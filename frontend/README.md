@@ -32,3 +32,9 @@ npm run build
 ```
 
 Production build: `npm run build`. Start the standalone Node server with `node .output/server/index.mjs`.
+
+## Student profile
+
+Open **Profile** in navigation, or **Edit my profile** in event details. Four sections keep draft values while switching. Completion counts optional fields; it is not an eligibility or skill score. Save explicitly confirms local browser storage; failures keep edits available for Retry. Leaving unsaved changes requires a discard decision. Existing preparation plans and completed tasks are preserved.
+
+Profile services are replaceable through `src/lib/profile/service.ts`. Demo project suggestions use only entered wording and technologies, require acceptance, and are never applied as verified skills. No live model calls or credentials are present. Age is not requested without a reviewed event condition. A selected event can be retained with `/profile?event=aurora-ai`; return and explicitly update its analysis after relevant saved changes.

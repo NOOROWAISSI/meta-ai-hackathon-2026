@@ -58,7 +58,7 @@ export async function requestPersonalAnalysis(
       },
       {
         title: "Existing experience",
-        text: `${skills.length ? `Related self-reported skills: ${skills.join(", ")}.` : "No related skills have been reported."} ${profile.experience?.trim() ? `Your description: ${profile.experience.trim()}` : "Project experience is not specified."} This is not independently verified competence.`,
+        text: `${skills.length ? `Related self-reported skills: ${skills.join(", ")}.` : "No related skills have been reported."} ${profile.experience?.trim() ? `Your description: ${profile.experience.trim()}` : ""} ${profile.projects?.length ? `Self-reported project contributions: ${profile.projects.map((project) => `${project.title}: ${project.contribution.trim() || "personal contribution not specified"}`).join("; ")}.` : !profile.experience?.trim() ? "Project experience is not specified." : ""} This is not independently verified competence; repository links are artifacts, not independent proof.`,
       },
       {
         title: "Information to clarify",
@@ -76,6 +76,11 @@ export async function requestPersonalAnalysis(
             : "Check venue availability, attendance format, and travel arrangements.",
           ...details.event.uncertainties,
           "Entry cost and other access conditions are not specified.",
+          ...(profile.constraints?.trim()
+            ? [
+                `Your reported practical constraints: ${profile.constraints.trim()}. These are personal circumstances, not organizer requirements.`,
+              ]
+            : []),
         ].join(" "),
       },
     ],
@@ -116,18 +121,21 @@ export async function createPreparationCandidate(
   profile: UserProfile,
   weeklyHours: number,
   freeOnly: boolean,
-  budget: number,
+  budget: number | null,
+  currency = "USD",
 ): Promise<PreparationPlan> {
   await wait(500);
   if (
     !Number.isFinite(weeklyHours) ||
     weeklyHours <= 0 ||
-    weeklyHours > 80 ||
-    !Number.isFinite(budget) ||
-    budget < 0 ||
-    budget > 10000
+    weeklyHours > 168 ||
+    (budget !== null && (!Number.isFinite(budget) || budget < 0 || budget > 1_000_000)) ||
+    (currency !== "" && !/^[A-Z]{3}$/.test(currency)) ||
+    (!freeOnly && budget !== null && !currency)
   )
-    throw new Error("Enter weekly hours between 1 and 80 and a budget between 0 and 10,000 USD.");
+    throw new Error(
+      "Enter positive weekly hours up to 168, and a valid learning budget or leave the maximum unknown.",
+    );
   if (
     hasHardBlocker(
       details.requirements.map((requirement) => evaluateRequirement(requirement, profile)),
@@ -144,6 +152,7 @@ export async function createPreparationCandidate(
     weeklyHours,
     freeOnly,
     budget: freeOnly ? 0 : budget,
+    ...(currency ? { currency } : {}),
     deadline: reliableTargetDeadline(details),
     tasks: [
       {

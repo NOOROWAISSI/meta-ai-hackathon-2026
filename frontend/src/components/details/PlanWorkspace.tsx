@@ -99,8 +99,12 @@ export function PlanWorkspace({ eventId }: { eventId?: string }) {
               </div>
               <p className="text-xs leading-relaxed text-muted-foreground">
                 Confirmed local demo plan · {plan.weeklyHours} hours/week ·{" "}
-                {plan.freeOnly ? "Free-only resources" : `Learning budget: ${plan.budget} USD`}.
-                Task completion is a self-report, not eligibility, skill certification, or
+                {plan.freeOnly
+                  ? "Free-only resources"
+                  : plan.budget === null
+                    ? "Paid resources allowed; maximum unknown"
+                    : `Learning budget: ${plan.budget} ${plan.currency ?? "USD"}`}
+                . Task completion is a self-report, not eligibility, skill certification, or
                 submission acceptance.
               </p>
               <div className="space-y-4">

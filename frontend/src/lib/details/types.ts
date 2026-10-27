@@ -80,7 +80,8 @@ export interface PreparationPlan {
   createdAt: string;
   weeklyHours: number;
   freeOnly: boolean;
-  budget: number;
+  budget: number | null;
+  currency?: string;
   deadline: string | null;
   tasks: {
     id: string;

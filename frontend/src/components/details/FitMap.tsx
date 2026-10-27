@@ -98,8 +98,7 @@ export function FitMap({
         </div>
       </div>
       <p className="mb-5 text-[10px] text-muted-foreground">
-        Each dot is one check. Planet sizes are decorative, not scores. Select a group to inspect
-        it.
+        Each dot is one check. Planet sizes are decorative, not scores. Select a group to inspect it.
       </p>
       {active && (
         <section

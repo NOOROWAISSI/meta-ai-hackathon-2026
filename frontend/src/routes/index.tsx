@@ -3,10 +3,12 @@ import { AppShell } from "@/components/discover/AppShell";
 import { DiscoverScreen } from "@/components/discover/DiscoverScreen";
 
 export const Route = createFileRoute("/")({
-  validateSearch: (search: Record<string, unknown>): { event?: string } =>
-    typeof search["event"] === "string" && search["event"].length <= 100
+  validateSearch: (search: Record<string, unknown>): { event?: string; analysis?: "update" } => ({
+    ...(typeof search["event"] === "string" && search["event"].length <= 100
       ? { event: search["event"] }
-      : {},
+      : {}),
+    ...(search["analysis"] === "update" ? { analysis: "update" as const } : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Discover Hackathons — NextStep" },
