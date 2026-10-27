@@ -27,3 +27,15 @@ Product specifications are maintained in our shared Google Drive.
 ## Project Status
 
 MVP Development — Draft v0.2
+
+## Frontend
+
+The React + TypeScript interface lives in [frontend/](./frontend/README.md).
+
+```sh
+cd frontend
+npm ci --legacy-peer-deps
+npm run dev
+```
+
+The current frontend uses fictional demo records and local browser storage. Backend, database, and live Meta AI integration are not connected yet.
