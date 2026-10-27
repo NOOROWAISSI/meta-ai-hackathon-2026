@@ -31,7 +31,7 @@ import type {
 import { useLocalState } from "@/lib/discover/use-local-state";
 import { CardSkeleton, HackathonCard } from "./HackathonCard";
 import { HackathonDetails } from "@/components/details/HackathonDetails";
-import { ProfileDialog } from "./ProfileDialog";
+import { useVisitState } from "@/components/VisitMemory";
 import { OpportunityGroups } from "./OpportunityGroups";
 
 const EMPTY_FILTERS: Filters = { topics: [], modes: [], deadline: "any", participation: "any" };
@@ -88,7 +88,7 @@ function Pill({
 }
 
 export function DiscoverScreen() {
-  const { event: eventId } = useSearch({ from: "/" });
+  const { event: eventId, analysis: analysisAction } = useSearch({ from: "/" });
   const navigate = useNavigate({ from: "/" });
   const discoveryScroll = useRef(0);
   const discoveryFocus = useRef<HTMLElement | null>(null);
@@ -102,19 +102,20 @@ export function DiscoverScreen() {
     previousEvent.current = eventId;
   }, [eventId]);
   const [demoState, setDemoState] = useState<DemoState>("normal");
-  const [storedProfile, setProfile] = useLocalState<UserProfile>(
+  const [storedProfile, , profileReady] = useLocalState<UserProfile>(
     "nextstep.profile",
     DEFAULT_PROFILE,
   );
   const [saved, setSaved] = useLocalState<string[]>("nextstep.saved", []);
-  const [dismissed, setDismissed] = useState<string[]>([]);
-  const [queryDraft, setQueryDraft] = useState("");
-  const [query, setQuery] = useState("");
-  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const [dismissed, setDismissed] = useVisitState<string[]>("discover.dismissed", []);
+  const [queryDraft, setQueryDraft] = useVisitState("discover.queryDraft", "");
+  const [query, setQuery] = useVisitState("discover.query", "");
+  const [filters, setFilters] = useVisitState<Filters>("discover.filters", EMPTY_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [tab, setTab] = useState<"for-you" | "all">("for-you");
-  const [timing, setTiming] = useState<TimingChip>(null);
-  const [profileOpen, setProfileOpen] = useState(false);
+  const [tab, setTab] = useVisitState<"for-you" | "all">("discover.tab", "for-you");
+  const [timing, setTiming] = useVisitState<TimingChip>("discover.timing", null);
+  const openProfile = () =>
+    void navigate({ to: "/profile", search: eventId ? { event: eventId } : {} });
 
   const profile: UserProfile =
     demoState === "incomplete-profile"
@@ -180,19 +181,6 @@ export function DiscoverScreen() {
     discoveryFocus.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
     void navigate({ to: "/", search: { event: event.id }, resetScroll: true });
-  };
-  const saveProfile = (next: UserProfile) => {
-    if (!setProfile({ ...next, version: (storedProfile.version ?? 0) + 1 })) {
-      toast.error("Couldn't save your profile", {
-        description: "Your draft is still here. Please try again.",
-      });
-      return false;
-    }
-    if (demoState === "incomplete-profile") setDemoState("normal");
-    toast.success("Profile saved in this browser", {
-      description: "Existing personal analysis is marked outdated until updated.",
-    });
-    return true;
   };
   const dismiss = (h: Hackathon, reason?: string) => {
     setDismissed((d) => [...d, h.id]);
@@ -286,7 +274,7 @@ export function DiscoverScreen() {
           </div>
           <button
             type="button"
-            onClick={() => setProfileOpen(true)}
+            onClick={() => openProfile()}
             aria-label="Edit profile"
             className="glass transition-soft grid size-12 shrink-0 place-items-center rounded-2xl hover:-translate-y-0.5"
           >
@@ -308,7 +296,7 @@ export function DiscoverScreen() {
             </p>
             <button
               type="button"
-              onClick={() => setProfileOpen(true)}
+              onClick={() => openProfile()}
               className="transition-soft rounded-xl bg-foreground px-4 py-2 text-sm font-semibold text-background hover:bg-primary"
             >
               Add your interests
@@ -675,22 +663,17 @@ export function DiscoverScreen() {
           Demo opportunities. All events, organizers, and AI recommendations are fictional and not
           verified. Links point to example.org placeholders.
         </p>
-
-        <ProfileDialog
-          open={profileOpen}
-          onOpenChange={setProfileOpen}
-          profile={storedProfile}
-          onSave={saveProfile}
-        />
       </div>
-      {eventId && (
+      {eventId && !profileReady && <p role="status">Loading your confirmed profile…</p>}
+      {eventId && profileReady && (
         <HackathonDetails
           key={eventId}
           eventId={eventId}
+          requestUpdate={analysisAction === "update"}
           profile={storedProfile}
           saved={saved.includes(eventId)}
           onToggleSave={() => toggleSave(eventId)}
-          onSaveProfile={saveProfile}
+          onEditProfile={openProfile}
           onBack={() => void navigate({ to: "/", search: {}, resetScroll: false })}
         />
       )}

@@ -13,6 +13,7 @@ import { type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { VisitMemoryProvider } from "@/components/VisitMemory";
 
 function NotFoundComponent() {
   return (
@@ -133,7 +134,9 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
+        <VisitMemoryProvider>
+          <Outlet />
+        </VisitMemoryProvider>
         <Toaster position="bottom-center" />
       </ThemeProvider>
     </QueryClientProvider>

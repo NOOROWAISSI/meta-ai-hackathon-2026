@@ -38,6 +38,33 @@ export interface UserProfile {
   entrantType?: "unknown" | "solo" | "team";
   teamSize?: number | null;
   version?: number;
+  displayName?: string;
+  avatarDataUrl?: string;
+  educationStatus?: "unknown" | "university" | "graduate" | "other" | "prefer-not";
+  fieldOfStudy?: string;
+  studyLevel?: string;
+  residence?: string;
+  goalChoice?: "unknown" | "now" | "prepare" | "explore";
+  goalDescription?: string;
+  preferredFormat?: ParticipationMode | "any" | "unknown";
+  skillNotes?: Record<string, string>;
+  projects?: ProfileProject[];
+  targetDate?: string;
+  learningBudget?: "unknown" | "free" | "paid";
+  maxBudget?: number | null;
+  currency?: string;
+  learningLanguage?: string;
+  constraints?: string;
+  savedAt?: string;
+}
+
+export interface ProfileProject {
+  id: string;
+  title: string;
+  description: string;
+  contribution: string;
+  technologies: string[];
+  url: string;
 }
 
 export interface Recommendation {

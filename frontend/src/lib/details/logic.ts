@@ -1,8 +1,14 @@
 import type { UserProfile } from "../discover/types";
 import type { EventDetails, FitMatch, Requirement } from "./types";
+import { profileAnalysisFacts } from "../profile/model";
 
 export function analysisContext(details: EventDetails, profile: UserProfile) {
-  return JSON.stringify([details.event.id, details.revision, details.sourceState, profile]);
+  return JSON.stringify([
+    details.event.id,
+    details.revision,
+    details.sourceState,
+    profileAnalysisFacts(profile),
+  ]);
 }
 export function hasPersonalProfile(profile: UserProfile) {
   return !!(
@@ -10,6 +16,10 @@ export function hasPersonalProfile(profile: UserProfile) {
     profile.skills.length ||
     profile.goals?.length ||
     profile.experience?.trim() ||
+    profile.projects?.length ||
+    profile.fieldOfStudy?.trim() ||
+    (profile.educationStatus && !["unknown", "prefer-not"].includes(profile.educationStatus)) ||
+    profile.weeklyHours !== null ||
     (profile.entrantType && profile.entrantType !== "unknown") ||
     profile.teamSize
   );

@@ -26,8 +26,9 @@ export function PreparationPanel({
   onUpdate: () => void;
 }) {
   const [weeklyHours, setWeeklyHours] = useState(profile.weeklyHours?.toString() ?? "");
-  const [freeOnly, setFreeOnly] = useState(true);
-  const [budget, setBudget] = useState("0");
+  const [freeOnly, setFreeOnly] = useState(profile.learningBudget !== "paid");
+  const [budget, setBudget] = useState(profile.maxBudget?.toString() ?? "");
+  const [currency, setCurrency] = useState(profile.currency ?? "");
   const [storedPlan, persistPlan] = useLocalState<PreparationPlan | null>(
     `nextstep.plan.${details.event.id}`,
     null,
@@ -63,7 +64,8 @@ export function PreparationPanel({
         profile,
         Number(weeklyHours),
         freeOnly,
-        freeOnly ? 0 : Number(budget),
+        freeOnly ? 0 : budget.trim() ? Number(budget) : null,
+        freeOnly ? "USD" : currency,
       ),
     onSuccess: save,
     onError: (error: Error) => setFormError(error.message),
@@ -147,7 +149,9 @@ export function PreparationPanel({
             e.preventDefault();
             setFormError("");
             if (!weeklyHours.trim() || Number(weeklyHours) <= 0) {
-              setFormError("Enter weekly available hours between 1 and 80.");
+              setFormError(
+                "Your profile may keep zero or unknown hours. To create a plan, enter positive weekly hours up to 168.",
+              );
               return;
             }
             generation.mutate();
@@ -161,9 +165,9 @@ export function PreparationPanel({
             <input
               id="prep-hours"
               type="number"
-              min={1}
-              max={80}
-              step={1}
+              min={0}
+              max={168}
+              step="any"
               required
               value={weeklyHours}
               onChange={(e) => setWeeklyHours(e.target.value)}
@@ -199,19 +203,35 @@ export function PreparationPanel({
             {!freeOnly && (
               <div>
                 <label htmlFor="paid-budget" className="text-xs text-muted-foreground">
-                  Maximum learning budget (USD)
+                  Maximum learning budget (optional)
                 </label>
                 <input
                   id="paid-budget"
                   type="number"
                   min={0}
-                  max={10000}
-                  required
+                  max={1000000}
                   step="0.01"
                   value={budget}
                   onChange={(e) => setBudget(e.target.value)}
                   className="mt-2 block w-40 rounded-xl border border-input bg-card p-3 text-sm"
                 />
+                <label htmlFor="paid-currency" className="mt-3 block text-xs text-muted-foreground">
+                  Currency
+                </label>
+                <select
+                  id="paid-currency"
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="mt-2 rounded-xl border border-input bg-card p-3 text-sm"
+                >
+                  <option value="">Not provided</option>
+                  {["USD", "ILS", "JOD", "EUR", "GBP"].map((code) => (
+                    <option key={code}>{code}</option>
+                  ))}
+                </select>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Blank maximum stays unknown. No currency conversion is assumed.
+                </p>
               </div>
             )}
           </fieldset>

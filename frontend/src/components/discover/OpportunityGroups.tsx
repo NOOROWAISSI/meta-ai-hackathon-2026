@@ -1,3 +1,4 @@
+import { useVisitState } from "@/components/VisitMemory";
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -7,7 +8,7 @@ import {
   LayoutGrid,
   ShieldCheck,
 } from "lucide-react";
-import { useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useRef, type CSSProperties, type ReactNode } from "react";
 import type { Hackathon } from "@/lib/discover/types";
 
 const GROUPS = [
@@ -54,7 +55,7 @@ export function OpportunityGroups({
   items: Hackathon[];
   renderCard: (event: Hackathon) => ReactNode;
 }) {
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useVisitState<string | null>("discover.collection", null);
   const panel = useRef<HTMLElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const results = useRef<HTMLDivElement>(null);

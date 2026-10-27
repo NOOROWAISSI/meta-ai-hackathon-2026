@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { Bookmark, Compass, ListChecks, Moon, Sparkles, Sun, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTheme } from "@/components/ThemeProvider";
@@ -49,6 +49,8 @@ function Wordmark() {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const location = useLocation();
+  const eventId = (location.search as { event?: string }).event;
   return (
     <div className="relative isolate min-h-screen overflow-x-hidden">
       <a
@@ -77,6 +79,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link
               key={to}
               to={to}
+              search={to === "/profile" && eventId ? { event: eventId } : {}}
               activeOptions={{ exact: true, includeSearch: false }}
               className="transition-soft flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground data-[status=active]:bg-primary data-[status=active]:text-primary-foreground data-[status=active]:shadow-button"
             >
@@ -112,6 +115,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link
             key={to}
             to={to}
+            search={to === "/profile" && eventId ? { event: eventId } : {}}
             activeOptions={{ exact: true, includeSearch: false }}
             className="transition-soft flex flex-col items-center gap-0.5 rounded-xl py-2 text-[11px] font-medium text-muted-foreground data-[status=active]:bg-primary data-[status=active]:text-primary-foreground"
           >

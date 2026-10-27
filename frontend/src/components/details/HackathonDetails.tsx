@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ProfileDialog } from "@/components/discover/ProfileDialog";
+import { useVisitState } from "@/components/VisitMemory";
 import { askOpportunity, fetchEventDetails, requestPersonalAnalysis } from "@/lib/details/api";
 import {
   analysisContext,
@@ -84,21 +84,29 @@ export function HackathonDetails({
   profile,
   saved,
   onToggleSave,
-  onSaveProfile,
+  onEditProfile,
+  requestUpdate = false,
   onBack,
 }: {
   eventId: string;
   profile: UserProfile;
   saved: boolean;
   onToggleSave: () => void;
-  onSaveProfile: (profile: UserProfile) => boolean;
+  onEditProfile?: () => void;
+  requestUpdate?: boolean;
+  onSaveProfile?: (profile: UserProfile) => boolean;
   onBack: () => void;
 }) {
   const [state, setState] = useState<DetailsState>("normal");
-  const [tab, setTab] = useState("overview");
-  const [profileOpen, setProfileOpen] = useState(false);
+  const [tab, setTab] = useVisitState(`details.tab.${eventId}`, "overview");
+
   const [timeZone, setTimeZone] = useState("UTC");
-  const [snapshot, setSnapshot] = useState<AnalysisSnapshot | null>(null);
+  const [snapshot, setSnapshot] = useVisitState<AnalysisSnapshot | null>(
+    `details.analysis.${eventId}`,
+    null,
+  );
+  const restoredSnapshot = useRef(snapshot);
+  const explicitUpdateHandled = useRef(false);
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<OpportunityAnswer | null>(null);
   const initialRequest = useRef("");
@@ -188,9 +196,17 @@ export function HackathonDetails({
     if (!details) return;
     const key = `${details.event.id}:${details.revision}:${details.sourceState}:${state}`;
     if (initialRequest.current === key) return;
+    const restored = initialRequest.current === "" && !!restoredSnapshot.current;
     initialRequest.current = key;
+    if (restored && !requestUpdate) return;
     generateAnalysis({ fail: state === "ai-error", record: details, facts: effectiveProfile });
-  }, [details, state, effectiveProfile, generateAnalysis]);
+  }, [details, state, effectiveProfile, generateAnalysis, requestUpdate]);
+  useEffect(() => {
+    if (requestUpdate && details && !explicitUpdateHandled.current) {
+      explicitUpdateHandled.current = true;
+      setTab("fit");
+    }
+  }, [requestUpdate, details, setTab]);
 
   const updateAnalysis = () => {
     if (details) generateAnalysis({ fail: false, record: details, facts: effectiveProfile });
@@ -596,7 +612,10 @@ export function HackathonDetails({
                 <div className="mt-5 flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => setProfileOpen(true)}
+                    onClick={() => {
+                      setTab("fit");
+                      onEditProfile?.();
+                    }}
                     className="detail-secondary"
                   >
                     Edit my profile
@@ -783,16 +802,6 @@ export function HackathonDetails({
           <ArrowRight className="size-4" aria-hidden />
         </button>
       </div>
-      <ProfileDialog
-        open={profileOpen}
-        onOpenChange={setProfileOpen}
-        profile={profile}
-        onSave={(next) => {
-          const success = onSaveProfile(next);
-          if (success && state === "incomplete-profile") setState("normal");
-          return success;
-        }}
-      />
     </div>
   );
 }
