@@ -2,11 +2,12 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { Bookmark, Compass, ListChecks, Moon, Sparkles, Sun, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTheme } from "@/components/ThemeProvider";
+import { DemoScenario } from "@/components/DemoScenario";
 
 const NAV = [
   { to: "/", label: "Discover", icon: Compass },
-  { to: "/plans", label: "My Plans", icon: ListChecks },
   { to: "/saved", label: "Saved", icon: Bookmark },
+  { to: "/plans", label: "My Plans", icon: ListChecks },
   { to: "/profile", label: "Profile", icon: UserRound },
 ] as const;
 
@@ -79,7 +80,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link
               key={to}
               to={to}
-              search={to === "/profile" && eventId ? { event: eventId } : {}}
+              search={{
+                ...((to === "/profile" || to === "/plans") && eventId ? { event: eventId } : {}),
+                ...(to === "/profile" && location.pathname === "/plans"
+                  ? { returnTo: "plans" as const }
+                  : {}),
+              }}
               activeOptions={{ exact: true, includeSearch: false }}
               className="transition-soft flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground data-[status=active]:bg-primary data-[status=active]:text-primary-foreground data-[status=active]:shadow-button"
             >
@@ -103,7 +109,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       <main id="main-content" className="px-4 pb-28 pt-6 sm:px-6 lg:ml-64 lg:pb-12 lg:pr-8 lg:pt-8">
-        <div className="mx-auto max-w-6xl">{children}</div>
+        <div className="mx-auto max-w-6xl">
+          {import.meta.env.DEV && <DemoScenario />}
+          {children}
+        </div>
       </main>
 
       {/* Mobile bottom nav */}
@@ -115,7 +124,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link
             key={to}
             to={to}
-            search={to === "/profile" && eventId ? { event: eventId } : {}}
+            search={{
+              ...((to === "/profile" || to === "/plans") && eventId ? { event: eventId } : {}),
+              ...(to === "/profile" && location.pathname === "/plans"
+                ? { returnTo: "plans" as const }
+                : {}),
+            }}
             activeOptions={{ exact: true, includeSearch: false }}
             className="transition-soft flex flex-col items-center gap-0.5 rounded-xl py-2 text-[11px] font-medium text-muted-foreground data-[status=active]:bg-primary data-[status=active]:text-primary-foreground"
           >

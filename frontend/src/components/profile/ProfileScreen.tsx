@@ -47,9 +47,11 @@ const ICONS = [GraduationCap, Compass, BookOpen, Clock3];
 export function ProfileScreen({
   eventId,
   service = profileService,
+  returnToPlans = false,
 }: {
   eventId?: string;
   service?: ProfileService;
+  returnToPlans?: boolean;
 }) {
   const navigate = useNavigate();
   const event = DEMO_HACKATHONS.find((entry) => entry.id === eventId);
@@ -192,13 +194,19 @@ export function ProfileScreen({
     }
   };
   const returnToContext = (updateAnalysis = false) =>
-    void navigate({
-      to: "/",
-      search: event
-        ? { event: event.id, ...(updateAnalysis ? { analysis: "update" as const } : {}) }
-        : {},
-      resetScroll: false,
-    });
+    returnToPlans && !updateAnalysis
+      ? void navigate({
+          to: "/plans",
+          search: event ? { event: event.id } : {},
+          resetScroll: false,
+        })
+      : void navigate({
+          to: "/",
+          search: event
+            ? { event: event.id, ...(updateAnalysis ? { analysis: "update" as const } : {}) }
+            : {},
+          resetScroll: false,
+        });
   const saveButton = (mobile = false) => (
     <button
       form="student-profile"

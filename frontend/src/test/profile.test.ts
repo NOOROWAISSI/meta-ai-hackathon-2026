@@ -1,3 +1,4 @@
+import { readRecord, updateRecord } from "@/lib/storage/database";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_PROFILE } from "@/lib/discover/demo-data";
 import { confirmedProfile, profileCompletion, toDraft, validateDraft } from "@/lib/profile/model";
@@ -58,23 +59,20 @@ describe("confirmed student profiles", () => {
   });
   it("preserves the saved profile and completed plan when a save fails, then confirms a retry", async () => {
     const previous = { ...DEFAULT_PROFILE, version: 1 };
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(previous));
-    localStorage.setItem(
-      "nextstep.plan.aurora-ai",
-      JSON.stringify({ tasks: [{ id: "done-task", status: "done" }] }),
-    );
-    const plan = localStorage.getItem("nextstep.plan.aurora-ai");
-    const write = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+    await updateRecord(PROFILE_KEY, DEFAULT_PROFILE, () => previous);
+    const marker = { tasks: [{ id: "done-task", status: "done" }] };
+    await updateRecord<unknown>("plan:aurora-ai", null, () => marker);
+    const write = vi.spyOn(IDBObjectStore.prototype, "put").mockImplementation(() => {
       throw new Error("quota");
     });
     await expect(
       demoProfileService.save({ ...previous, weeklyHours: 0 }, previous),
     ).rejects.toThrow("quota");
-    expect(JSON.parse(localStorage.getItem(PROFILE_KEY)!)).toEqual(previous);
+    expect(await readRecord(PROFILE_KEY, DEFAULT_PROFILE)).toEqual(previous);
     write.mockRestore();
     const saved = await demoProfileService.save({ ...previous, weeklyHours: 0 }, previous);
     expect(saved).toMatchObject({ weeklyHours: 0, version: 2 });
-    expect(localStorage.getItem("nextstep.plan.aurora-ai")).toBe(plan);
+    expect(await readRecord("plan:aurora-ai", null)).toEqual(marker);
     expect(await demoProfileService.load()).toEqual(saved);
   });
   it("marks relevant analysis changes, but display name changes do not invalidate comparison", () => {
@@ -94,11 +92,11 @@ describe("confirmed student profiles", () => {
   it("does not overwrite a newer profile saved in another tab", async () => {
     const previous = { ...DEFAULT_PROFILE, version: 1 };
     const newer = { ...previous, skills: ["Python"], version: 2 };
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(newer));
+    await updateRecord(PROFILE_KEY, DEFAULT_PROFILE, () => newer);
     await expect(
       demoProfileService.save({ ...previous, skills: ["React"] }, previous),
     ).rejects.toThrow("another tab");
-    expect(JSON.parse(localStorage.getItem(PROFILE_KEY)!)).toEqual(newer);
+    expect(await readRecord(PROFILE_KEY, DEFAULT_PROFILE)).toEqual(newer);
   });
   it("asks for personal contribution instead of inventing team achievements", async () => {
     const suggestion = await demoProfileService.suggestExperience({

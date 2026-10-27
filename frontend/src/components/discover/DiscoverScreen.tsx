@@ -165,9 +165,9 @@ export function DiscoverScreen() {
     setQueryDraft("");
     setTiming(null);
   };
-  const toggleSave = (id: string) => {
+  const toggleSave = async (id: string) => {
     const removing = saved.includes(id);
-    if (setSaved((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))) {
+    if (await setSaved((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))) {
       toast.success(removing ? "Removed from saved" : "Saved in this browser");
     } else {
       toast.error("Couldn't save your change", {
@@ -674,6 +674,7 @@ export function DiscoverScreen() {
           saved={saved.includes(eventId)}
           onToggleSave={() => toggleSave(eventId)}
           onEditProfile={openProfile}
+          onPrepare={() => void navigate({ to: "/plans", search: { event: eventId } })}
           onBack={() => void navigate({ to: "/", search: {}, resetScroll: false })}
         />
       )}

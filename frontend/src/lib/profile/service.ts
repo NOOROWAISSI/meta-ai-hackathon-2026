@@ -1,6 +1,7 @@
 import type { ProfileProject, UserProfile } from "../discover/types";
 import { DEFAULT_PROFILE } from "../discover/demo-data";
 import { profileAnalysisFacts, toDraft, validateDraft } from "./model";
+import { readRecord, updateRecord } from "../storage/database";
 
 export interface ExperienceSuggestion {
   projectId: string;
@@ -20,10 +21,8 @@ export interface ProfileService {
 const pause = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 export const PROFILE_KEY = "nextstep.profile";
 
-function readProfile(): UserProfile {
-  const raw = localStorage.getItem(PROFILE_KEY);
-  if (!raw) return structuredClone(DEFAULT_PROFILE);
-  const value = JSON.parse(raw) as UserProfile;
+async function readProfile(): Promise<UserProfile> {
+  const value = await readRecord<UserProfile>(PROFILE_KEY, structuredClone(DEFAULT_PROFILE));
   if (
     !value ||
     !Array.isArray(value.interests) ||
@@ -49,14 +48,6 @@ export const demoProfileService: ProfileService = {
     if (fail) throw new Error("Demo save failure. Your edits are still here; retry when ready.");
     if (Object.keys(validateDraft(toDraft(profile))).length)
       throw new Error("Some profile fields are invalid. Your saved information has not changed.");
-    const current = readProfile();
-    if (
-      (current.version ?? 0) !== (previous.version ?? 0) ||
-      JSON.stringify(current) !== JSON.stringify(previous)
-    )
-      throw new Error(
-        "Your saved profile changed in another tab. Keep these edits, then reload the profile in another tab to compare before saving.",
-      );
     const relevantChanged =
       JSON.stringify(profileAnalysisFacts(profile)) !==
       JSON.stringify(profileAnalysisFacts(previous));
@@ -65,9 +56,16 @@ export const demoProfileService: ProfileService = {
       version: (previous.version ?? 0) + (relevantChanged || !previous.savedAt ? 1 : 0),
       savedAt: new Date().toISOString(),
     };
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(confirmed));
-    window.dispatchEvent(new Event("nextstep:storage"));
-    return confirmed;
+    return updateRecord<UserProfile>(PROFILE_KEY, DEFAULT_PROFILE, (current) => {
+      if (
+        (current.version ?? 0) !== (previous.version ?? 0) ||
+        JSON.stringify(current) !== JSON.stringify(previous)
+      )
+        throw new Error(
+          "Your saved profile changed in another tab. Your draft is kept; compare the latest profile before saving.",
+        );
+      return confirmed;
+    });
   },
   async normalizeSkills(skills) {
     // Demo normalization is limited to whitespace and case-insensitive deduplication.

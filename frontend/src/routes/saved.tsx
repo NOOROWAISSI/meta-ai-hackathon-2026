@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { DemoPlaceholder } from "@/components/discover/AppShell";
+import { SavedScreen } from "@/components/saved/SavedScreen";
 
 export const Route = createFileRoute("/saved")({
   head: () => ({
@@ -10,5 +10,5 @@ export const Route = createFileRoute("/saved")({
       { property: "og:description", content: "Hackathons you've saved for later." },
     ],
   }),
-  component: () => <DemoPlaceholder title="Saved" description="A dedicated saved list is coming. Your saves are kept in this browser and power “Similar to your saved opportunities” on Discover." />,
+  component: SavedScreen,
 });
