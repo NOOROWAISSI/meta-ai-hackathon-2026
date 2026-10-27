@@ -30,7 +30,7 @@ import type {
 } from "@/lib/discover/types";
 import { useLocalState } from "@/lib/discover/use-local-state";
 import { CardSkeleton, HackathonCard } from "./HackathonCard";
-import { DetailDrawer } from "./DetailDrawer";
+import { HackathonDetails } from "@/components/details/HackathonDetails";
 import { ProfileDialog } from "./ProfileDialog";
 import { OpportunityGroups } from "./OpportunityGroups";
 
@@ -190,7 +190,7 @@ export function DiscoverScreen() {
     }
     if (demoState === "incomplete-profile") setDemoState("normal");
     toast.success("Profile saved in this browser", {
-      description: "Your discovery suggestions now use the updated profile.",
+      description: "Existing personal analysis is marked outdated until updated.",
     });
     return true;
   };
@@ -242,7 +242,7 @@ export function DiscoverScreen() {
 
   return (
     <>
-      <div className="space-y-6">
+      <div hidden={!!eventId} className="space-y-6">
         {import.meta.env.DEV && (
           <details className="text-xs text-muted-foreground">
             <summary className="w-fit cursor-pointer rounded-lg px-2 py-1">
@@ -683,12 +683,17 @@ export function DiscoverScreen() {
           onSave={saveProfile}
         />
       </div>
-      <DetailDrawer
-        h={list.find((event) => event.id === eventId) ?? null}
-        saved={!!eventId && saved.includes(eventId)}
-        onToggleSave={() => eventId && toggleSave(eventId)}
-        onClose={() => void navigate({ to: "/", search: {}, resetScroll: false })}
-      />
+      {eventId && (
+        <HackathonDetails
+          key={eventId}
+          eventId={eventId}
+          profile={storedProfile}
+          saved={saved.includes(eventId)}
+          onToggleSave={() => toggleSave(eventId)}
+          onSaveProfile={saveProfile}
+          onBack={() => void navigate({ to: "/", search: {}, resetScroll: false })}
+        />
+      )}
     </>
   );
 }

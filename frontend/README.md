@@ -1,24 +1,27 @@
-# NextStep frontend
+# NextStep
 
-React and TypeScript hackathon discovery interface using TanStack Start and Tailwind CSS.
+A fictional hackathon discovery and preparation frontend with light/dark galaxy themes.
 
-## Run locally
+## Development
 
-Requires Node.js 22.12+ or 24 LTS.
+You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
 
 ```sh
-cd frontend
+git clone https://github.com/NOOROWAISSI/meta-ai-hackathon-2026.git
+cd meta-ai-hackathon-2026/frontend
 npm ci --legacy-peer-deps
 npm run dev
 ```
 
-Open http://localhost:8080.
+## Demo flow
 
-## Discover
+Open a collection on Discover, choose **View opportunity**, and explore **Overview**, **Requirements & My Fit**, and **Preparation**. Direct event links use `/?event=aurora-ai`. Returning to Discover preserves its in-memory search, filters, open collection, and saved state.
 
-Search and filter the five fictional demo opportunities, expand stacked collections, save opportunities, and edit a local profile. Light and dark galaxy themes support desktop and mobile. View opportunity opens a compact preview; the full details workflow is delivered separately.
+Event details use the existing five fictional fixtures. Unknown information is shown explicitly; example.org links are placeholders. Personal analysis and Q&A are labelled demo templates behind `src/lib/details/api.ts`, with no live model calls or frontend credentials. Profile edits mark earlier analysis outdated until explicitly updated.
 
-All events and recommendation messages are synthetic. Links use example.org placeholders. No backend, database, or live AI service is connected. Saved state and profile data stay in this browser. My Plans, Saved, and Profile navigation pages are placeholders at this stage.
+Create and confirm a local preparation plan in the Preparation tab, then use **Continue my plan** for the separate task workspace. Local save failures are reported before presenting changes as confirmed.
+
+Development-only **Details preview controls** cover loading, unavailable/stale sources, date conflicts, incomplete profiles, failed analysis and retry, and a clearly simulated hard participation blocker. See [FRONTEND-REVIEW.md](./FRONTEND-REVIEW.md) for implemented behavior and remaining integration boundaries.
 
 ## Verification
 
@@ -28,4 +31,4 @@ npx tsc --noEmit
 npm run build
 ```
 
-Start the production server with `node .output/server/index.mjs` after building.
+Production build: `npm run build`. Start the standalone Node server with `node .output/server/index.mjs`.
