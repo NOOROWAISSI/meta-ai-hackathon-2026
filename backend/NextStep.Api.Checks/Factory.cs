@@ -23,6 +23,7 @@ public sealed class Factory(bool fake = true, bool recovery = false) : WebApplic
 }
 public sealed class FakeModel : IMetaModelClient
 {
+    public PlanGenerationContext? LastContext;
     public int Calls;
     public string? ErrorCode;
     public bool Invalid;
@@ -32,6 +33,7 @@ public sealed class FakeModel : IMetaModelClient
     public async Task<PlanCandidateOutput> GenerateCandidateAsync(PlanGenerationContext context, CancellationToken ct = default)
     {
         Calls++;
+        LastContext = context;
         Entered?.TrySetResult();
         if (Resume is not null) await Resume.Task.WaitAsync(ct);
         if (ErrorCode is { } code) throw new MetaAiException(code, "Test provider failure", true);

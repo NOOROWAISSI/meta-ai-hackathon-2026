@@ -312,6 +312,44 @@ Test("student seed creates a real login once and preserves subsequent profile ed
     Assert((await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!.Background == update.Background);
 });
 
+Test("account profile editor persists display fields with canonical facts and rejects stale writes", async () => {
+    await using var host = new Factory();
+    var (client, profile) = await Session(host);
+    var editor = new JsonObject { ["displayName"] = "Synthetic account", ["fieldOfStudy"] = "Computer Science", ["weeklyHours"] = 5, ["skills"] = new JsonArray("Python"), ["projects"] = new JsonArray() };
+    var updated = profile with { Background = "A confirmed self-report", AvailableHoursPerWeek = Known(5) };
+    var response = await client.PutAsJsonAsync("/api/profile/editor", new ProfileEditorUpdate(profile.Version, updated, editor), Wire.Json); response.EnsureSuccessStatusCode();
+    var saved = (await response.Content.ReadFromJsonAsync<ProfileEditorView>(Wire.Json))!;
+    Assert(saved.Profile.Version == profile.Version + 1 && saved.Editor["fieldOfStudy"]!.GetValue<string>() == "Computer Science");
+    var reload = (await client.GetFromJsonAsync<ProfileEditorView>("/api/profile/editor", Wire.Json))!;
+    Assert(reload.Profile.Background == updated.Background && reload.Editor["savedAt"] is not null);
+    Assert((await client.PutAsJsonAsync("/api/profile/editor", new ProfileEditorUpdate(profile.Version, updated, editor), Wire.Json)).StatusCode == HttpStatusCode.Conflict);
+    var other = await Session(host);
+    Assert((await other.Client.PutAsJsonAsync("/api/profile/editor", new ProfileEditorUpdate(0, updated, editor), Wire.Json)).StatusCode == HttpStatusCode.Conflict);
+});
+Test("real courses support atomic account preferences without overwriting the other selection", async () => {
+    await using var host = new Factory();
+    var (client, _) = await Session(host);
+    var saved = await client.PatchAsJsonAsync("/api/preferences/harvard-cs50x", new PreferenceChange(Saved: true), Wire.Json); saved.EnsureSuccessStatusCode();
+    var hidden = await client.PatchAsJsonAsync("/api/preferences/harvard-cs50x", new PreferenceChange(NotInterested: true), Wire.Json); hidden.EnsureSuccessStatusCode();
+    var value = (await hidden.Content.ReadFromJsonAsync<PreferenceView>(Wire.Json))!;
+    Assert(value.Saved && value.NotInterested && DateTimeOffset.TryParse(value.SavedAt, out _));
+    Assert((await client.PatchAsJsonAsync("/api/preferences/harvard-cs50x", new PreferenceChange(Saved: false, ExpectedAccountId: "a-different-account"), Wire.Json)).StatusCode == HttpStatusCode.Conflict);
+    var reloaded = (await client.GetFromJsonAsync<PreferenceView[]>("/api/preferences/snapshot", Wire.Json))!.Single();
+    Assert(reloaded.Saved && reloaded.NotInterested);
+    Assert((await client.PatchAsJsonAsync("/api/preferences/aurora-ai", new PreferenceChange(Saved: true), Wire.Json)).StatusCode == HttpStatusCode.NotFound);
+});
+Test("reviewed real resource descriptors reach the provider using the same IDs exposed by the API", async () => {
+    await using var host = new Factory(); var (client, profile, _, _) = await Ready(host);
+    var opportunity = (await client.GetFromJsonAsync<Opportunity>("/api/opportunities/E02", Wire.Json))!;
+    var submission = (await client.GetFromJsonAsync<SubmissionState>("/api/submissions/E02", Wire.Json))!;
+    var resources = (await client.GetFromJsonAsync<LearningResource[]>("/api/opportunities/E02/resources", Wire.Json))!;
+    Assert(resources.Length > 0 && resources.All(resource => !resource.Url.Contains("example.org")));
+    (await client.PostAsJsonAsync("/api/opportunities/E02/plan-candidates", new AnalysisRequest(opportunity.SourceRevision, profile, submission), Wire.Json)).EnsureSuccessStatusCode();
+    var context = host.Model.LastContext!;
+    Assert(context.ReviewedResourceIds.Count > 0 && context.ReviewedResources.Count == context.ReviewedResourceIds.Count);
+    Assert(context.ReviewedResources.All(resource => resources.Any(record => record.Id == resource.Id && record.Title == resource.Title)));
+});
+
 var passed = 0;
 try {
     foreach (var test in cases) {
