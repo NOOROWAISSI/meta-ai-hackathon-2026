@@ -8,6 +8,7 @@ import type {
   StudentProfile,
   SubmissionState,
   TaskStatus,
+  AssessmentContext,
 } from "@/lib/contract/types";
 export class AccountApiError extends Error {
   constructor(
@@ -68,6 +69,21 @@ export interface ProfileEnvelope {
   displayName: string;
 }
 export type AccountPreference = OpportunityPreference & { savedAt: string | null };
+/** Application-side report, separate from the canonical candidate/plan wire contracts. */
+export interface SubmissionCoverageView {
+  context: AssessmentContext;
+  planVersion: number | null;
+  candidateId: string | null;
+  planOutdated: boolean;
+  report: {
+    reviewedOutstandingMandatoryRequirementIds: string[];
+    candidateRequirementIds: string[];
+    retainedRequirementIds: string[];
+    unrepresentedRequirementIds: string[];
+    sourceCoverage: "unknown" | "incomplete" | "complete";
+  };
+  unresolvedRequirementIds: string[];
+}
 export const accountApi = {
   profile: () => apiJson<StudentProfile>("/profile"),
   profileEditor: () => apiJson<ProfileEnvelope>("/profile/editor"),
@@ -101,6 +117,10 @@ export const accountApi = {
   opportunities: () => apiJson<Opportunity[]>("/opportunities"),
   opportunity: (id: string) => apiJson<Opportunity>(`/opportunities/${encodeURIComponent(id)}`),
   submission: (id: string) => apiJson<SubmissionState>(`/submissions/${encodeURIComponent(id)}`),
+  submissionCoverage: (id: string, candidateId?: string) =>
+    apiJson<SubmissionCoverageView>(
+      `/submissions/${encodeURIComponent(id)}/coverage${candidateId ? `?candidateId=${encodeURIComponent(candidateId)}` : ""}`,
+    ),
   resources: (id: string) =>
     apiJson<ReviewedResource[]>(`/opportunities/${encodeURIComponent(id)}/resources`),
   plans: () => apiJson<Plan[]>("/plans"),
