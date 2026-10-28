@@ -20,7 +20,7 @@ import {
   updateRecord,
 } from "@/lib/storage/database";
 import type { Opportunity, Plan, PlanCandidateOutput, SubmissionState } from "@/lib/contract/types";
-import { demoProfileService } from "@/lib/profile/service";
+import { demoProfileService } from "@/test/fixtures/profile-service";
 import canonicalFixture from "@/lib/contract/sample-payload.json";
 
 const editor = {

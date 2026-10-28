@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/sheet";
 import type { Plan, PreparationTask, TaskStatus } from "@/lib/contract/types";
 import type { PreparationBundle } from "@/lib/preparation/logic";
-import { preparationRepository } from "@/lib/preparation/repository";
+import { apiJson, accountDataChanged } from "@/lib/account/api";
 import { preparationFeatures } from "@/lib/preparation/service";
 import { TaskResources } from "./Resources";
 
@@ -17,6 +17,32 @@ export const STATUS_LABELS: Record<TaskStatus, string> = {
   not_started: "Not started",
   in_progress: "In progress",
   done: "Done",
+};
+interface TaskProgressRequest {
+  opportunityId: string;
+  planId: string;
+  baseVersion: number;
+  taskId: string;
+  status: TaskStatus;
+  operationId: string;
+  artifactUrls?: string[];
+  fail?: boolean;
+}
+const preparationRepository = {
+  async progress(input: TaskProgressRequest) {
+    const result = await apiJson<Plan>(
+      `/plans/${encodeURIComponent(input.opportunityId)}/tasks/${encodeURIComponent(input.taskId)}`,
+      "PATCH",
+      {
+        expectedVersion: input.baseVersion,
+        status: input.status,
+        operationId: input.operationId,
+        ...(input.artifactUrls ? { artifactUrls: input.artifactUrls } : {}),
+      },
+    );
+    accountDataChanged();
+    return result;
+  },
 };
 export function TaskDrawer({
   task,

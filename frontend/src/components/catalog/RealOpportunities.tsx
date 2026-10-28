@@ -10,13 +10,20 @@ import {
   MapPin,
   Search,
   Trophy,
+  BrainCircuit,
+  Braces,
 } from "lucide-react";
 import { AppShell } from "@/components/discover/AppShell";
 import { CardSkeleton } from "@/components/discover/HackathonCard";
+import { OpportunityGroups } from "@/components/discover/OpportunityGroups";
 import { useVisitState } from "@/components/VisitMemory";
 import { realCatalogService, type ListingSummary } from "@/lib/catalog/service";
 import { useLocale } from "@/components/LocaleProvider";
 import { isCatalogTranslationEnabled, translateCatalog } from "@/lib/catalog/translation";
+import {
+  PreferenceActions,
+  useAccountPreferences,
+} from "@/components/account/AccountOpportunities";
 
 const kinds = [
   { value: "all", label: "All opportunities", icon: Layers3 },
@@ -27,6 +34,7 @@ const kinds = [
 ] as const;
 export function RealOpportunities() {
   const { language, t } = useLocale();
+  const preferences = useAccountPreferences();
   const [query, setQuery] = useVisitState("real.query", "");
   const [kind, setKind] = useVisitState<string>("real.kind", "all");
   const [scope, setScope] = useVisitState("real.scope", "all");
@@ -58,12 +66,45 @@ export function RealOpportunities() {
   const displayRows = (catalog.data ?? []).map((item) => ({ ...item, ...translated.get(item.id) }));
   const rows = displayRows.filter(
     (item) =>
+      !preferences.data?.some((p) => p.opportunityId === item.id && p.notInterested) &&
       (kind === "all" || item.kind === kind) &&
       (scope === "all" || item.scope === scope) &&
       `${item.title} ${item.organizer} ${item.topics.join(" ")}`
         .toLowerCase()
         .includes(query.trim().toLowerCase()),
   );
+  const collections = [
+    {
+      id: "ai-data",
+      title: t("AI & Data", "الذكاء الاصطناعي والبيانات"),
+      description: t(
+        "Explore AI challenges and learning paths.",
+        "تحديات الذكاء الاصطناعي ومسارات التعلّم.",
+      ),
+      topics: ["AI", "Data", "Machine learning"],
+      icon: BrainCircuit,
+    },
+    {
+      id: "web-code",
+      title: t("Code & Create", "برمج وابنِ"),
+      description: t(
+        "Programming, web and computer-science foundations.",
+        "البرمجة والويب وأساسيات علم الحاسوب.",
+      ),
+      topics: ["Web", "Programming", "Python", "SQL", "Computer science"],
+      icon: Braces,
+    },
+    {
+      id: "more",
+      title: t("More to explore", "فرص ثانية تستكشفها"),
+      description: t("More challenges from the source catalog.", "تحديات وفرص ثانية من المصادر."),
+      topics: [],
+      icon: Layers3,
+    },
+  ];
+  const classify = (item: ListingSummary) =>
+    collections.find((group) => group.topics.some((topic) => item.topics.includes(topic)))?.id ??
+    "more";
   return (
     <AppShell>
       <section className="space-y-6">
@@ -74,7 +115,7 @@ export function RealOpportunities() {
               {t("Palestine & online worldwide", "فلسطين وفرص عالمية أونلاين")}
             </p>
             <h1>
-              {t("Real opportunities.", "فرص حقيقية.")}
+              {t("Discover opportunities.", "اكتشف الفرص.")}
               <br />
               {t("Your next possibility.", "خطوتك القادمة.")}
             </h1>
@@ -254,16 +295,29 @@ export function RealOpportunities() {
                   </button>
                 </div>
               ) : (
-                <div className="grid items-stretch gap-5 md:grid-cols-2 xl:grid-cols-3">
-                  {rows.map((item) => (
+                <OpportunityGroups
+                  items={rows}
+                  collections={collections}
+                  classify={classify}
+                  memoryKey="real.collection"
+                  renderCard={(item) => (
                     <article
                       key={item.id}
                       className="glass-strong flex min-w-0 flex-col overflow-hidden rounded-3xl"
                     >
                       <div
-                        className={`h-2 ${item.kind === "course" ? "bg-[linear-gradient(90deg,var(--galaxy-teal-ink),var(--primary))]" : "bg-[linear-gradient(90deg,var(--primary),var(--galaxy-copper-ink))]"}`}
-                      />
-                      <div className="flex flex-1 flex-col gap-4 p-5">
+                        className={`relative h-16 ${item.kind === "course" ? "event-cover event-cover-two" : "event-cover event-cover-one"}`}
+                        aria-hidden
+                      >
+                        <span className="absolute -bottom-5 start-5 grid size-11 place-items-center rounded-2xl border-2 border-card bg-card text-sm font-bold text-primary shadow-md">
+                          {item.organizer
+                            .split(/\s+/)
+                            .slice(0, 2)
+                            .map((word) => word[0])
+                            .join("")}
+                        </span>
+                      </div>
+                      <div className="flex flex-1 flex-col gap-4 p-5 pt-8">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <span className="prep-priority">
                             {t(
@@ -367,21 +421,19 @@ export function RealOpportunities() {
                               : t("Not specified", "غير محدد")}
                           </p>
                         </details>
-                        <a
-                          href={item.officialUrl}
-                          target="_blank"
-                          rel="noreferrer noopener"
+                        <Link
+                          to="/"
+                          search={{ opportunity: item.id }}
                           className="detail-primary mt-auto min-h-11"
                         >
-                          {item.kind === "course"
-                            ? t("View official course", "صفحة الدورة الرسمية")
-                            : t("View official event", "صفحة الحدث الرسمية")}
+                          {t("Understand this opportunity", "تعرّف على الفرصة")}
                           <ArrowUpRight className="size-4" aria-hidden />
-                        </a>
+                        </Link>
+                        <PreferenceActions item={item} />
                       </div>
                     </article>
-                  ))}
-                </div>
+                  )}
+                />
               )}
             </>
           )
@@ -446,9 +498,34 @@ export function RealOpportunities() {
             ))}
           </div>
         </details>
-        <Link to="/" search={{}} className="detail-secondary">
-          {t("Back to Discovery demo", "العودة للاستكشاف التجريبي")}
-        </Link>
+        {!!preferences.data?.some((p) => p.notInterested) && (
+          <details className="glass rounded-3xl p-5">
+            <summary className="cursor-pointer font-semibold">
+              {t("Not interested · hidden opportunities", "مش مهتم · الفرص المخفية")}
+            </summary>
+            <div className="mt-4 divide-y divide-border">
+              {catalog.data
+                ?.filter((item) =>
+                  preferences.data?.some((p) => p.opportunityId === item.id && p.notInterested),
+                )
+                .map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex flex-wrap items-center justify-between gap-4 py-4"
+                  >
+                    <Link
+                      to="/"
+                      search={{ opportunity: item.id }}
+                      className="text-sm font-semibold text-primary"
+                    >
+                      {item.title}
+                    </Link>
+                    <PreferenceActions item={item} restore />
+                  </div>
+                ))}
+            </div>
+          </details>
+        )}
       </section>
     </AppShell>
   );

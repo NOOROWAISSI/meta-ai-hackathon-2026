@@ -16,6 +16,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { VisitMemoryProvider } from "@/components/VisitMemory";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { LocaleProvider } from "@/components/LocaleProvider";
+import { AccountCacheBridge } from "@/components/account/AccountBoundary";
 
 function NotFoundComponent() {
   return (
@@ -139,6 +140,7 @@ function RootComponent() {
         <VisitMemoryProvider>
           <AuthProvider>
             <LocaleProvider>
+              <AccountCacheBridge />
               <Outlet />
             </LocaleProvider>
           </AuthProvider>

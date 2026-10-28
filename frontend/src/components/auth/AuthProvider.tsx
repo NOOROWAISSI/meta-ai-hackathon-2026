@@ -39,6 +39,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
   useEffect(() => {
     void reload();
+    const expired = () => void reload();
+    window.addEventListener("nextstep:session-expired", expired);
+    return () => window.removeEventListener("nextstep:session-expired", expired);
   }, [reload]);
   return (
     <AuthContext.Provider

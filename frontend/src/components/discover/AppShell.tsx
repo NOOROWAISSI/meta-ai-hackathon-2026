@@ -2,7 +2,6 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { Bookmark, Compass, ListChecks, Moon, Sparkles, Sun, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTheme } from "@/components/ThemeProvider";
-import { DemoScenario } from "@/components/DemoScenario";
 import { AuthControl } from "@/components/auth/AuthControl";
 import { LanguageToggle, useLocale } from "@/components/LocaleProvider";
 
@@ -33,11 +32,11 @@ function ThemeToggle() {
       className="glass transition-soft flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold text-foreground hover:border-primary/50"
     >
       {theme === "dark" ? (
-        <Sun className="size-4 text-primary" aria-hidden />
-      ) : (
         <Moon className="size-4 text-primary" aria-hidden />
+      ) : (
+        <Sun className="size-4 text-primary" aria-hidden />
       )}
-      {theme === "dark" ? t("Light mode", "الوضع الفاتح") : t("Dark mode", "الوضع الداكن")}
+      {theme === "dark" ? t("Dark mode", "الوضع الداكن") : t("Light mode", "الوضع الفاتح")}
     </button>
   );
 }
@@ -66,7 +65,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       "My Plans": t("My Plans", "خططي"),
       Profile: t("Profile", "ملفي"),
     })[label] ?? label;
-  const eventId = (location.search as { event?: string }).event;
+  const searchContext = location.search as { event?: string; opportunity?: string };
+  const eventId = searchContext.opportunity ?? searchContext.event;
+  const isCurrentSection = (to: (typeof NAV)[number]["to"]) =>
+    to === "/"
+      ? location.pathname === "/" || location.pathname === "/opportunities"
+      : location.pathname === to || location.pathname.startsWith(`${to}/`);
   return (
     <div className="relative isolate min-h-screen overflow-x-hidden">
       <a
@@ -96,13 +100,18 @@ export function AppShell({ children }: { children: ReactNode }) {
               key={to}
               to={to}
               search={{
-                ...((to === "/profile" || to === "/plans") && eventId ? { event: eventId } : {}),
+                ...((to === "/profile" || (to === "/plans" && /^E\d+$/.test(eventId ?? ""))) &&
+                eventId
+                  ? { event: eventId }
+                  : {}),
                 ...(to === "/profile" && location.pathname === "/plans"
                   ? { returnTo: "plans" as const }
                   : {}),
               }}
               activeOptions={{ exact: true, includeSearch: false }}
-              className="transition-soft flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground data-[status=active]:bg-primary data-[status=active]:text-primary-foreground data-[status=active]:shadow-button"
+              aria-current={isCurrentSection(to) ? "page" : undefined}
+              data-nav-active={isCurrentSection(to)}
+              className="app-nav-link transition-soft flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             >
               <Icon className="size-4" aria-hidden />
               {navLabel(label)}
@@ -119,20 +128,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
         <p className="rounded-2xl bg-secondary/70 p-3 text-xs leading-relaxed text-secondary-foreground">
-          {location.pathname === "/opportunities"
-            ? t(
-                "Source-backed catalog. Check current organizer conditions before participating.",
-                "فرص مرتبطة بمصادرها. راجع شروط الجهة الحالية قبل المشاركة.",
-              )
-            : location.pathname === "/login"
-              ? t(
-                  "Browse freely. Create an account when you choose.",
-                  "تصفّح بحرية وأنشئ حسابًا عندما تختار.",
-                )
-              : t(
-                  "Demo build — opportunities and recommendations are fictional.",
-                  "نسخة تجريبية — الفرص والتوصيات هنا خيالية.",
-                )}
+          {t(
+            "Source-backed opportunities. Check the organizer’s current conditions before participating.",
+            "فرص مرتبطة بمصادرها. راجع شروط الجهة الحالية قبل المشاركة.",
+          )}
         </p>
       </aside>
 
@@ -145,12 +144,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       <main id="main-content" className="px-4 pb-28 pt-6 sm:px-6 lg:ms-64 lg:pb-12 lg:pe-8 lg:pt-8">
-        <div className="mx-auto max-w-6xl">
-          {import.meta.env.DEV && !["/login", "/opportunities"].includes(location.pathname) && (
-            <DemoScenario />
-          )}
-          {children}
-        </div>
+        <div className="mx-auto max-w-6xl">{children}</div>
       </main>
 
       {/* Mobile bottom nav */}
@@ -163,13 +157,18 @@ export function AppShell({ children }: { children: ReactNode }) {
             key={to}
             to={to}
             search={{
-              ...((to === "/profile" || to === "/plans") && eventId ? { event: eventId } : {}),
+              ...((to === "/profile" || (to === "/plans" && /^E\d+$/.test(eventId ?? ""))) &&
+              eventId
+                ? { event: eventId }
+                : {}),
               ...(to === "/profile" && location.pathname === "/plans"
                 ? { returnTo: "plans" as const }
                 : {}),
             }}
             activeOptions={{ exact: true, includeSearch: false }}
-            className="transition-soft flex flex-col items-center gap-0.5 rounded-xl py-2 text-[11px] font-medium text-muted-foreground data-[status=active]:bg-primary data-[status=active]:text-primary-foreground"
+            aria-current={isCurrentSection(to) ? "page" : undefined}
+            data-nav-active={isCurrentSection(to)}
+            className="app-nav-link app-nav-link-mobile transition-soft flex flex-col items-center gap-0.5 rounded-xl py-2 text-[11px] font-medium text-muted-foreground"
           >
             <Icon className="size-4" aria-hidden />
             {navLabel(label)}
