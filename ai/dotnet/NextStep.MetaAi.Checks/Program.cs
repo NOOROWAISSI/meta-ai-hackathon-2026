@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using NextStep.MetaAi;
 using NextStep.MetaAi.Application;
+using NextStep.MetaAi.Evaluation;
 
 // No sockets: every client below uses an in-memory HttpMessageHandler.
 Environment.SetEnvironmentVariable("MODEL_API_KEY", "fake-test-only"); // Child process only; never consume a real ambient key.
@@ -70,10 +71,11 @@ Test("ten described and allowlisted resources accepted", async () =>
 {
     var ids = Enumerable.Range(0, 10).Select(i => "r" + i).ToArray();
     using var h = new FakeHandler((_, _, _) => Task.FromResult(Reply(TaskJson(resources: ids)))); using var http = new HttpClient(h);
-    await Client(http).GenerateCandidateAsync(Context() with {
+    var candidate = await Client(http).GenerateCandidateAsync(Context() with {
         ReviewedResourceIds = ids,
         ReviewedResources = ids.Select(id => new ReviewedResourceInfo(id, "Reviewed resource " + id, "Relevant to the task demo")).ToArray()
     });
+    Assert(candidate.Tasks.Single().ResourceIds.SequenceEqual(ids) && h.Count == 1);
 });
 Reject("legacy bare resource ID cannot be used without metadata", TaskJson(resources: ["r"]),
     context: Context() with { ReviewedResourceIds = ["r"] });
@@ -123,7 +125,23 @@ Test("blank resource descriptor rejected before provider call", async () =>
     })); Assert(h.Count == 0);
 });
 var eleven = Enumerable.Range(0, 11).Select(i => "r" + i).ToArray();
-Reject("eleven approved resources rejected", TaskJson(resources: eleven), context: Context() with { ReviewedResourceIds = eleven });
+Reject("eleven approved resources rejected", TaskJson(resources: eleven), context: Context() with {
+    ReviewedResourceIds = eleven,
+    ReviewedResources = eleven.Select(id => new ReviewedResourceInfo(id, "Reviewed resource " + id, "Relevant to the task demo")).ToArray()
+});
+foreach (var count in new[] { 10, 11 })
+    Test("direct policy resource limit " + count, async () =>
+    {
+        var ids = eleven.Take(count).ToArray();
+        var context = Context() with {
+            ReviewedResourceIds = eleven,
+            ReviewedResources = eleven.Select(id => new ReviewedResourceInfo(id, "Reviewed resource " + id, "Relevant to the task demo")).ToArray()
+        };
+        GenerationPolicy.ValidateInput(context);
+        var candidate = new PlanCandidateOutput([TaskValue(resources: ids)], "Goal advice");
+        if (count == 10) GenerationPolicy.ValidateCandidate(candidate, context);
+        else await Error("invalid_model_output", () => { GenerationPolicy.ValidateCandidate(candidate, context); return Task.CompletedTask; });
+    });
 foreach (double? hours in new double?[] { null, 5 })
     Test("useful effort exceeds weekly value " + (hours?.ToString() ?? "unknown"), async () =>
     {
@@ -370,6 +388,100 @@ Sync("unknown hours stay untimed", () => Assert(Budget(null, 7, 20).Feasibility 
 Sync("zero capacity with work is infeasible", () => Assert(Budget(0, 7, 2).Feasibility == "infeasible"));
 Sync("all done is no remaining gap", () => Assert(Budget(0, null, 0, new RetainedWork("done", "done", 0)).Feasibility == "no_remaining_gap"));
 Sync("closed or exact cutoff leaves zero capacity", () => Assert(Budget(5, 0, 2).AvailableHours == 0 && Budget(5, -1, 2).Feasibility == "infeasible"));
+
+// Synthetic source bytes and option sentinels only; these checks never open a socket.
+Dictionary<string, byte[]> Sources() => new() {
+    ["ai/dotnet/NextStep.MetaAi/MetaModelClient.cs"] = Encoding.UTF8.GetBytes("synthetic prompt source"),
+    ["ai/dotnet/NextStep.MetaAi.Eval/Program.cs"] = Encoding.UTF8.GetBytes("synthetic scenarios")
+};
+EvaluationProvenance Provenance(MetaAiOptions? options = null, string? root = null) =>
+    EvaluationProvenance.Capture(now.ToOffset(TimeSpan.FromHours(7)), options ?? Settings(), Sources(), root);
+EvaluationReport Report(MetaAiOptions? options = null) => new(2, Provenance(options), [
+    new("offline-example", "Synthetic serialization check", "ok", 12, 1,
+        new([TaskValue()], "Synthetic advice"), "untimed", null, 2, ["Manual review required"], null)
+]);
+Sync("evaluation JSON envelope preserves scenario results and UTC provenance", () => {
+    var report = Report();
+    using var doc = JsonDocument.Parse(report.ToJson());
+    Keys(doc.RootElement, "schemaVersion", "provenance", "results");
+    Assert(doc.RootElement.GetProperty("schemaVersion").GetInt32() == 2);
+    var provenance = doc.RootElement.GetProperty("provenance");
+    Keys(provenance, "executedAtUtc", "gitCommitSha", "relevantSourceHasUncommittedChanges",
+        "sourceMatchesWorkingTree", "sourceFingerprint", "promptFingerprint", "scenarioVersion",
+        "scenarioFingerprint", "configuration");
+    Assert(provenance.GetProperty("executedAtUtc").GetDateTimeOffset() == now && report.Provenance.ExecutedAtUtc.Offset == TimeSpan.Zero);
+    Assert(provenance.GetProperty("scenarioVersion").GetString() == "synthetic-v1");
+    var restored = JsonSerializer.Deserialize<EvaluationReport>(report.ToJson(), ContractJson.CreateOptions())!;
+    Assert(JsonSerializer.Serialize(restored.Results, ContractJson.CreateOptions()) ==
+        JsonSerializer.Serialize(report.Results, ContractJson.CreateOptions()));
+});
+Sync("evaluation records effective model timeout and retry settings", () => {
+    var options = new MetaAiOptions { Model = "synthetic-model", AttemptTimeoutSeconds = 7,
+        OverallTimeoutSeconds = 19, MaxRetries = 2, MaxRetryDelaySeconds = 3, MaxResponseBytes = 2048 };
+    using var doc = JsonDocument.Parse(Report(options).ToJson());
+    var configuration = doc.RootElement.GetProperty("provenance").GetProperty("configuration");
+    Keys(configuration, "model", "attemptTimeoutSeconds", "overallTimeoutSeconds", "maxRetries", "maxRetryDelaySeconds", "maxResponseBytes");
+    Assert(configuration.GetProperty("model").GetString() == options.Model &&
+        configuration.GetProperty("attemptTimeoutSeconds").GetInt32() == 7 &&
+        configuration.GetProperty("overallTimeoutSeconds").GetInt32() == 19 &&
+        configuration.GetProperty("maxRetries").GetInt32() == 2 &&
+        configuration.GetProperty("maxRetryDelaySeconds").GetInt32() == 3 &&
+        configuration.GetProperty("maxResponseBytes").GetInt32() == 2048);
+});
+Sync("evaluation Markdown contains the same provenance and separate manual verdict", () => {
+    var report = Report(); var markdown = report.ToMarkdown();
+    var provenanceJson = markdown.Split("```json" + Environment.NewLine, StringSplitOptions.None)[1].Split("```", StringSplitOptions.None)[0];
+    var restored = JsonSerializer.Deserialize<EvaluationProvenance>(provenanceJson, ContractJson.CreateOptions());
+    Assert(restored == report.Provenance && markdown.Contains("offline-example") &&
+        markdown.Contains("Structural success is not a quality score") && markdown.Contains("Verdict / notes: ______"));
+});
+foreach (var format in new[] { "JSON", "Markdown" })
+    Sync("evaluation " + format + " excludes credentials and environment", () => {
+        var options = Settings(); options.ApiKey = "synthetic-key-DO-NOT-RECORD";
+        options.ChatCompletionsUrl = "https://synthetic.invalid/?secret=DO-NOT-RECORD";
+        Environment.SetEnvironmentVariable("NEXTSTEP_PROVENANCE_TEST_SECRET", "synthetic-env-DO-NOT-RECORD");
+        try {
+            var report = Report(options); var text = format == "JSON" ? report.ToJson() : report.ToMarkdown();
+            Assert(!text.Contains("DO-NOT-RECORD") && !text.Contains("apiKey", StringComparison.OrdinalIgnoreCase) &&
+                !text.Contains("MODEL_API_KEY") && !text.Contains("NEXTSTEP_PROVENANCE_TEST_SECRET") && !text.Contains("fake-test-only"));
+        } finally { Environment.SetEnvironmentVariable("NEXTSTEP_PROVENANCE_TEST_SECRET", null); }
+    });
+Sync("evaluation fingerprint is deterministic regardless of source enumeration order", () => {
+    var sources = Sources(); var reversed = sources.Reverse().ToDictionary(s => s.Key, s => s.Value);
+    Assert(EvaluationProvenance.Fingerprint(sources) == EvaluationProvenance.Fingerprint(reversed));
+});
+Sync("evaluation fingerprint changes for uncommitted source bytes", () => {
+    var sources = Sources(); var before = EvaluationProvenance.Fingerprint(sources);
+    sources[sources.Keys.First()] = Encoding.UTF8.GetBytes("edited prompt source");
+    Assert(before != EvaluationProvenance.Fingerprint(sources));
+});
+Sync("evaluation fingerprint includes file identity and additions", () => {
+    var sources = Sources(); var before = EvaluationProvenance.Fingerprint(sources);
+    sources["ai/dotnet/NextStep.MetaAi/Added.cs"] = sources.Values.First();
+    Assert(before != EvaluationProvenance.Fingerprint(sources));
+    sources.Remove(sources.Keys.First());
+    Assert(before != EvaluationProvenance.Fingerprint(sources));
+});
+Sync("evaluation provenance survives unavailable Git and source paths", () => {
+    var p = Provenance();
+    Assert(p.GitCommitSha is null && p.RelevantSourceHasUncommittedChanges is null && p.SourceMatchesWorkingTree is null &&
+        p.SourceFingerprint.StartsWith("sha256:") && p.SourceFingerprint.Length == 71);
+});
+Sync("evaluation provenance survives nonrepository Git failure", () => {
+    var p = Provenance(root: Path.GetTempPath());
+    Assert(p.GitCommitSha is null && p.RelevantSourceHasUncommittedChanges is null && p.SourceMatchesWorkingTree == false &&
+        p.SourceFingerprint == Provenance().SourceFingerprint);
+});
+Sync("evaluation prompt identity changes independently of scenarios", () => {
+    var sources = Sources(); sources["ai/dotnet/NextStep.MetaAi/MetaModelClient.cs"] = Encoding.UTF8.GetBytes("changed prompt");
+    var changed = EvaluationProvenance.Capture(now, Settings(), sources, null); var original = Provenance();
+    Assert(changed.PromptFingerprint != original.PromptFingerprint && changed.ScenarioFingerprint == original.ScenarioFingerprint);
+});
+Sync("evaluation scenario identity changes independently of prompt", () => {
+    var sources = Sources(); sources["ai/dotnet/NextStep.MetaAi.Eval/Program.cs"] = Encoding.UTF8.GetBytes("changed scenario");
+    var changed = EvaluationProvenance.Capture(now, Settings(), sources, null); var original = Provenance();
+    Assert(changed.ScenarioFingerprint != original.ScenarioFingerprint && changed.PromptFingerprint == original.PromptFingerprint);
+});
 
 var passed = 0; var failed = 0;
 foreach (var item in cases)
