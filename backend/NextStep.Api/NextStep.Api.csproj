@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup><TargetFramework>net8.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><LangVersion>12</LangVersion><UserSecretsId>nextstep-local-backend</UserSecretsId></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../ai/dotnet/NextStep.MetaAi/NextStep.MetaAi.csproj" />
+    <PackageReference Include="MySqlConnector" Version="2.6.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.33" />
+    <Content Update="Data/catalog.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Update="Data/sources.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Update="Data/listings.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Data/schema.sql" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
