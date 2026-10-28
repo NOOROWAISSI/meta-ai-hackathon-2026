@@ -14,6 +14,8 @@ import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { VisitMemoryProvider } from "@/components/VisitMemory";
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import { LocaleProvider } from "@/components/LocaleProvider";
 
 function NotFoundComponent() {
   return (
@@ -135,7 +137,11 @@ function RootComponent() {
       <ThemeProvider>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <VisitMemoryProvider>
-          <Outlet />
+          <AuthProvider>
+            <LocaleProvider>
+              <Outlet />
+            </LocaleProvider>
+          </AuthProvider>
         </VisitMemoryProvider>
         <Toaster position="bottom-center" />
       </ThemeProvider>

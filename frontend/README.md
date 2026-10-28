@@ -4,6 +4,8 @@ A fictional hackathon discovery and preparation frontend with light/dark galaxy 
 
 ## Development
 
+Application backend: see [backend/README.md](../backend/README.md) for ASP.NET Core, MySQL, Rofi's provider integration, endpoints, and real-database checks. The existing frontend demo remains explicitly separate until its repositories are switched to the server authority.
+
 You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
 
 ```sh
@@ -48,3 +50,8 @@ Production build: `npm run build`. Start the standalone Node server with `node .
 Open **Profile** in navigation, or **Edit my profile** in event details. Four sections keep draft values while switching. Completion counts optional fields; it is not an eligibility or skill score. Save explicitly confirms local browser storage; failures keep edits available for Retry. Leaving unsaved changes requires a discard decision. Existing preparation plans and completed tasks are preserved.
 
 Profile services are replaceable through `src/lib/profile/service.ts`. Demo project suggestions use only entered wording and technologies, require acceptance, and are never applied as verified skills. No live model calls or credentials are present. Age is not requested without a reviewed event condition. A selected event can be retained with `/profile?event=aurora-ai`; return and explicitly update its analysis after relevant saved changes.
+
+
+## Application integration and localization
+
+Authentication/recovery and the real source catalog use the sibling ASP.NET API through the Vite /api proxy. Legacy fictional demo stores remain separate. Arabic/English labels and RTL are available for navigation, real opportunities and auth/recovery; legacy copy is not fully translated. Dynamic Meta translation is off by default and belongs to a separate reviewed adapter.
