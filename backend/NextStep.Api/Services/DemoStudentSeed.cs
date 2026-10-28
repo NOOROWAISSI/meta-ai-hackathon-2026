@@ -6,7 +6,7 @@ using MySqlConnector;
 
 namespace NextStep.Api;
 
-public sealed record DemoStudent(string Email, string Name, string Background, string[] Interests, string[] Skills, double? WeeklyHours);
+public sealed record DemoStudent(string Email, string Name, string Background, string[] Interests, string[] Skills, double? WeeklyHours, string[]? Goals = null);
 public sealed record SeedResult(int Created, int Skipped);
 
 /// <summary>Explicit development-only seed. Never resets passwords or overwrites existing students.</summary>
@@ -16,7 +16,8 @@ public sealed class DemoStudentSeed(MySqlStateStore store, IWebHostEnvironment e
     public static readonly DemoStudent[] Students = [
         new("noor.student@example.invalid", "نور أحمد", "ملف طالب تجريبي: هندسة حاسوب، مهتمة بتطوير الويب والذكاء الاصطناعي.", ["AI", "Web development"], ["React", "TypeScript"], 6),
         new("omar.student@example.invalid", "عمر خالد", "ملف طالب تجريبي: علوم حاسوب، مهتم بالأمن السيبراني؛ لا وقت للتحضير حاليًا.", ["Cybersecurity", "Data"], ["Python"], 0),
-        new("lina.student@example.invalid", "لينا حسن", "ملف طالبة تجريبي غير مكتمل؛ لم تُحدّد ساعات التحضير بعد.", ["Design", "AI"], [], null)
+        new("lina.student@example.invalid", "لينا حسن", "ملف طالبة تجريبي غير مكتمل؛ لم تُحدّد ساعات التحضير بعد.", ["Design", "AI"], [], null),
+        new("adam.student@example.invalid", "آدم صالح", "حساب اختبار جاهز: طالب علوم حاسوب، أجرّب بناء واجهات صغيرة وربط APIs. هذه بيانات طالب مصطنعة للتجربة فقط.", ["AI", "Web development", "Data"], ["Python", "React", "APIs"], 5, ["Prepare a small hackathon prototype and a clear project walkthrough.", "Review the selected organizer's published submission checklist before committing."])
     ];
     public async Task<SeedResult> Run(IReadOnlyList<DemoStudent> students, CancellationToken ct)
     {
@@ -31,6 +32,7 @@ public sealed class DemoStudentSeed(MySqlStateStore store, IWebHostEnvironment e
             var owner = Guid.NewGuid().ToString("N"); var id = Guid.NewGuid().ToString("N");
             var profile = Input.Blank("profile-" + owner) with {
                 Version = 1, Background = student.Background, Interests = student.Interests,
+                Goals = (student.Goals ?? []).Select((statement, index) => new NextStep.MetaAi.PlanGoal("seed-goal-" + index, statement)).ToArray(),
                 Skills = student.Skills.Select((label, index) => new Skill("demo-skill-" + index, label, "reported_has")).ToArray(),
                 AvailableHoursPerWeek = student.WeeklyHours is { } hours ? new JsonObject { ["state"] = "known", ["value"] = hours, ["reportedAt"] = DateTimeOffset.UtcNow.ToString("O") } : new JsonObject { ["state"] = "unknown" },
                 PreferredFormats = ["online"], PreferredLanguage = "ar"

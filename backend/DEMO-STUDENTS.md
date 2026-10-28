@@ -1,19 +1,20 @@
-# Development student-account seed
+﻿# Development student accounts
 
-Synthetic MySQL accounts, created only by the explicit seed command. No real students or production credentials are seeded.
+These are actual accounts in development MySQL with synthetic names and self-reported facts. Creation is explicit and allowed only in Development or Testing.
 
-| Student | Email | Scenario |
+| Name | Email | Scenario |
 | --- | --- | --- |
-| Noor Ahmad | noor.student@example.invalid | React/TypeScript, AI/web interests, six hours/week |
-| Omar Khaled | omar.student@example.invalid | Python/cybersecurity, zero preparation hours |
-| Lina Hassan | lina.student@example.invalid | Partial profile, design/AI, unknown hours |
+| Noor Ahmad | noor.student@example.invalid | React, TypeScript, AI/web interests, six weekly hours |
+| Omar Khaled | omar.student@example.invalid | Python/security interests, zero weekly hours |
+| Lina Hassan | lina.student@example.invalid | Partial profile, design/AI interests, unknown availability |
+| Adam Saleh | adam.student@example.invalid | Python, React, APIs, five weekly hours and two preparation goals |
 
-Shared development-only password: NextStep-Demo-2026!
+Development password for all four: `NextStep-Demo-2026!`
 
-    powershell -NoProfile -ExecutionPolicy Bypass -File backend/Seed-Students.ps1
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File backend/Seed-Students.ps1
+```
 
-The password is intentionally public test data; never reuse it for a real account. Arabic display names are product fixture data. Seeding uses the normal password hasher and an atomic transaction per new account. Repeated execution skips existing normalized emails, preserving passwords, edits, plans and progress. Production is blocked; no HTTP seed endpoint or external mail/model call exists.
+Existing accounts are skipped, preserving passwords, profile edits, preferences, plans and progress. New accounts are created atomically using normal password hashing. No plans, completed submissions, eligibility results or AI output are seeded. No Meta call or email is sent.
 
-example.invalid cannot receive mail. For Gmail recovery use a real test mailbox you own. Age, residence and eligibility stay unknown. Skills are synthetic self-reports. No accepted plan or completed submission is manufactured.
-
-The profile is stored in MySQL. Legacy browser-demo adapters do not show it until API integration is completed. Authentication itself is connected to the backend.
+Normal Profile, Saved and Plans read account-owned API data. The example.invalid addresses cannot receive mail; recovery delivery requires a real address you control and private Gmail configuration. Age, residence and eligibility are not inferred.
