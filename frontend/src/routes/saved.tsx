@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { SavedScreen } from "@/components/saved/SavedScreen";
+import { AccountSaved } from "@/components/account/AccountOpportunities";
+import { AccountBoundary } from "@/components/account/AccountBoundary";
 
 export const Route = createFileRoute("/saved")({
   head: () => ({
@@ -10,5 +11,9 @@ export const Route = createFileRoute("/saved")({
       { property: "og:description", content: "Hackathons you've saved for later." },
     ],
   }),
-  component: SavedScreen,
+  component: () => (
+    <AccountBoundary>
+      <AccountSaved />
+    </AccountBoundary>
+  ),
 });

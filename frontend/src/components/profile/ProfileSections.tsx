@@ -372,24 +372,26 @@ export function ProfileSections({
               <p className="profile-footnote">
                 A link is an artifact, not independent proof of authorship or competence.
               </p>
-              <ExperienceHelper
-                project={project}
-                service={service}
-                fail={suggestionFailure}
-                onAccept={(contribution, skills) => {
-                  const combined = [...draft.skills];
-                  for (const skill of skills) {
-                    if (!combined.some((entry) => entry.toLowerCase() === skill.toLowerCase()))
-                      combined.push(skill);
-                  }
-                  update({
-                    projects: projects.map((entry) =>
-                      entry.id === project.id ? { ...entry, contribution } : entry,
-                    ),
-                    skills: combined,
-                  });
-                }}
-              />
+              {service.suggestionsAvailable !== false && (
+                <ExperienceHelper
+                  project={project}
+                  service={service}
+                  fail={suggestionFailure}
+                  onAccept={(contribution, skills) => {
+                    const combined = [...draft.skills];
+                    for (const skill of skills) {
+                      if (!combined.some((entry) => entry.toLowerCase() === skill.toLowerCase()))
+                        combined.push(skill);
+                    }
+                    update({
+                      projects: projects.map((entry) =>
+                        entry.id === project.id ? { ...entry, contribution } : entry,
+                      ),
+                      skills: combined,
+                    });
+                  }}
+                />
+              )}
               <button
                 type="button"
                 className="flex items-center gap-2 text-xs text-destructive"

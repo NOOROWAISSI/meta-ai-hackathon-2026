@@ -292,8 +292,8 @@ export function LoginScreen({
           </form>
           <p className="mt-6 border-t border-border pt-4 text-center text-xs leading-6 text-muted-foreground">
             {t(
-              "Browser demo data stays here and is not imported automatically.",
-              "بيانات الديمو تبقى على هذا المتصفح ولا تُنقل تلقائيًا لحسابك.",
+              "Your profile and progress stay with your account. Browsing remains open.",
+              "ملفك وتقدّمك محفوظين بحسابك، وتصفّح الفرص متاح للجميع.",
             )}
           </p>
         </>

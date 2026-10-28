@@ -29,3 +29,13 @@ Display translation: proposed POST /api/localization/catalog input {language}; o
 ## Validation and limits
 
 Application-only: 24 real-MySQL integration checks with test-only model/mail replacements. Frontend publication checks cover tests, TypeScript and production build. The proposal adds five isolated search/translation checks. Live Gmail, Google and Meta remain unverified. Legacy browser-demo adapters are not fully replaced; source JSON is not an opportunity-table seed. Conditional adjustment and production operations remain pending.
+
+## Account integration follow-up - 28 October 2026
+
+The publishing checkout now passes 27 app-only MySQL checks (the five search/translation checks remain in the separate proposal). Normal frontend routes use account APIs for profile metadata and canonical facts, atomic saved/hidden preferences, candidate acceptance, and task progress. The established stacked collections and galaxy/My Fit design remain in place.
+
+The server projects current reviewed resource IDs and descriptors into the existing provider context. Submission checks remain separate and uncovered mandatory targets are visible. This does not replace Rofi's draft deterministic reconciliation work in PR #12; alignment with that policy remains a joint review item.
+
+Rofi's live backend verification at f541c77 is acknowledged. The updated full browser-to-live-Meta journey is not claimed as passed: local checks use test-only provider replacements and the local runtime reports missing Meta configuration. Source-backed personal AI briefing and search/translation are still separate integration work. npm audit findings remain open for compatibility-tested triage.
+
+Frontend changes have a separate integration PR targeting noor. Main must wait for the dependency review and remaining checks; merging the frontend into noor is not approval of the full stack.

@@ -2,7 +2,7 @@ import { readRecord, updateRecord } from "@/lib/storage/database";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_PROFILE } from "@/lib/discover/demo-data";
 import { confirmedProfile, profileCompletion, toDraft, validateDraft } from "@/lib/profile/model";
-import { demoProfileService, PROFILE_KEY } from "@/lib/profile/service";
+import { demoProfileService, PROFILE_KEY } from "@/test/fixtures/profile-service";
 import { analysisContext } from "@/lib/details/logic";
 import { buildEventDetails } from "@/lib/details/records";
 

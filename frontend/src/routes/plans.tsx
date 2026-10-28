@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PlanWorkspace } from "@/components/details/PlanWorkspace";
+import { AccountPlans } from "@/components/account/AccountPlans";
+import { AccountBoundary } from "@/components/account/AccountBoundary";
 
 export const Route = createFileRoute("/plans")({
   validateSearch: (search: Record<string, unknown>): { event?: string } =>
@@ -19,5 +20,9 @@ export const Route = createFileRoute("/plans")({
 
 function PlansRoute() {
   const { event } = Route.useSearch();
-  return <PlanWorkspace key={event ?? "index"} {...(event ? { eventId: event } : {})} />;
+  return (
+    <AccountBoundary>
+      <AccountPlans key={event ?? "index"} {...(event ? { eventId: event } : {})} />
+    </AccountBoundary>
+  );
 }

@@ -1,5 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ProfileScreen } from "@/components/profile/ProfileScreen";
+import { AccountBoundary } from "@/components/account/AccountBoundary";
+import { useQuery } from "@tanstack/react-query";
+import { realCatalogService } from "@/lib/catalog/service";
 
 export const Route = createFileRoute("/profile")({
   validateSearch: (search: Record<string, unknown>): { event?: string; returnTo?: "plans" } => ({
@@ -21,7 +24,19 @@ export const Route = createFileRoute("/profile")({
 });
 function ProfileRoute() {
   const { event, returnTo } = Route.useSearch();
+  const catalog = useQuery({
+    queryKey: ["real-listings"],
+    queryFn: realCatalogService.listings,
+    staleTime: 300000,
+  });
+  const selected = catalog.data?.find((item) => item.id === event);
   return (
-    <ProfileScreen {...(event ? { eventId: event } : {})} returnToPlans={returnTo === "plans"} />
+    <AccountBoundary>
+      <ProfileScreen
+        {...(event ? { eventId: event } : {})}
+        {...(selected ? { contextEvent: selected } : {})}
+        returnToPlans={returnTo === "plans"}
+      />
+    </AccountBoundary>
   );
 }
