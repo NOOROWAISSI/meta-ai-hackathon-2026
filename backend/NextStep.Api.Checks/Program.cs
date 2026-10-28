@@ -238,6 +238,56 @@ Test("Google stays explicitly unavailable without credentials; the real catalog 
     Assert(sources.Single(s => s.Id == "knowledge-academy-user").Url == "https://www.instagram.com/eknowledge.learn/");
 });
 
+Test("source intake rejects prose-only answers and accepts only bounded HTTPS search results", () => {
+    using var prose = JsonDocument.Parse("""{"status":"completed","output":[{"type":"message","content":[{"type":"output_text","text":"Invented opportunity https://example.org"}]}]}""");
+    try { MetaSourceSearch.Extract(prose.RootElement); throw new Exception("Expected search rejection"); }
+    catch (MetaAiException error) { Assert(error.Error.Code == "search_not_performed"); }
+    using var grounded = JsonDocument.Parse("""{"status":"completed","output":[{"type":"web_search_call","status":"completed","results":[{"url":"https://www.instagram.com/p/fixture/#fragment","title":"Synthetic result"},{"url":"https://www.instagram.com/p/fixture/","title":"Duplicate"},{"url":"javascript:alert(1)","title":"Unsafe"},{"url":"http://example.org","title":"Insecure"},{"url":"https://127.0.0.1/private","title":"Local"},{"url":"https://user:pass@example.org","title":"Credentials"}]}]}""");
+    var links = MetaSourceSearch.Extract(grounded.RootElement);
+    Assert(links.Count == 1 && links[0].Url == "https://www.instagram.com/p/fixture/");
+    using var empty = JsonDocument.Parse("""{"status":"completed","output":[{"type":"web_search_call","status":"completed","results":[]}]}""");
+    Assert(MetaSourceSearch.Extract(empty.RootElement).Count == 0);
+    using var partial = JsonDocument.Parse("""{"status":"incomplete","output":[]}""");
+    try { MetaSourceSearch.Extract(partial.RootElement); throw new Exception("Expected incomplete rejection"); }
+    catch (MetaAiException error) { Assert(error.Error.Code == "invalid_model_output"); }
+    return Task.CompletedTask;
+});
+Test("Meta source search requires server configuration before any network request", async () => {
+    using var client = new HttpClient();
+    var search = new MetaSourceSearch(client, Microsoft.Extensions.Options.Options.Create(new MetaAiOptions()));
+    try { await search.Search(new("test", "Synthetic", "https://example.org", "palestine", "website", "public_html", null, "fixture"), CancellationToken.None); throw new Exception("Expected missing configuration"); }
+    catch (MetaAiException error) { Assert(error.Error.Code == "provider_unavailable"); }
+});
+
+Test("search adapter sends grounded Responses requests while keeping provider access server-side", async () => {
+    using var handler = new SearchHandler(); using var client = new HttpClient(handler);
+    var search = new MetaSourceSearch(client, Microsoft.Extensions.Options.Options.Create(new MetaAiOptions { ApiKey = "synthetic-test-key" }));
+    var links = await search.Search(new("ewb-najah", "EWB", "https://www.instagram.com/ewb.nnu/", "palestine", "instagram", "manual_review", null, "fixture"), CancellationToken.None);
+    Assert(handler.Verified && links.Count == 1);
+});
+
+Test("translation caches validated display text and leaves canonical source data unchanged", async () => {
+    using var handler = new TranslationHandler();
+    var catalog = new DiscoveryCatalog(new Catalog()); var original = JsonSerializer.Serialize(catalog.Listings(), Wire.Json);
+    using var service = new CatalogTranslationService(handler, Microsoft.Extensions.Options.Options.Create(new MetaAiOptions { ApiKey = "synthetic-test-key" }), catalog);
+    var first = await service.Translate("ar", CancellationToken.None); var second = await service.Translate("ar", CancellationToken.None);
+    Assert(handler.Verified && handler.Calls == 1 && first.SourceRevision == second.SourceRevision && first.Items.Length == catalog.Listings().Length);
+    Assert(first.TranslationKind == "ai_translation" && JsonSerializer.Serialize(catalog.Listings(), Wire.Json) == original);
+    var english = await service.Translate("en", CancellationToken.None); Assert(english.TranslationKind == "original" && handler.Calls == 1);
+    var invalid = first.Items.ToArray(); invalid[0] = invalid[0] with { Id = "invented-id" };
+    try { CatalogTranslationService.Validate(first.Items, invalid); throw new Exception("Expected ID rejection"); }
+    catch (MetaAiException error) { Assert(error.Error.Code == "invalid_model_output"); }
+});
+Test("translation route keeps the original available without a key and rejects unsupported languages", async () => {
+    var (client, _) = await Session();
+    (await client.PostAsJsonAsync("/api/localization/catalog", new CatalogTranslationRequest("en"), Wire.Json)).EnsureSuccessStatusCode();
+    Assert((await client.PostAsJsonAsync("/api/localization/catalog", new CatalogTranslationRequest("fr"), Wire.Json)).StatusCode == HttpStatusCode.BadRequest);
+    using var handler = new TranslationHandler();
+    using var service = new CatalogTranslationService(handler, Microsoft.Extensions.Options.Options.Create(new MetaAiOptions()), new DiscoveryCatalog(new Catalog()));
+    try { await service.Translate("ar", CancellationToken.None); throw new Exception("Expected missing key"); }
+    catch (MetaAiException error) { Assert(error.Error.Code == "provider_unavailable" && handler.Calls == 0); }
+});
+
 Test("email code resets a password once, revokes old sessions, and keeps saved profile", async () => {
     await using var host = new Factory(recovery: true); var client = host.CreateClient(); client.DefaultRequestHeaders.Add("X-NextStep-Request", "1");
     var email = $"reset-{Guid.NewGuid():N}@example.invalid"; const string oldPassword = "Old-synthetic-password-42!"; const string newPassword = "New-synthetic-password-43!";

@@ -21,6 +21,8 @@ builder.Services.AddControllers().AddJsonOptions(options => {
 builder.Services.AddSingleton<Catalog>();
 builder.Services.AddSingleton<DiscoveryCatalog>();
 builder.Services.AddSingleton<SourceCollector>();
+builder.Services.AddHttpClient<MetaSourceSearch>();
+builder.Services.AddSingleton<CatalogTranslationService>();
 builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
 builder.Services.AddSingleton<PasswordRecoveryRepository>();
 builder.Services.AddScoped<PasswordRecoveryService>();
@@ -77,5 +79,17 @@ if (args.Contains("--seed-students")) {
     return;
 }
 if (args.Contains("--collect-sources")) { await app.Services.GetRequiredService<SourceCollector>().Collect(CancellationToken.None); return; }
+if (args.Contains("--search-sources")) {
+    var index = Array.IndexOf(args, "--source");
+    var id = index >= 0 && index + 1 < args.Length ? args[index + 1] : null;
+    var source = app.Services.GetRequiredService<DiscoveryCatalog>().Sources().SingleOrDefault(s => s.Id == id);
+    if (source is null) { Console.Error.WriteLine("Choose one registered source using --source <id>. No paid search was made."); Environment.ExitCode = 1; return; }
+    try {
+        var links = await app.Services.GetRequiredService<MetaSourceSearch>().Search(source, CancellationToken.None);
+        await app.Services.GetRequiredService<SourceCollector>().Save("meta:" + source.Id, links, "search_results_pending_review", null, CancellationToken.None);
+        Console.WriteLine($"Meta search: {links.Count} candidate links stored for manual review; none published. Search results do not confirm organizer identity or open registration.");
+    } catch (MetaAiException error) { Console.Error.WriteLine($"{error.Error.Code}: {error.Error.Message}"); Environment.ExitCode = 1; }
+    return;
+}
 app.Run();
 public partial class Program;
