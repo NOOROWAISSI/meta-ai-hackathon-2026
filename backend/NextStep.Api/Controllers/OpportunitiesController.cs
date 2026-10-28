@@ -5,14 +5,14 @@ namespace NextStep.Api.Controllers;
 
 [ApiController]
 [Route("api/opportunities")]
-public sealed class OpportunitiesController(Catalog catalog, Application service) : ControllerBase
+public sealed class OpportunitiesController(Catalog catalog, Application service, ResourceCatalog resources) : ControllerBase
 {
     [HttpGet]
     public Opportunity[] Get() => catalog.All();
     [HttpGet("{id}")]
     public Opportunity Get(string id) => catalog.Get(id);
     [HttpGet("{id}/resources")]
-    public object[] Resources(string id) { catalog.Get(id); return []; }
+    public LearningResource[] Resources(string id) => resources.For(catalog.Get(id));
     [HttpPost("{id}/analysis")]
     public async Task<IActionResult> Analyze(string id, AnalysisRequest request, CancellationToken ct) => Ok(await service.Analyze((string)HttpContext.Items["owner"]!, id, request, ct));
     [HttpPost("{id}/plan-candidates")]

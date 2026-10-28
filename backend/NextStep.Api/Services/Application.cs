@@ -5,7 +5,7 @@ using NextStep.MetaAi.Application;
 
 namespace NextStep.Api;
 
-public sealed class Application(IStateStore store, Catalog catalog, IMetaModelClient model)
+public sealed class Application(IStateStore store, Catalog catalog, IMetaModelClient model, ResourceCatalog resources)
 {
     public static SubmissionState Submission(UserState state, Opportunity opportunity) => state.Submissions.GetValueOrDefault(opportunity.Id) ?? Catalog.EmptySubmission(opportunity);
     public Task<StudentProfile> SaveProfile(string owner, ProfileUpdate update, CancellationToken ct)
@@ -46,7 +46,8 @@ public sealed class Application(IStateStore store, Catalog catalog, IMetaModelCl
         var analysis = Matching.Analyze(opportunity, profile, submission, DateTimeOffset.UtcNow);
         var previous = snapshot.Plans.GetValueOrDefault(id);
         var rules = opportunity.Requirements.Where(r => r.Lane is "submission" or "preparation" && r.Evaluation["key"]?.GetValue<string>() != "unresolved" && Catalog.Reviewed(opportunity, r) && Matching.Applies(r, profile) == true && analysis.Matches.Single(m => m.RequirementId == r.Id).Status != "supported").Select(r => new ReviewedRequirement(r.Id, r.Statement, r.Lane, true, r.IsMandatory)).ToArray();
-        var projection = new PlanGenerationContext(id, opportunity.Theme, opportunity.SourceRevision, request.ExpectedSourceRevision, profile.Goals, rules, [], Input.Fact<double>(profile.AvailableHoursPerWeek), Catalog.Instant(opportunity, "submission_close"), analysis.ParticipationSummary == "does_not_meet_confirmed_requirement", previous?.Tasks.Select(t => new ExistingPlanTask(t.Id, t.Title, t.Status, t.Target)).ToArray() ?? [], new PlanningProfile(profile.ProjectExperience.Select(e => e.Description).Concat(profile.AcceptedInterpretations.Select(e => e.Text)).Append(profile.Background).Where(s => !string.IsNullOrWhiteSpace(s)).Take(30).Select(s => s.Length <= 1000 ? s : s[..1000]).ToArray(), profile.Skills.Where(s => s.State == "reported_has").Select(s => s.Label).Take(30).ToArray(), profile.Constraints));
+        var reviewedResources = resources.For(opportunity).Where(resource => resource.Status == "reviewed").ToArray();
+        var projection = new PlanGenerationContext(id, opportunity.Theme, opportunity.SourceRevision, request.ExpectedSourceRevision, profile.Goals, rules, reviewedResources.Select(resource => resource.Id).ToArray(), Input.Fact<double>(profile.AvailableHoursPerWeek), Catalog.Instant(opportunity, "submission_close"), analysis.ParticipationSummary == "does_not_meet_confirmed_requirement", previous?.Tasks.Select(t => new ExistingPlanTask(t.Id, t.Title, t.Status, t.Target)).ToArray() ?? [], new PlanningProfile(profile.ProjectExperience.Select(e => e.Description).Concat(profile.AcceptedInterpretations.Select(e => e.Text)).Append(profile.Background).Where(s => !string.IsNullOrWhiteSpace(s)).Take(30).Select(s => s.Length <= 1000 ? s : s[..1000]).ToArray(), profile.Skills.Where(s => s.State == "reported_has").Select(s => s.Label).Take(30).ToArray(), profile.Constraints)) { ReviewedResources = reviewedResources.Select(resource => new ReviewedResourceInfo(resource.Id, resource.Title, resource.RelevanceNote)).ToArray() };
         GenerationPolicy.ValidateInput(projection);
         var output = await model.GenerateCandidateAsync(projection, ct);
         GenerationPolicy.ValidateInput(projection); GenerationPolicy.ValidateCandidate(output, projection);

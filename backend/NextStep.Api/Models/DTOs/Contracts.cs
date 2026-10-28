@@ -47,6 +47,10 @@ public sealed record Plan(string Id, int Version, AssessmentContext Context, Pla
 public sealed record ProgressState(string PlanId, int ConfirmedPlanVersion, string SaveState);
 public sealed record OpportunityPreference(string OpportunityId, bool Saved, bool NotInterested);
 public sealed record ProfileUpdate(int ExpectedVersion, StudentProfile Profile);
+public sealed record ProfileEditorUpdate(int ExpectedVersion, StudentProfile Profile, JsonObject Editor);
+public sealed record ProfileEditorView(StudentProfile Profile, JsonObject Editor, string DisplayName);
+public sealed record PreferenceChange(bool? Saved = null, bool? NotInterested = null, string? ExpectedAccountId = null);
+public sealed record PreferenceView(string OpportunityId, bool Saved, bool NotInterested, string? SavedAt);
 public sealed record SubmissionUpdate(int ExpectedVersion, SubmissionState Submission);
 public sealed record AcceptPlan(string CandidateId, int? ExpectedPlanVersion, string OperationId);
 public sealed record TaskUpdate(int ExpectedVersion, string Status, string OperationId, string[]? ArtifactUrls = null);
@@ -58,6 +62,8 @@ public sealed class UserState
 {
     public int SchemaVersion { get; set; } = 1;
     public StudentProfile Profile { get; set; } = null!;
+    public JsonObject ProfileEditor { get; set; } = new();
+    public Dictionary<string, string> SavedAt { get; set; } = [];
     public Dictionary<string, SubmissionState> Submissions { get; set; } = [];
     public Dictionary<string, Plan> Plans { get; set; } = [];
     public Dictionary<string, StoredCandidate> Candidates { get; set; } = [];

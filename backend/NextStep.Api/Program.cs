@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 if (builder.Environment.IsDevelopment()) {
     builder.Configuration.AddJsonFile(Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", ".secrets", "email.json")), optional: true, reloadOnChange: false).AddEnvironmentVariables();
 }
-builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 65536);
+builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 786432);
 builder.Services.ConfigureHttpJsonOptions(options => { options.SerializerOptions.UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow; options.SerializerOptions.MaxDepth = 32; });
 builder.Services.AddControllers().AddJsonOptions(options => {
     options.JsonSerializerOptions.UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow;
@@ -20,6 +20,7 @@ builder.Services.AddControllers().AddJsonOptions(options => {
 });
 builder.Services.AddSingleton<Catalog>();
 builder.Services.AddSingleton<DiscoveryCatalog>();
+builder.Services.AddSingleton<ResourceCatalog>();
 builder.Services.AddSingleton<SourceCollector>();
 builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
 builder.Services.AddSingleton<PasswordRecoveryRepository>();

@@ -23,7 +23,7 @@ public sealed class SystemController(IStateStore store, IOptions<MetaAiOptions> 
         return Ok(new { session = "created", persistence = "same-browser MySQL-backed anonymous session" });
     }
     [HttpGet("/api/data/export")]
-    public async Task<IActionResult> Export(CancellationToken ct) => Ok(await store.Read((string)HttpContext.Items["owner"]!, state => new { schemaVersion = state.SchemaVersion, profile = state.Profile, submissions = state.Submissions, plans = state.Plans, preferences = state.Preferences }, ct));
+    public async Task<IActionResult> Export(CancellationToken ct) => Ok(await store.Read((string)HttpContext.Items["owner"]!, state => new { schemaVersion = state.SchemaVersion, profile = state.Profile, profileEditor = state.ProfileEditor, submissions = state.Submissions, plans = state.Plans, preferences = state.Preferences, savedAt = state.SavedAt }, ct));
     [HttpDelete("/api/data")]
     public async Task<IActionResult> Delete(CancellationToken ct)
     {
