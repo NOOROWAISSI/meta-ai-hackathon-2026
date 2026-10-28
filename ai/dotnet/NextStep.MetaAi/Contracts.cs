@@ -23,6 +23,10 @@ public sealed record ExistingPlanTask(string Id, string Title, string Status, Ta
 public sealed record PlanningProfile(IReadOnlyList<string> AcceptedExperience,
     IReadOnlyList<string> ReportedSkills, IReadOnlyList<string> Constraints);
 
+// Trusted server-side projection of a reviewed resource. No URL is sent to the model;
+// the app resolves resource IDs to reviewed catalog links after validation.
+public sealed record ReviewedResourceInfo(string Id, string Title, string RelevanceNote);
+
 // Internal projection, not the frontend PlanCandidateRequest. The caller captures
 // profile/submission/source/base-plan versions and checks them again after generation.
 public sealed record PlanGenerationContext(string OpportunityId, string OpportunityTheme,
@@ -30,7 +34,12 @@ public sealed record PlanGenerationContext(string OpportunityId, string Opportun
     IReadOnlyList<ReviewedRequirement> ReviewedRequirements, IReadOnlyList<string> ReviewedResourceIds,
     double? AvailableHoursPerWeek, DateTimeOffset? ReviewedSubmissionDeadline,
     bool HasConfirmedParticipationBlocker, IReadOnlyList<ExistingPlanTask> ExistingTasks,
-    PlanningProfile SelfReport);
+    PlanningProfile SelfReport)
+{
+    // Optional for existing callers. Without descriptive metadata, the generator
+    // cannot reference a resource even if its ID is present in ReviewedResourceIds.
+    public IReadOnlyList<ReviewedResourceInfo> ReviewedResources { get; init; } = [];
+}
 public interface IMetaModelClient
 {
     Task<PlanCandidateOutput> GenerateCandidateAsync(PlanGenerationContext context,

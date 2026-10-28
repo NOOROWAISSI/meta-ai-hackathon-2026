@@ -65,12 +65,62 @@ Reject("unknown requirement rejected", TaskJson(target: new("requirement", Requi
 Reject("both target IDs rejected", TaskJson(target: new("goal", "goal-demo", "req")));
 Reject("missing target ID rejected", TaskJson(target: new("goal")));
 Reject("unknown resource rejected", TaskJson(resources: ["unknown"]));
-Reject("duplicate resources rejected", TaskJson(resources: ["r", "r"]), context: Context() with { ReviewedResourceIds = ["r"] });
-Test("ten approved resources accepted", async () =>
+Reject("duplicate resources rejected", TaskJson(resources: ["r", "r"]), context: Context() with { ReviewedResourceIds = ["r"], ReviewedResources = [new("r", "Reviewed", "Relevant to demo")] });
+Test("ten described and allowlisted resources accepted", async () =>
 {
     var ids = Enumerable.Range(0, 10).Select(i => "r" + i).ToArray();
     using var h = new FakeHandler((_, _, _) => Task.FromResult(Reply(TaskJson(resources: ids)))); using var http = new HttpClient(h);
-    await Client(http).GenerateCandidateAsync(Context() with { ReviewedResourceIds = ids });
+    await Client(http).GenerateCandidateAsync(Context() with {
+        ReviewedResourceIds = ids,
+        ReviewedResources = ids.Select(id => new ReviewedResourceInfo(id, "Reviewed resource " + id, "Relevant to the task demo")).ToArray()
+    });
+});
+Reject("legacy bare resource ID cannot be used without metadata", TaskJson(resources: ["r"]),
+    context: Context() with { ReviewedResourceIds = ["r"] });
+Reject("allowlisted but undescribed resource cannot be used", TaskJson(resources: ["r2"]),
+    context: Context() with {
+        ReviewedResourceIds = ["r1", "r2"],
+        ReviewedResources = [new("r1", "Reviewed resource", "Useful for this demo")]
+    });
+Test("resource descriptors sent to model without raw IDs or URLs", async () =>
+{
+    using var h = new FakeHandler(async (_, request, ct) => {
+        var body = await request.Content!.ReadAsStringAsync(ct);
+        using var outer = JsonDocument.Parse(body);
+        using var context = JsonDocument.Parse(outer.RootElement.GetProperty("messages")[1].GetProperty("content").GetString()!);
+        var r = context.RootElement.GetProperty("reviewedResources")[0];
+        Assert(r.GetProperty("id").GetString() == "r");
+        Assert(r.GetProperty("title").GetString() == "Review handbook");
+        Assert(r.GetProperty("relevanceNote").GetString() == "Demo scripting guidance");
+        Assert(!context.RootElement.TryGetProperty("reviewedResourceIds", out var unusedResourceIds));
+        Assert(!r.TryGetProperty("url", out var unusedUrl));
+        return Reply(TaskJson(resources: ["r"]));
+    });
+    using var http = new HttpClient(h);
+    await Client(http).GenerateCandidateAsync(Context() with {
+        ReviewedResourceIds = ["r"], ReviewedResources = [new("r", "Review handbook", "Demo scripting guidance")]
+    });
+});
+Test("descriptor not in trusted allowlist rejected before provider call", async () =>
+{
+    using var h = new FakeHandler((_, _, _) => throw new Exception("Unexpected call")); using var http = new HttpClient(h);
+    await Error("invalid_input", () => Client(http).GenerateCandidateAsync(Context() with {
+        ReviewedResourceIds = ["r"], ReviewedResources = [new("other", "Unknown", "Not reviewed")]
+    })); Assert(h.Count == 0);
+});
+Test("duplicate resource descriptors rejected before provider call", async () =>
+{
+    using var h = new FakeHandler((_, _, _) => throw new Exception("Unexpected call")); using var http = new HttpClient(h);
+    await Error("invalid_input", () => Client(http).GenerateCandidateAsync(Context() with {
+        ReviewedResourceIds = ["r"], ReviewedResources = [new("r", "Title", "Note"), new("r", "Title", "Note")]
+    })); Assert(h.Count == 0);
+});
+Test("blank resource descriptor rejected before provider call", async () =>
+{
+    using var h = new FakeHandler((_, _, _) => throw new Exception("Unexpected call")); using var http = new HttpClient(h);
+    await Error("invalid_input", () => Client(http).GenerateCandidateAsync(Context() with {
+        ReviewedResourceIds = ["r"], ReviewedResources = [new("r", "", "Note")]
+    })); Assert(h.Count == 0);
 });
 var eleven = Enumerable.Range(0, 11).Select(i => "r" + i).ToArray();
 Reject("eleven approved resources rejected", TaskJson(resources: eleven), context: Context() with { ReviewedResourceIds = eleven });
@@ -297,7 +347,22 @@ BudgetAssessment Budget(double? h, double? days, double effort, params RetainedW
 Sync("one-day budget retains honest infeasibility", () => { var b = Budget(5, 1, 5); Assert(b.Feasibility == "infeasible" && Math.Abs(b.AvailableHours!.Value - 5d/7) < 1e-9 && b.RemainingEffortHours == 5); });
 Sync("two-week budget permits more than one week", () => Assert(Budget(5, 14, 8).Feasibility == "fits_reported_budget"));
 Sync("capacity boundary fits exactly", () => Assert(Budget(5, 7, 5).Feasibility == "fits_reported_budget"));
-Sync("capacity boundary above is infeasible", () => Assert(Budget(5, 7, 5.0001).Feasibility == "infeasible"));
+Sync("capacity boundary above one-minute tolerance is infeasible", () => Assert(Budget(5, 7, 5.02).Feasibility == "infeasible"));
+Sync("two-second reporting drift does not flip exact capacity boundary", () => {
+    var b = PreparationBudget.Evaluate(10, now.AddDays(28), now.AddSeconds(2),
+        new([TaskValue(40)], "Advice"), []);
+    Assert(b.AvailableHours is { } cap && cap < 40 && b.RemainingEffortHours == 40 && b.Feasibility == "fits_reported_budget");
+});
+Sync("material capacity gap still infeasible", () => {
+    var b = PreparationBudget.Evaluate(10, now.AddDays(28), now.AddMinutes(30),
+        new([TaskValue(40)], "Advice"), []);
+    Assert(b.Feasibility == "infeasible");
+});
+Sync("expired cutoff cannot be rescued by tolerance", () => {
+    var b = PreparationBudget.Evaluate(5, now, now.AddSeconds(2),
+        new([TaskValue(0.001)], "Advice"), []);
+    Assert(b.Feasibility == "infeasible");
+});
 Sync("retained in-progress effort counts", () => { var b = Budget(5, 7, 2, new RetainedWork("old", "in_progress", 4)); Assert(b.RemainingEffortHours == 6 && b.Feasibility == "infeasible"); });
 Sync("completed work contributes zero", () => Assert(Budget(5, 7, 2, new RetainedWork("done", "done", 0)).RemainingEffortHours == 2));
 Sync("unknown deadline stays untimed", () => Assert(Budget(5, null, 20).Feasibility == "untimed"));

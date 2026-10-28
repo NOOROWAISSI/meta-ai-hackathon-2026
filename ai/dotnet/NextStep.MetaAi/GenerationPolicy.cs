@@ -17,7 +17,7 @@ public static class GenerationPolicy
         if (input is null || !Id(input.OpportunityId) || !Text(input.SourceRevision, 500) ||
             !Text(input.ExpectedSourceRevision, 500) || !Text(input.OpportunityTheme, 1000) ||
             input.Goals is null || input.ReviewedRequirements is null || input.ReviewedResourceIds is null ||
-            input.ExistingTasks is null || input.SelfReport is null) InvalidInput();
+            input.ReviewedResources is null || input.ExistingTasks is null || input.SelfReport is null) InvalidInput();
         if (input.SourceRevision != input.ExpectedSourceRevision)
             throw new MetaAiException("version_conflict", "Source context changed; reload and retry.");
         if (input.HasConfirmedParticipationBlocker)
@@ -28,12 +28,16 @@ public static class GenerationPolicy
         if (input.AvailableHoursPerWeek == 0)
             throw new MetaAiException("invalid_input", "No preparation capacity is reported.");
         if (input.Goals.Count + input.ReviewedRequirements.Count == 0 || input.Goals.Count > 30 ||
-            input.ReviewedRequirements.Count > 50 || input.ReviewedResourceIds.Count > 200 || input.ExistingTasks.Count > 100) InvalidInput();
+            input.ReviewedRequirements.Count > 50 || input.ReviewedResourceIds.Count > 200 ||
+            input.ReviewedResources.Count > 50 || input.ExistingTasks.Count > 100) InvalidInput();
         if (input.Goals.Any(g => g is null || !Id(g.Id) || !Text(g.Statement, 1000)) ||
             input.ReviewedRequirements.Any(r => r is null || !Id(r.Id) || !Text(r.Statement, 1000) ||
                 r.Lane is not ("submission" or "preparation") || r.Applies != true || (r.Lane == "preparation" && r.IsMandatory)) ||
             input.ReviewedResourceIds.Any(r => !Id(r)) ||
             input.ReviewedResourceIds.Distinct(StringComparer.Ordinal).Count() != input.ReviewedResourceIds.Count ||
+            input.ReviewedResources.Any(r => r is null || !Id(r.Id) || !Text(r.Title, 200) ||
+                !Text(r.RelevanceNote, 1000) || !input.ReviewedResourceIds.Contains(r.Id, StringComparer.Ordinal)) ||
+            input.ReviewedResources.Select(r => r.Id).Distinct(StringComparer.Ordinal).Count() != input.ReviewedResources.Count ||
             input.ExistingTasks.Any(t => t is null || !Id(t.Id) || !Text(t.Title, 2000) || t.Target is null ||
                 t.Status is not ("not_started" or "in_progress" or "done")) ||
             input.ExistingTasks.Select(t => t.Id).Distinct(StringComparer.Ordinal).Count() != input.ExistingTasks.Count) InvalidInput();
@@ -48,7 +52,8 @@ public static class GenerationPolicy
         if (candidate is null || candidate.Tasks is null || candidate.Tasks.Count > 6 || !Guidance(candidate.Explanation, 4000)) InvalidOutput();
         var goals = input.Goals.Select(g => g.Id).ToHashSet(StringComparer.Ordinal);
         var rules = input.ReviewedRequirements.ToDictionary(r => r.Id, StringComparer.Ordinal);
-        var resources = input.ReviewedResourceIds.ToHashSet(StringComparer.Ordinal);
+        // IDs alone convey no relevance. Only entries with reviewed metadata may be selected.
+        var resources = input.ReviewedResources.Select(r => r.Id).ToHashSet(StringComparer.Ordinal);
         var seen = input.ExistingTasks.Where(t => t.Status is "done" or "in_progress")
             .Select(t => t.Title.Trim()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (var task in candidate.Tasks)

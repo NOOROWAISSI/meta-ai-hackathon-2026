@@ -23,7 +23,14 @@ public static class PreparationBudget
         var remaining = candidate.Tasks.Sum(t => t.EstimatedHours) + retained.Sum(t => t.RemainingEstimatedHours);
         double? available = hours is { } weekly && deadline is { } end
             ? Math.Max(0, (end - now).TotalDays / 7 * weekly) : null;
-        var feasibility = remaining == 0 ? "no_remaining_gap" : hours == 0 || (available is { } capacity && remaining > capacity)
+        // Avoid false infeasible near an exact capacity boundary due to seconds elapsed
+        // during generation. Preserve the precise capacity and effort values; this is
+        // only a one-minute classification tolerance, never a reduction of estimates.
+        const double capacityToleranceHours = 1d / 60d;
+        var expired = deadline is { } cutoff && cutoff <= now;
+        var infeasible = hours == 0 || expired ||
+            (available is { } capacity && (capacity <= 0 || remaining > capacity + capacityToleranceHours));
+        var feasibility = remaining == 0 ? "no_remaining_gap" : infeasible
             ? "infeasible" : available is null ? "untimed" : "fits_reported_budget";
         return new(now, hours, deadline, available, remaining, available is null ? "untimed" : "even_weekly_distribution", feasibility);
     }
