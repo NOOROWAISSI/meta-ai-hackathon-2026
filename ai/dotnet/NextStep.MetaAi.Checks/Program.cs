@@ -483,6 +483,19 @@ Sync("evaluation scenario identity changes independently of prompt", () => {
     Assert(changed.ScenarioFingerprint != original.ScenarioFingerprint && changed.PromptFingerprint == original.PromptFingerprint);
 });
 
+Test("provider candidate with omitted mandatory action still returns unchanged for reconciliation", async () =>
+{
+    var context = Context() with { ReviewedRequirements = [new("req-submit", "Submit the demo", "submission", true, true)] };
+    using var h = new FakeHandler((_, _, _) => Task.FromResult(Reply(TaskJson())));
+    using var http = new HttpClient(h);
+    var candidate = await Client(http).GenerateCandidateAsync(context);
+    var before = JsonSerializer.Serialize(candidate, ContractJson.CreateOptions());
+    var coverage = SubmissionCoverage.Reconcile(context.ReviewedRequirements, candidate.Tasks, []);
+    Assert(coverage.UnrepresentedRequirementIds.SequenceEqual(new[] { "req-submit" }) && h.Count == 1);
+    Assert(before == JsonSerializer.Serialize(candidate, ContractJson.CreateOptions()));
+});
+NextStep.MetaAi.Checks.SubmissionCoverageChecks.Register(Sync);
+
 var passed = 0; var failed = 0;
 foreach (var item in cases)
 {
