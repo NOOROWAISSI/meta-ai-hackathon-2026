@@ -8,7 +8,9 @@ using NextStep.MetaAi;
 
 var builder = WebApplication.CreateBuilder(args);
 if (builder.Environment.IsDevelopment()) {
-    builder.Configuration.AddJsonFile(Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", ".secrets", "email.json")), optional: true, reloadOnChange: false).AddEnvironmentVariables();
+    builder.Configuration.AddJsonFile(Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", ".secrets", "email.json")), optional: true, reloadOnChange: false)
+        .AddJsonFile(Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", ".secrets", "google.json")), optional: true, reloadOnChange: false)
+        .AddJsonFile(Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", ".secrets", "meta.json")), optional: true, reloadOnChange: false).AddEnvironmentVariables();
 }
 builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 786432);
 builder.Services.ConfigureHttpJsonOptions(options => { options.SerializerOptions.UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow; options.SerializerOptions.MaxDepth = 32; });
