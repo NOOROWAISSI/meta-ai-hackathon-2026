@@ -551,6 +551,60 @@ Test("listing projections retain ambiguous date text without inventing a trusted
     return Task.CompletedTask;
 });
 
+Test("configured Google challenge uses same-origin callback, profile-only scopes and PKCE", async () => {
+    await using var host = new Factory(google: true);
+    var client = host.CreateClient(new() { AllowAutoRedirect = false, BaseAddress = new Uri("https://localhost:8082") });
+    var response = await client.GetAsync("/api/auth/google?returnTo=%2Fplans%3Fevent%3DE01");
+    Assert(response.StatusCode == HttpStatusCode.Redirect && response.Headers.Location!.Host == "accounts.google.com", await response.Content.ReadAsStringAsync());
+    var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(response.Headers.Location.Query);
+    Assert(query["redirect_uri"] == "https://localhost:8082/api/auth/google/callback" && query["code_challenge_method"] == "S256" && !string.IsNullOrEmpty(query["state"]));
+    Assert(!query["scope"].ToString().Contains("gmail", StringComparison.OrdinalIgnoreCase) && !query["scope"].ToString().Contains("drive", StringComparison.OrdinalIgnoreCase));
+    Assert(host.Google.Calls == 0);
+});
+Test("Google OAuth callback creates a real MySQL session and preserves the selected event", async () => {
+    await using var host = new Factory(google: true);
+    var client = host.CreateClient(new() { AllowAutoRedirect = false, BaseAddress = new Uri("https://localhost:8082") });
+    var start = await client.GetAsync("/api/auth/google?returnTo=%2Fplans%3Fevent%3DE01");
+    var state = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(start.Headers.Location!.Query)["state"].ToString();
+    var callback = await client.GetAsync("/api/auth/google/callback?code=synthetic-code&state=" + Uri.EscapeDataString(state));
+    Assert(callback.StatusCode == HttpStatusCode.Redirect && callback.Headers.Location!.OriginalString.Contains("google=complete") && callback.Headers.Location.OriginalString.Contains("returnTo=%2Fplans%3Fevent%3DE01"));
+    var me = await client.GetFromJsonAsync<JsonObject>("/api/auth/me"); Assert(me!["user"]?["hasGoogle"]?.GetValue<bool>() == true && me["user"]?["hasPassword"]?.GetValue<bool>() == false);
+    var profile = (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!; owners.Add(profile.Id["profile-".Length..]);
+    Assert(host.Google.Calls == 2 && host.Google.ExchangeHadVerifier);
+    Assert(!string.Join(";", callback.Headers.GetValues("Set-Cookie")).Contains("synthetic-access-token"));
+    client.DefaultRequestHeaders.Add("X-NextStep-Request", "1");
+    (await client.PostAsync("/api/auth/logout", null)).EnsureSuccessStatusCode();
+    Assert((await client.GetFromJsonAsync<JsonObject>("/api/auth/me"))!["user"] is null);
+});
+Test("cancelled Google consent and invalid OAuth state return safely without creating an account", async () => {
+    await using var host = new Factory(google: true);
+    var client = host.CreateClient(new() { AllowAutoRedirect = false, BaseAddress = new Uri("https://localhost:8082") });
+    var start = await client.GetAsync("/api/auth/google?returnTo=%2Fprofile%3Fevent%3DE02");
+    var state = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(start.Headers.Location!.Query)["state"].ToString();
+    var cancelled = await client.GetAsync("/api/auth/google/callback?error=access_denied&state=" + Uri.EscapeDataString(state));
+    Assert(cancelled.Headers.Location!.OriginalString == "/login?error=google_failed&returnTo=%2Fprofile%3Fevent%3DE02");
+    var invalid = await client.GetAsync("/api/auth/google/callback?code=synthetic-code&state=invalid");
+    Assert(invalid.Headers.Location!.OriginalString == "/login?error=google_failed&returnTo=%2F");
+    Assert(host.Google.Calls == 0 && (await client.GetFromJsonAsync<JsonObject>("/api/auth/me"))!["user"] is null);
+});
+Test("Google callback rejects unverified email and never automatically links a password account", async () => {
+    await using var host = new Factory(google: true); host.Google.Verified = false;
+    async Task<HttpResponseMessage> SignIn(HttpClient client) {
+        var start = await client.GetAsync("/api/auth/google?returnTo=%2Fsaved");
+        var state = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(start.Headers.Location!.Query)["state"].ToString();
+        return await client.GetAsync("/api/auth/google/callback?code=synthetic-code&state=" + Uri.EscapeDataString(state));
+    }
+    var client = host.CreateClient(new() { AllowAutoRedirect = false, BaseAddress = new Uri("https://localhost:8082") });
+    Assert((await SignIn(client)).Headers.Location!.OriginalString.StartsWith("/login?error=google_failed"));
+    Assert((await client.GetFromJsonAsync<JsonObject>("/api/auth/me"))!["user"] is null);
+    client.DefaultRequestHeaders.Add("X-NextStep-Request", "1");
+    (await client.PostAsJsonAsync("/api/auth/register", new RegisterRequest(host.Google.Email, "Synthetic-Password-2026!", "Existing password account"), Wire.Json)).EnsureSuccessStatusCode();
+    var profile = (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!; owners.Add(profile.Id["profile-".Length..]);
+    (await client.PostAsync("/api/auth/logout", null)).EnsureSuccessStatusCode(); host.Google.Verified = true;
+    Assert((await SignIn(client)).Headers.Location!.OriginalString == "/login?error=existing_account&returnTo=%2Fsaved");
+    Assert((await client.GetFromJsonAsync<JsonObject>("/api/auth/me"))!["user"] is null);
+});
+
 var passed = 0;
 try {
     foreach (var test in cases) {
