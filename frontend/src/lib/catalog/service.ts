@@ -19,6 +19,12 @@ const listingSchema = z.object({
   sourceStatus: z.enum(["reviewed", "needs_verification"]),
   sourcePassage: z.string().nullable(),
   verificationNote: z.string(),
+  firstSeenAt: z.string().refine(isContractInstant).nullable().optional(),
+  lastCheckedAt: z.string().refine(isContractInstant).nullable().optional(),
+  sourcePageUrl: z.string().url().nullable().optional(),
+  eventEndAt: z.string().refine(isContractInstant).nullable().optional(),
+  availabilityState: z.enum(["unknown", "ended", "cancelled"]).optional(),
+  sourceFreshness: z.enum(["not_checked", "current", "stale"]).optional(),
 });
 /** Discovery-only extension; courses never inherit hackathon eligibility rules. */
 export type ListingSummary = Pick<
@@ -48,5 +54,26 @@ export const realCatalogService = {
   },
   async sources() {
     return z.array(sourceSchema).parse(await get("/api/sources"));
+  },
+  async collectionStatus() {
+    return z
+      .object({
+        enabled: z.boolean(),
+        intervalHours: z.number().int().positive(),
+        lastAttemptAt: z.string().refine(isContractInstant).nullable(),
+        pendingReviewCount: z.number().int().nonnegative(),
+        automaticallyDiscoveredCount: z.number().int().nonnegative(),
+        sources: z
+          .array(
+            z.object({
+              sourceId: z.string(),
+              lastAttemptAt: z.string().refine(isContractInstant),
+              outcome: z.string(),
+              candidateCount: z.number().int().nonnegative(),
+            }),
+          )
+          .optional(),
+      })
+      .parse(await get("/api/sources/status"));
   },
 };
