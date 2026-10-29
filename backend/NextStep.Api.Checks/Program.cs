@@ -477,6 +477,80 @@ Test("signed-in accounts cannot read coverage, accept candidates or update tasks
     Assert((await first.Client.GetFromJsonAsync<Plan>("/api/plans/E01", Wire.Json))!.Version == 1);
 });
 
+Test("contract instants accept explicit UTC or numeric offsets without host-culture inference", () => {
+    var before = System.Globalization.CultureInfo.CurrentCulture;
+    try {
+        System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.GetCultureInfo("ar-SA");
+        Assert(ContractTime.TryInstant("2026-10-29T09:30:00Z", out var utc));
+        Assert(ContractTime.TryInstant("2026-10-29T12:30:00+03:00", out var east));
+        Assert(ContractTime.TryInstant("2026-10-29T04:30:00-05:00", out var west));
+        Assert(utc == east && east == west && east.Offset == TimeSpan.FromHours(3));
+        Assert(ContractTime.IsInstant("2024-02-29T23:59:59.1234567+14:00"));
+        var zone = TimeZoneInfo.CreateCustomTimeZone("Display+03", TimeSpan.FromHours(3), "Display+03", "Display+03");
+        Assert(TimeZoneInfo.ConvertTime(utc, zone).UtcTicks == utc.UtcTicks);
+    } finally { System.Globalization.CultureInfo.CurrentCulture = before; }
+    return Task.CompletedTask;
+});
+Test("contract instants reject missing offsets, unknown offsets and impossible dates", () => {
+    foreach (var value in new string?[] { null, "", "2026-10-29", "2026-10-29T09:30:00", "2026-10-29 09:30:00Z", "2026-02-29T09:30:00Z", "2026-10-29T24:00:00Z", "2026-10-29T09:30:60Z", "2026-10-29T09:30:00-00:00", "2026-10-29T09:30:00+14:01", "2026-10-29T09:30:00+0300", "2026-10-29T09:30:00Z\n", "0000-01-01T00:00:00Z" }) Assert(!ContractTime.IsInstant(value), "Unexpected trusted instant: " + value);
+    Assert(ContractTime.IsDate("2024-02-29") && !ContractTime.IsDate("2026-02-29") && !ContractTime.IsDate("2026-10-29T00:00:00Z"));
+    return Task.CompletedTask;
+});
+Test("profile API rejects offset-less fact, interpretation and answer metadata without saving", async () => {
+    await using var host = new Factory(); var (client, profile) = await Session(host);
+    foreach (var value in new[] { "2026-10-29", "2026-10-29T09:30:00", "2026-02-29T09:30:00Z" }) {
+        var fact = Known(0); fact["reportedAt"] = value;
+        Assert((await client.PutAsJsonAsync("/api/profile", new ProfileUpdate(0, profile with { AvailableHoursPerWeek = fact }), Wire.Json)).StatusCode == HttpStatusCode.BadRequest);
+    }
+    var experience = profile with { ProjectExperience = [new("project-time", "Self-reported example")], AcceptedInterpretations = [new("project-time", "Confirmed wording", "2026-10-29T09:30:00")] };
+    Assert((await client.PutAsJsonAsync("/api/profile", new ProfileUpdate(0, experience), Wire.Json)).StatusCode == HttpStatusCode.BadRequest);
+    var answer = profile with { ClarificationAnswers = [new("question-time", "My answer", "2026-10-29T09:30:00")] };
+    Assert((await client.PutAsJsonAsync("/api/profile", new ProfileUpdate(0, answer), Wire.Json)).StatusCode == HttpStatusCode.BadRequest);
+    Assert((await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!.Version == 0);
+    var valid = Known(0); valid["reportedAt"] = "2026-10-29T11:30:00+02:00";
+    var saved = await client.PutAsJsonAsync("/api/profile", new ProfileUpdate(0, profile with { AvailableHoursPerWeek = valid }), Wire.Json); saved.EnsureSuccessStatusCode();
+    var result = (await saved.Content.ReadFromJsonAsync<StudentProfile>(Wire.Json))!;
+    Assert(result.AvailableHoursPerWeek["reportedAt"]!.GetValue<string>() == "2026-10-29T11:30:00+02:00" && Input.Fact<double>(result.AvailableHoursPerWeek) == 0);
+});
+Test("profile editor keeps calendar dates date-only and generates explicit-offset save timestamps", async () => {
+    await using var host = new Factory(); var (client, profile) = await Session(host);
+    foreach (var date in new[] { "2026-02-29", "2026-10-29T00:00:00Z" }) Assert((await client.PutAsJsonAsync("/api/profile/editor", new ProfileEditorUpdate(0, profile, new() { ["targetDate"] = date }), Wire.Json)).StatusCode == HttpStatusCode.BadRequest);
+    Assert((await client.PutAsJsonAsync("/api/profile/editor", new ProfileEditorUpdate(0, profile, new() { ["savedAt"] = "2026-10-29T09:00:00" }), Wire.Json)).StatusCode == HttpStatusCode.BadRequest);
+    var response = await client.PutAsJsonAsync("/api/profile/editor", new ProfileEditorUpdate(0, profile, new() { ["targetDate"] = "2026-10-29" }), Wire.Json); response.EnsureSuccessStatusCode();
+    var value = (await response.Content.ReadFromJsonAsync<ProfileEditorView>(Wire.Json))!;
+    Assert(value.Editor["targetDate"]!.GetValue<string>() == "2026-10-29" && ContractTime.IsInstant(value.Editor["savedAt"]!.GetValue<string>()));
+    ProfileEditorValidation.Validate(new() { ["targetDate"] = "" });
+});
+Test("ambiguous or conflicting source deadlines stay unknown and original passages stay unchanged", () => {
+    var original = new Catalog().Get("E01"); var source = original.SourceEvidence[0];
+    var claim = new TimelineClaim("claim-time", "Published: 29 October; time not confirmed", "2026-10-29", [source.Id], "Asia/Hebron");
+    var record = original with { TimelineEvents = [new("submission-time", "submission_close", [claim], "reviewed")] };
+    var before = JsonSerializer.Serialize(record, Wire.Json);
+    Assert(Catalog.Instant(record, "submission_close") is null && JsonSerializer.Serialize(record, Wire.Json) == before);
+    var exact = record with { TimelineEvents = [record.TimelineEvents[0] with { Claims = [claim with { DateTime = "2026-10-29T12:30:00+03:00" }] }] };
+    Assert(Catalog.Instant(exact, "submission_close") == DateTimeOffset.Parse("2026-10-29T09:30:00Z"));
+    Assert(Catalog.Instant(exact with { TimelineEvents = [exact.TimelineEvents[0] with { SourceStatus = "conflicting" }] }, "submission_close") is null);
+    Assert(Catalog.Instant(exact with { TimelineEvents = [exact.TimelineEvents[0] with { Claims = [claim with { DateTime = "2026-10-29T12:30:00+03:00" }, claim with { Id = "other", DateTime = "2026-10-29T14:00:00Z" }] }] }, "submission_close") is null);
+    Assert(Catalog.Instant(exact with { SourceEvidence = exact.SourceEvidence.Select(e => e with { CheckedAt = "2026-10-28T09:00:00" }).ToArray() }, "submission_close") is null);
+    return Task.CompletedTask;
+});
+Test("review metadata without an offset cannot establish reviewed rules or complete source coverage", () => {
+    var opportunity = new Catalog().Get("E01"); var rule = opportunity.Requirements.First(r => r.Lane == "submission" && r.IsMandatory);
+    var invalid = opportunity with { SourceEvidence = opportunity.SourceEvidence.Select(e => e with { CheckedAt = "2026-10-28T09:00:00" }).ToArray() };
+    Assert(!Catalog.Reviewed(invalid, rule));
+    var source = opportunity with { Requirements = [rule], SourceCoverage = opportunity.SourceCoverage with { Submission = new("complete", [rule.Id], [], "2026-10-28T09:00:00") } };
+    var report = SubmissionReconciliation.Assess(source, Input.Blank("profile-time"), Catalog.EmptySubmission(source), null, [], []);
+    Assert(report.Report.SourceCoverage == "unknown");
+    return Task.CompletedTask;
+});
+Test("listing projections retain ambiguous date text without inventing a trusted deadline", () => {
+    var item = new ListingSummary("time-listing", "course", "Synthetic clock example", "Synthetic organizer", "online", "https://example.invalid", "Test only", [], "global_online", "2026-10-29", "not_specified", "unknown", "2026-10-28T09:00:00", "reviewed", "Registration on 29 October", "Original note.");
+    var projected = DiscoveryCatalog.WithTimeSemantics(item);
+    Assert(projected.RegistrationDeadline is null && projected.LastReviewedAt is null && projected.SourceStatus == "needs_verification");
+    Assert(projected.SourcePassage == item.SourcePassage && projected.VerificationNote.Contains("2026-10-29") && item.RegistrationDeadline == "2026-10-29");
+    return Task.CompletedTask;
+});
+
 var passed = 0;
 try {
     foreach (var test in cases) {
