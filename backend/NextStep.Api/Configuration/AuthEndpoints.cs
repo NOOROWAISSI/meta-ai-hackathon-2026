@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace NextStep.Api;
 
@@ -17,6 +18,7 @@ public static class AuthEndpoints
             options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
             options.CallbackPath = "/api/auth/google/callback";
             options.SaveTokens = false;
+            options.UsePkce = true;
             options.CorrelationCookie.SameSite = SameSiteMode.Lax;
             options.CorrelationCookie.SecurePolicy = builder.Environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
             options.Events.OnCreatingTicket = context => {
@@ -31,11 +33,15 @@ public static class AuthEndpoints
                     var result = await accounts.Google(principal.FindFirstValue(ClaimTypes.NameIdentifier)!, principal.FindFirstValue(ClaimTypes.Email)!, principal.FindFirstValue(ClaimTypes.Name) ?? "", context.HttpContext.RequestAborted);
                     Cookie(context.HttpContext, result.Token, builder.Environment);
                     context.HandleResponse(); context.Response.Redirect(context.ReturnUri ?? "/");
-                } catch (ApiFault) { context.HandleResponse(); context.Response.Redirect("/login?error=existing_account"); }
+                } catch (ApiFault) { context.HandleResponse(); context.Response.Redirect(GoogleFailureReturn(context.ReturnUri, "existing_account")); }
             };
-            options.Events.OnRemoteFailure = context => { context.HandleResponse(); context.Response.Redirect("/login?error=google_failed"); return Task.CompletedTask; };
+            options.Events.OnRemoteFailure = context => { context.HandleResponse(); context.Response.Redirect(GoogleFailureReturn(context.Properties?.RedirectUri, "google_failed")); return Task.CompletedTask; };
         });
     }
     public static void Cookie(HttpContext http, string token, IWebHostEnvironment environment) => http.Response.Cookies.Append("nextstep-session", token, new CookieOptions { HttpOnly = true, Secure = !environment.IsDevelopment() && !environment.IsEnvironment("Testing"), SameSite = SameSiteMode.Strict, Path = "/api", MaxAge = TimeSpan.FromDays(30), IsEssential = true });
+    private static string GoogleFailureReturn(string? redirect, string error) {
+        var destination = redirect is not null && redirect.StartsWith("/login?", StringComparison.Ordinal) ? SafeReturn(QueryHelpers.ParseQuery(redirect[redirect.IndexOf('?')..])["returnTo"].FirstOrDefault()) : "/";
+        return "/login?error=" + error + "&returnTo=" + Uri.EscapeDataString(destination);
+    }
     public static string SafeReturn(string? value) => value is not null && value.StartsWith('/') && !value.StartsWith("//") && !value.Contains('\\') && !value.Any(char.IsControl) && new[] { "/", "/saved", "/plans", "/profile", "/opportunities" }.Contains(value.Split('?')[0]) ? value : "/";
 }
