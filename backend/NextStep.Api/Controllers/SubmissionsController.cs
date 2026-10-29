@@ -7,6 +7,8 @@ namespace NextStep.Api.Controllers;
 public sealed class SubmissionsController(Application service, IStateStore store, Catalog catalog) : ControllerBase
 {
     private string Owner => (string)HttpContext.Items["owner"]!;
+    [HttpGet("{id}/coverage")]
+    public async Task<IActionResult> Coverage(string id, [FromQuery] string? candidateId, CancellationToken ct) => Ok(await service.Coverage(Owner, id, candidateId, ct));
     [HttpGet("{id}")]
     public async Task<IActionResult> Get(string id, CancellationToken ct) => Ok(await store.Read(Owner, state => Application.Submission(state, catalog.Get(id)), ct));
     [HttpPut("{id}")]

@@ -350,6 +350,133 @@ Test("reviewed real resource descriptors reach the provider using the same IDs e
     Assert(context.ReviewedResources.All(resource => resources.Any(record => record.Id == resource.Id && record.Title == resource.Title)));
 });
 
+Test("submission reconciliation keeps partial criteria outstanding without claiming failure or completeness", async () => {
+    await using var host = new Factory(); var data = await Ready(host); var rule = data.Opportunity.Requirements.First(r => r.Lane == "submission" && r.IsMandatory);
+    rule = rule with { Evaluation = new JsonObject { ["key"] = "submission_criterion", ["criterion"] = "duration", ["parameters"] = new JsonObject() } };
+    var opportunity = data.Opportunity with { Requirements = [rule] };
+    var submission = new SubmissionState(opportunity.Id, 1, [new(rule.Id, "reported_present", new() { ["presence"] = "reported_met", ["duration"] = "unknown" }, "self_report")]);
+    var result = SubmissionReconciliation.Assess(opportunity, data.Profile, submission, null, [], []);
+    Assert(result.Report.ReviewedOutstandingMandatoryRequirementIds.Contains(rule.Id) && result.Report.UnrepresentedRequirementIds.Contains(rule.Id));
+    Assert(result.Report.SourceCoverage == "incomplete" && Matching.Analyze(opportunity, data.Profile, submission, DateTimeOffset.UtcNow).Matches.Single().Status == "unknown");
+    submission = submission with { Version = 2, Items = [submission.Items[0] with { CriterionResults = new() { ["duration"] = "reported_met" } }] };
+    Assert(SubmissionReconciliation.Assess(opportunity, data.Profile, submission, null, [], []).Report.ReviewedOutstandingMandatoryRequirementIds.Length == 0);
+    Assert(SubmissionReconciliation.Assess(opportunity, data.Profile, submission, null, [], []).Report.SourceCoverage == "incomplete");
+});
+Test("unknown applicability and stale or conflicting rules stay outside reconciliation and visible", async () => {
+    await using var host = new Factory(); var data = await Ready(host); var rule = data.Opportunity.Requirements.First(r => r.Lane == "submission" && r.IsMandatory);
+    var rules = new[] { rule with { Id = "unknown-division", Applicability = new() { ["key"] = "division", ["division"] = "college_plus" } }, rule with { Id = "stale-rule", SourceStatus = "stale" }, rule with { Id = "conflicting-rule", SourceStatus = "conflicting" } };
+    var opportunity = data.Opportunity with { Requirements = rules };
+    var result = SubmissionReconciliation.Assess(opportunity, data.Profile, Catalog.EmptySubmission(opportunity), null, [], []);
+    Assert(result.Report.ReviewedOutstandingMandatoryRequirementIds.Length == 0 && result.UnresolvedRequirementIds.Length == 3 && result.Report.SourceCoverage == "incomplete");
+});
+Test("retention includes Done and artifacts but does not turn representation into fulfillment", async () => {
+    await using var host = new Factory(); var data = await Ready(host); var requirement = data.Opportunity.Requirements.First(r => r.Lane == "submission" && r.IsMandatory);
+    PreparationTask Task(string id, string status, string[] urls) => new(id, "Retained " + id, new("requirement", RequirementId: requirement.Id), "must", "Artifact draft", "Review the artifact", 2, status == "done" ? 0 : 2, status, [], urls);
+    var tasks = new[] { Task("done", "done", ["https://example.invalid/my-artifact"]), Task("started", "in_progress", []), Task("linked", "not_started", ["https://example.invalid/draft"]), Task("replaceable", "not_started", []) };
+    var plan = new Plan("plan-test", 1, Matching.Context(data.Opportunity, data.Profile, data.Submission), data.Profile.Goals, tasks, tasks.Select(t => t.Id).ToArray(), new(DateTimeOffset.UtcNow.ToString("O"), 5, null, null, 6, "Test"), "untimed", []);
+    var retained = SubmissionReconciliation.Retain(plan);
+    Assert(retained.Select(t => t.Id).SequenceEqual(new[] { "done", "started", "linked" }));
+    var result = SubmissionReconciliation.Assess(data.Opportunity, data.Profile, data.Submission, plan, [], retained);
+    Assert(result.Report.ReviewedOutstandingMandatoryRequirementIds.Contains(requirement.Id) && result.Report.RetainedRequirementIds.Contains(requirement.Id) && !result.Report.UnrepresentedRequirementIds.Contains(requirement.Id));
+    Assert(retained[0].ArtifactUrls.Single() == tasks[0].ArtifactUrls.Single() && retained[0].EstimatedHours == 2 && retained[0].RemainingEstimatedHours == 0 && result.Report.SourceCoverage == "incomplete");
+});
+Test("coverage endpoint is private, candidate scoped and reports omissions without rejecting acceptance", async () => {
+    await using var host = new Factory(); var data = await Ready(host); var other = await Session(host);
+    Assert((await host.CreateClient().GetAsync("/api/submissions/E01/coverage")).StatusCode == HttpStatusCode.Unauthorized);
+    var response = await data.Client.PostAsJsonAsync("/api/opportunities/E01/plan-candidates", Request(data.Profile, data.Submission, data.Opportunity), Wire.Json); response.EnsureSuccessStatusCode();
+    var id = response.Headers.GetValues("X-Candidate-Id").Single();
+    var candidateJson = await response.Content.ReadAsStringAsync(); Assert(!candidateJson.Contains("unrepresentedRequirementIds"));
+    var coverage = (await data.Client.GetFromJsonAsync<SubmissionCoverageView>("/api/submissions/E01/coverage?candidateId=" + id, Wire.Json))!;
+    Assert(coverage.CandidateId == id && coverage.Report.UnrepresentedRequirementIds.Length > 0 && coverage.Report.SourceCoverage == "incomplete");
+    Assert((await other.Client.GetAsync("/api/submissions/E01/coverage?candidateId=" + id)).StatusCode == HttpStatusCode.NotFound);
+    Assert((await other.Client.PostAsJsonAsync("/api/plans/E01/accept", new AcceptPlan(id, null, Guid.NewGuid().ToString("N")), Wire.Json)).StatusCode == HttpStatusCode.NotFound);
+    var accepted = await data.Client.PostAsJsonAsync("/api/plans/E01/accept", new AcceptPlan(id, null, Guid.NewGuid().ToString("N")), Wire.Json); accepted.EnsureSuccessStatusCode();
+    var plan = (await accepted.Content.ReadFromJsonAsync<Plan>(Wire.Json))!;
+    Assert(plan.Warnings.Any(w => w.StartsWith("Submission action not represented")) && plan.Tasks.Length == 2);
+    var after = (await data.Client.GetFromJsonAsync<SubmissionCoverageView>("/api/submissions/E01/coverage", Wire.Json))!;
+    Assert(after.PlanVersion == 1 && after.Report.SourceCoverage == "incomplete");
+});
+Test("changed submission evidence invalidates both coverage preview and acceptance without touching the plan", async () => {
+    await using var host = new Factory(); var data = await Ready(host); var original = await Accepted(data.Client, data.Profile, data.Submission, data.Opportunity);
+    host.Model.Prefix = "Replacement";
+    var generated = await data.Client.PostAsJsonAsync("/api/opportunities/E01/plan-candidates", Request(data.Profile, data.Submission, data.Opportunity, original.Plan), Wire.Json); generated.EnsureSuccessStatusCode();
+    var id = generated.Headers.GetValues("X-Candidate-Id").Single();
+    var changed = data.Submission with { Items = data.Submission.Items.Select((item, i) => i == 0 ? item with { State = "reported_present", CriterionResults = new() { ["presence"] = "reported_met" } } : item).ToArray() };
+    (await data.Client.PutAsJsonAsync("/api/submissions/E01", new SubmissionUpdate(changed.Version, changed), Wire.Json)).EnsureSuccessStatusCode();
+    Assert((await data.Client.GetAsync("/api/submissions/E01/coverage?candidateId=" + id)).StatusCode == HttpStatusCode.Conflict);
+    Assert((await data.Client.PostAsJsonAsync("/api/plans/E01/accept", new AcceptPlan(id, 1, Guid.NewGuid().ToString("N")), Wire.Json)).StatusCode == HttpStatusCode.Conflict);
+    Assert((await data.Client.GetFromJsonAsync<Plan>("/api/plans/E01", Wire.Json))!.Version == 1);
+    Assert((await data.Client.GetFromJsonAsync<SubmissionCoverageView>("/api/submissions/E01/coverage", Wire.Json))!.PlanOutdated);
+});
+Test("regeneration preserves completed identity and artifacts while replacing only unfinished unlinked work", async () => {
+    await using var host = new Factory(); var data = await Ready(host); var first = await Accepted(data.Client, data.Profile, data.Submission, data.Opportunity);
+    var task = first.Plan.Tasks[0]; var progress = await data.Client.PatchAsJsonAsync("/api/plans/E01/tasks/" + task.Id, new TaskUpdate(1, "done", Guid.NewGuid().ToString("N"), ["https://example.invalid/self-reported-artifact"]), Wire.Json); progress.EnsureSuccessStatusCode();
+    var current = (await progress.Content.ReadFromJsonAsync<Plan>(Wire.Json))!; host.Model.Prefix = "Fresh";
+    var generated = await data.Client.PostAsJsonAsync("/api/opportunities/E01/plan-candidates", Request(data.Profile, data.Submission, data.Opportunity, current), Wire.Json); generated.EnsureSuccessStatusCode();
+    var id = generated.Headers.GetValues("X-Candidate-Id").Single();
+    var accepted = await data.Client.PostAsJsonAsync("/api/plans/E01/accept", new AcceptPlan(id, 2, Guid.NewGuid().ToString("N")), Wire.Json); accepted.EnsureSuccessStatusCode();
+    var plan = (await accepted.Content.ReadFromJsonAsync<Plan>(Wire.Json))!;
+    Assert(plan.Version == 3 && plan.Tasks.Length == 3 && !plan.Tasks.Any(t => t.Id == first.Plan.Tasks[1].Id));
+    Assert(JsonSerializer.Serialize(plan.Tasks.Single(t => t.Id == task.Id), Wire.Json) == JsonSerializer.Serialize(current.Tasks.Single(t => t.Id == task.Id), Wire.Json));
+    Assert(JsonSerializer.Serialize(await data.Client.GetFromJsonAsync<SubmissionState>("/api/submissions/E01", Wire.Json), Wire.Json) == JsonSerializer.Serialize(data.Submission, Wire.Json));
+});
+Test("competing candidate acceptances commit once and preserve the winning coverage warnings", async () => {
+    await using var host = new Factory(); var data = await Ready(host);
+    async Task<string> Draft() { var r = await data.Client.PostAsJsonAsync("/api/opportunities/E01/plan-candidates", Request(data.Profile, data.Submission, data.Opportunity), Wire.Json); r.EnsureSuccessStatusCode(); return r.Headers.GetValues("X-Candidate-Id").Single(); }
+    var first = await Draft(); var second = await Draft();
+    var responses = await Task.WhenAll(new[] { first, second }.Select(id => data.Client.PostAsJsonAsync("/api/plans/E01/accept", new AcceptPlan(id, null, Guid.NewGuid().ToString("N")), Wire.Json)));
+    Assert(responses.Count(r => r.IsSuccessStatusCode) == 1 && responses.Count(r => r.StatusCode == HttpStatusCode.Conflict) == 1);
+    var plan = (await data.Client.GetFromJsonAsync<Plan>("/api/plans/E01", Wire.Json))!;
+    Assert(plan.Version == 1 && plan.Warnings.Any(w => w.Contains("Submission action not represented")));
+});
+
+Test("old source revision cannot authorize coverage or acceptance", async () => {
+    await using var host = new Factory(); var data = await Ready(host);
+    var generated = await data.Client.PostAsJsonAsync("/api/opportunities/E01/plan-candidates", Request(data.Profile, data.Submission, data.Opportunity), Wire.Json); generated.EnsureSuccessStatusCode();
+    var id = generated.Headers.GetValues("X-Candidate-Id").Single();
+    var owner = data.Profile.Id["profile-".Length..];
+    await host.Services.GetRequiredService<IStateStore>().Change(owner, state => { var candidate = state.Candidates[id]; state.Candidates[id] = candidate with { Context = candidate.Context with { SourceRevision = "previous-source-revision" } }; return true; }, CancellationToken.None);
+    Assert((await data.Client.GetAsync("/api/submissions/E01/coverage?candidateId=" + id)).StatusCode == HttpStatusCode.Conflict);
+    Assert((await data.Client.PostAsJsonAsync("/api/plans/E01/accept", new AcceptPlan(id, null, Guid.NewGuid().ToString("N")), Wire.Json)).StatusCode == HttpStatusCode.Conflict);
+    Assert((await data.Client.GetFromJsonAsync<Plan[]>("/api/plans", Wire.Json))!.Length == 0);
+});
+Test("source completeness is never inferred from task coverage or an empty omission set", async () => {
+    await using var host = new Factory(); var data = await Ready(host); var rule = data.Opportunity.Requirements.First(r => r.Lane == "submission" && r.IsMandatory);
+    var opportunity = data.Opportunity with { Requirements = [rule] };
+    var task = new CandidateTask("Prepare the artifact", new("requirement", RequirementId: rule.Id), "must", "Artifact draft", "Review the artifact", 1, []);
+    foreach (var state in new[] { "unknown", "incomplete" }) {
+        var record = opportunity with { SourceCoverage = opportunity.SourceCoverage with { Submission = new(state, [], [], null) } };
+        var result = SubmissionReconciliation.Assess(record, data.Profile, Catalog.EmptySubmission(record), null, [task], []);
+        Assert(result.Report.UnrepresentedRequirementIds.Length == 0 && result.Report.SourceCoverage == state);
+    }
+    var reviewed = opportunity with { SourceCoverage = opportunity.SourceCoverage with { Submission = new("complete", [rule.Id], [], DateTimeOffset.UtcNow.AddMinutes(-1).ToString("O")) } };
+    var complete = SubmissionReconciliation.Assess(reviewed, data.Profile, Catalog.EmptySubmission(reviewed), null, [task], []);
+    Assert(complete.Report.SourceCoverage == "complete" && complete.Report.ReviewedOutstandingMandatoryRequirementIds.Contains(rule.Id));
+});
+
+Test("signed-in accounts cannot read coverage, accept candidates or update tasks belonging to another account", async () => {
+    await using var host = new Factory();
+    async Task<(HttpClient Client, StudentProfile Profile)> Account() {
+        var client = host.CreateClient(); client.DefaultRequestHeaders.Add("X-NextStep-Request", "1");
+        (await client.PostAsJsonAsync("/api/auth/register", new RegisterRequest("coverage-" + Guid.NewGuid().ToString("N") + "@example.invalid", "Synthetic-Coverage-2026!", "Coverage isolation check"), Wire.Json)).EnsureSuccessStatusCode();
+        var original = (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!; owners.Add(original.Id["profile-".Length..]);
+        var profile = original with { AvailableHoursPerWeek = Known(5), Goals = [new("goal-isolation", "Prepare the prototype")], EntrantType = KnownText("individual"), Enrollment = KnownText("higher_education") };
+        var saved = await client.PutAsJsonAsync("/api/profile", new ProfileUpdate(profile.Version, profile), Wire.Json); saved.EnsureSuccessStatusCode();
+        return (client, (await saved.Content.ReadFromJsonAsync<StudentProfile>(Wire.Json))!);
+    }
+    var first = await Account(); var second = await Account(); var opportunity = new Catalog().Get("E01");
+    var submission = (await first.Client.GetFromJsonAsync<SubmissionState>("/api/submissions/E01", Wire.Json))!;
+    var generated = await first.Client.PostAsJsonAsync("/api/opportunities/E01/plan-candidates", Request(first.Profile, submission, opportunity), Wire.Json); generated.EnsureSuccessStatusCode();
+    var id = generated.Headers.GetValues("X-Candidate-Id").Single();
+    Assert((await second.Client.GetAsync("/api/submissions/E01/coverage?candidateId=" + id)).StatusCode == HttpStatusCode.NotFound);
+    Assert((await second.Client.PostAsJsonAsync("/api/plans/E01/accept", new AcceptPlan(id, null, Guid.NewGuid().ToString("N")), Wire.Json)).StatusCode == HttpStatusCode.NotFound);
+    var accepted = await first.Client.PostAsJsonAsync("/api/plans/E01/accept", new AcceptPlan(id, null, Guid.NewGuid().ToString("N")), Wire.Json); accepted.EnsureSuccessStatusCode();
+    var plan = (await accepted.Content.ReadFromJsonAsync<Plan>(Wire.Json))!;
+    Assert((await second.Client.PatchAsJsonAsync("/api/plans/E01/tasks/" + plan.Tasks[0].Id, new TaskUpdate(1, "done", Guid.NewGuid().ToString("N")), Wire.Json)).StatusCode == HttpStatusCode.NotFound);
+    Assert((await second.Client.GetFromJsonAsync<Plan[]>("/api/plans", Wire.Json))!.Length == 0);
+    Assert((await first.Client.GetFromJsonAsync<Plan>("/api/plans/E01", Wire.Json))!.Version == 1);
+});
+
 var passed = 0;
 try {
     foreach (var test in cases) {

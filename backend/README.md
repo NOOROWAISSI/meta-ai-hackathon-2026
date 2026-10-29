@@ -41,8 +41,11 @@ Data/catalog.json has five document-derived hackathon snapshots with incomplete 
     powershell -NoProfile -ExecutionPolicy Bypass -File backend/Check-Api.ps1
     dotnet build backend/NextStep.sln --configuration Release
 
-The app-only suite has 27 real-MySQL integration checks with provider/email replacements only in test hosts. Five other checks belong to the separate Meta search/translation proposal.
+The app-only suite has 37 real-MySQL integration checks with provider/email replacements only in test hosts. Five other checks belong to the separate Meta search/translation proposal.
 
 Normal frontend routes now use source-backed opportunities and account-owned API persistence for Profile, Saved, Not interested, preparation acceptance and progress. The agreed stacked-card design, galaxy details tabs and My Fit constellation are retained. Historical fixtures remain outside normal navigation. Full browser-to-live-provider verification on this revision, opportunity tables/publication tooling, scheduling, conditional plan adjustment, email verification/provider linking and production hardening remain pending. See REAL-ACCOUNT-INTEGRATION.md.
 
 Meta search/translation implementation is deliberately outside this app PR. The frontend translation boundary is disabled by default; enabling VITE_ENABLE_META_TRANSLATION requires the separately reviewed adapter. See [LOCALIZATION.md](LOCALIZATION.md) and [HANDOFF-ROFI.md](HANDOFF-ROFI.md).
+
+
+Submission coverage now integrates Rofi's helper without changing candidate/acceptance contracts. See [SUBMISSION-COVERAGE-INTEGRATION.md](SUBMISSION-COVERAGE-INTEGRATION.md) for the owner-scoped report endpoint, transaction rules and regression scope. Dependency remediation is documented in [frontend/DEPENDENCY-SECURITY.md](../frontend/DEPENDENCY-SECURITY.md).

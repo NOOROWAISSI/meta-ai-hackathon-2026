@@ -51,11 +51,12 @@ public sealed class Application(IStateStore store, Catalog catalog, IMetaModelCl
         GenerationPolicy.ValidateInput(projection);
         var output = await model.GenerateCandidateAsync(projection, ct);
         GenerationPolicy.ValidateInput(projection); GenerationPolicy.ValidateCandidate(output, projection);
-        var retained = previous?.Tasks.Where(t => t.Status != "not_started" || t.ArtifactUrls.Length > 0).ToArray() ?? [];
+        var retained = SubmissionReconciliation.Retain(previous);
         if (output.Tasks.Any(t => retained.Any(old => string.Equals(old.Title.Trim(), t.Title.Trim(), StringComparison.OrdinalIgnoreCase)))) throw new ApiFault("invalid_model_output", "The draft repeats retained work. Your accepted plan is unchanged.");
         return await store.Change(owner, state => {
             Check(opportunity, state, request);
             if (state.Plans.GetValueOrDefault(id)?.Version != previous?.Version) throw new ApiFault("version_conflict", "Progress changed while generating. Request a fresh draft.");
+            _ = SubmissionReconciliation.Assess(opportunity, state.Profile, Submission(state, opportunity), previous, output.Tasks, SubmissionReconciliation.Retain(previous));
             var now = DateTimeOffset.UtcNow;
             foreach (var expired in state.Candidates.Where(p => p.Value.ExpiresAt <= now).Select(p => p.Key).ToArray()) state.Candidates.Remove(expired);
             if (state.Candidates.Count >= 20) throw new ApiFault("rate_limited", "Too many pending drafts. Discard an older draft first.");
@@ -77,11 +78,24 @@ public sealed class Application(IStateStore store, Catalog catalog, IMetaModelCl
             var deadline = Catalog.Instant(opportunity, "submission_close");
             if (deadline <= DateTimeOffset.UtcNow) throw new ApiFault("invalid_input", "The confirmed submission window has closed.");
             if (Input.Fact<double>(state.Profile.AvailableHoursPerWeek) == 0 && candidate.Output.Tasks.Count > 0) throw new ApiFault("invalid_input", "Zero reported hours cannot support positive preparation work.");
-            var retained = previous?.Tasks.Where(t => t.Status != "not_started" || t.ArtifactUrls.Length > 0).ToArray() ?? [];
+            var retained = SubmissionReconciliation.Retain(previous);
+            var coverage = SubmissionReconciliation.Assess(opportunity, state.Profile, submission, previous, candidate.Output.Tasks, retained, candidate.Id);
             var tasks = retained.Concat(candidate.Output.Tasks.Select(t => new PreparationTask(Guid.NewGuid().ToString("N"), t.Title, t.Target, t.Priority, t.Deliverable, t.CompletionCriteria, t.EstimatedHours, t.EstimatedHours, "not_started", t.ResourceIds.ToArray(), []))).ToArray();
             var goals = candidate.Goals.Concat(previous?.Goals ?? []).DistinctBy(g => g.Id).ToArray(); var budget = Budget(opportunity, state.Profile, tasks);
             var plan = new Plan(previous?.Id ?? Guid.NewGuid().ToString("N"), checked((previous?.Version ?? 0) + 1), currentContext, goals, tasks, tasks.Select(t => t.Id).ToArray(), budget.Budget, budget.Feasibility, new[] { candidate.Output.Explanation, "Progress is self-reported and does not change eligibility or submission facts." }.Concat(deadline is null ? ["Submission timing is unconfirmed; this is untimed guidance."] : Array.Empty<string>()).ToArray());
+            plan = plan with { Warnings = plan.Warnings.Concat(coverage.Report.UnrepresentedRequirementIds.Select(requirementId => "Submission action not represented by plan tasks: " + opportunity.Requirements.Single(rule => rule.Id == requirementId).Statement)).Concat(coverage.Report.SourceCoverage != "complete" ? ["Submission source coverage remains " + coverage.Report.SourceCoverage + "; task coverage does not establish submission completeness."] : Array.Empty<string>()).ToArray() };
             state.Plans[id] = plan; state.Candidates.Remove(candidate.Id); Remember(state, request.OperationId, fingerprint, id); return plan;
+        }, ct);
+    }
+    public Task<SubmissionCoverageView> Coverage(string owner, string id, string? candidateId, CancellationToken ct)
+    {
+        var opportunity = catalog.Get(id);
+        return store.Read(owner, state => {
+            var plan = state.Plans.GetValueOrDefault(id); var submission = Submission(state, opportunity);
+            if (candidateId is null) return SubmissionReconciliation.Assess(opportunity, state.Profile, submission, plan, [], plan?.Tasks ?? []);
+            if (!state.Candidates.TryGetValue(candidateId, out var candidate) || candidate.OpportunityId != id || candidate.ExpiresAt <= DateTimeOffset.UtcNow) throw new ApiFault("not_found", "This draft is unavailable for your account.");
+            if (candidate.Context != Matching.Context(opportunity, state.Profile, submission) || candidate.BaseVersion != plan?.Version) throw new ApiFault("version_conflict", "Draft context changed. Reload current evidence and request a new draft.");
+            return SubmissionReconciliation.Assess(opportunity, state.Profile, submission, plan, candidate.Output.Tasks, SubmissionReconciliation.Retain(plan), candidate.Id);
         }, ct);
     }
     public Task<Plan> Progress(string owner, string id, string taskId, TaskUpdate request, CancellationToken ct)

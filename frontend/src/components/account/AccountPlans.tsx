@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { useState, useRef, useEffect } from "react";
 import {
   ArrowLeft,
@@ -12,7 +12,12 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/discover/AppShell";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { accountApi, apiJson, accountDataChanged, type ProfileEnvelope } from "@/lib/account/api";
+import {
+  accountApi,
+  apiJson,
+  accountDataChanged,
+  type SubmissionCoverageView,
+} from "@/lib/account/api";
 import type {
   Opportunity,
   Plan,
@@ -195,6 +200,20 @@ export function AccountPreparation({ opportunityId }: { opportunityId: string })
   const bundle = data.data;
   const plan = bundle?.plan;
   const [candidate, setCandidate] = useState<Candidate | null>(null);
+  const coverage = useQuery({
+    queryKey: [
+      "account",
+      auth?.user?.id,
+      "submission-coverage",
+      opportunityId,
+      bundle?.context,
+      plan?.version,
+      candidate?.candidateId,
+    ],
+    queryFn: () => accountApi.submissionCoverage(opportunityId, candidate?.candidateId),
+    enabled: !!bundle,
+    retry: false,
+  });
   const [busy, setBusy] = useState(false);
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState("");
@@ -296,7 +315,17 @@ export function AccountPreparation({ opportunityId }: { opportunityId: string })
     }
   }
   async function accept() {
-    if (!candidate || accepting || candidateStale) return;
+    if (
+      !bundle ||
+      !candidate ||
+      accepting ||
+      candidateStale ||
+      !coverage.isSuccess ||
+      coverage.isFetching ||
+      coverage.data.candidateId !== candidate.candidateId ||
+      !sameContext(coverage.data.context, bundle.context)
+    )
+      return;
     setAccepting(true);
     setError("");
     try {
@@ -514,7 +543,14 @@ export function AccountPreparation({ opportunityId }: { opportunityId: string })
           <div className="mt-5 flex flex-wrap gap-3">
             <button
               type="button"
-              disabled={accepting || candidateStale}
+              disabled={
+                accepting ||
+                candidateStale ||
+                !coverage.isSuccess ||
+                coverage.isFetching ||
+                coverage.data.candidateId !== candidate.candidateId ||
+                !sameContext(coverage.data.context, bundle.context)
+              }
               className="detail-primary"
               onClick={() => void accept()}
             >
@@ -636,6 +672,7 @@ export function AccountPreparation({ opportunityId }: { opportunityId: string })
         opportunity={bundle.opportunity}
         submission={bundle.submission}
         analysis={bundle.analysis}
+        coverage={coverage}
         plan={plan ?? null}
         onSaved={reload}
       />
@@ -660,12 +697,14 @@ function SubmissionChecklist({
   plan,
   onSaved,
   analysis,
+  coverage,
 }: {
   opportunity: Opportunity;
   submission: SubmissionState;
   plan: Plan | null;
   onSaved: () => void;
   analysis: AnalysisResult;
+  coverage: UseQueryResult<SubmissionCoverageView, Error>;
 }) {
   const requirements = opportunity.requirements.filter(
     (r) =>
@@ -717,6 +756,36 @@ function SubmissionChecklist({
         Task completion never confirms these items. Reported presence is not independent
         verification or proof that all artifact conditions are met.
       </p>
+      {coverage.isFetching && (
+        <p role="status" className="mt-3 text-xs text-muted-foreground">
+          Checking task representation against current submission evidence…
+        </p>
+      )}
+      {coverage.isError && (
+        <p role="alert" className="prep-error mt-3">
+          Coverage could not be confirmed. The accepted plan and evidence are unchanged.{" "}
+          <button type="button" className="underline" onClick={() => void coverage.refetch()}>
+            Retry coverage
+          </button>
+        </p>
+      )}
+      {coverage.data && !coverage.isError && (
+        <div className="mt-4 flex flex-wrap gap-3 text-xs text-muted-foreground">
+          <span>Source coverage: {coverage.data.report.sourceCoverage}</span>
+          <span>
+            {coverage.data.report.unrepresentedRequirementIds.length} reviewed outstanding actions
+            without a task
+          </span>
+          <span>
+            {coverage.data.unresolvedRequirementIds.length} source/applicability checks unresolved
+          </span>
+          {coverage.data.planOutdated && <span>Plan context outdated · progress preserved</span>}
+          <p className="w-full">
+            Representation is not fulfillment. Unknown evidence is unresolved, not a confirmed
+            failure. Even zero uncovered actions does not establish successful submission.
+          </p>
+        </div>
+      )}
       {error && (
         <p role="alert" className="prep-error mt-3">
           {error}
@@ -748,9 +817,19 @@ function SubmissionChecklist({
                       · source: {r.sourceStatus}
                     </p>
                     <p className="mt-2 text-xs text-muted-foreground">
-                      {tasks.length
-                        ? `Plan coverage: ${tasks.map((task) => task.title).join(" · ")}. Evidence must still be checked separately.`
-                        : "Not covered by a preparation task. Keep this organizer action visible."}
+                      {coverage.isError || coverage.isFetching
+                        ? "Refreshing task representation…"
+                        : coverage.data?.unresolvedRequirementIds.includes(r.id)
+                          ? "Source or applicability unresolved; kept visible outside the reviewed reconciliation set."
+                          : coverage.data?.report.unrepresentedRequirementIds.includes(r.id)
+                            ? "Outstanding organizer action not represented by plan tasks."
+                            : coverage.data?.report.candidateRequirementIds.includes(r.id)
+                              ? "Represented in the proposed draft; submission evidence must still be checked."
+                              : coverage.data?.report.retainedRequirementIds.includes(r.id)
+                                ? "Represented by confirmed or explicitly retained work; task status is not submission evidence."
+                                : tasks.length
+                                  ? `Plan coverage: ${tasks.map((task) => task.title).join(" · ")}. Evidence must still be checked separately.`
+                                  : "Not covered by a preparation task. Keep this organizer action visible."}
                     </p>
                   </div>
                   <label className="text-xs">
