@@ -15,7 +15,7 @@ public static class Input
         Require(node is JsonObject, "Expected a known or unknown profile fact.");
         var fact = (JsonObject)node!;
         if (fact["state"]?.GetValue<string>() == "unknown") { Require(fact.All(p => p.Key is "state" or "reason") && (fact["reason"] is null || Text(fact["reason"]!.GetValue<string>()))); return; }
-        Require(fact["state"]?.GetValue<string>() == "known" && fact.All(p => p.Key is "state" or "value" or "reportedAt") && fact["value"] is not null && check(fact["value"]!) && DateTimeOffset.TryParse(fact["reportedAt"]?.GetValue<string>(), out _), "A known fact needs a valid value and reportedAt.");
+        Require(fact["state"]?.GetValue<string>() == "known" && fact.All(p => p.Key is "state" or "value" or "reportedAt") && fact["value"] is not null && check(fact["value"]!) && ContractTime.IsInstant(fact["reportedAt"]?.GetValue<string>()), "A known fact needs a valid value and reportedAt.");
     }
     public static void Profile(StudentProfile p)
     {
@@ -40,8 +40,8 @@ public static class Input
         Require(p.Skills is { Length: <= 50 } && p.Skills.All(s => s is not null && Id(s.Id) && Text(s.Label, 100) && s.State is "reported_has" or "reported_lacks" or "unknown") && p.Skills.Select(s => s.Id).Distinct().Count() == p.Skills.Length);
         Require(p.Goals is { Length: <= 30 } && p.Goals.All(g => g is not null && Id(g.Id) && !string.IsNullOrWhiteSpace(g.Statement) && Text(g.Statement)) && p.Goals.Select(g => g.Id).Distinct().Count() == p.Goals.Length);
         Require(p.Interests is { Length: <= 30 } && p.Interests.All(s => Text(s, 100)) && p.Constraints is { Length: <= 30 } && p.Constraints.All(s => Text(s)) && p.PreferredFormats is { Length: <= 3 } && p.PreferredFormats.All(s => s is "online" or "in_person" or "hybrid"));
-        Require(p.AcceptedInterpretations is { Length: <= 30 } && p.AcceptedInterpretations.All(x => x is not null && p.ProjectExperience.Any(e => e.Id == x.ExperienceId) && Text(x.Text) && DateTimeOffset.TryParse(x.AcceptedAt, out _)));
-        Require(p.ClarificationAnswers is { Length: <= 30 } && p.ClarificationAnswers.All(x => x is not null && Id(x.QuestionId) && Text(x.Answer) && DateTimeOffset.TryParse(x.AnsweredAt, out _)) && (p.PreferredLanguage is null || Text(p.PreferredLanguage, 50)));
+        Require(p.AcceptedInterpretations is { Length: <= 30 } && p.AcceptedInterpretations.All(x => x is not null && p.ProjectExperience.Any(e => e.Id == x.ExperienceId) && Text(x.Text) && ContractTime.IsInstant(x.AcceptedAt)));
+        Require(p.ClarificationAnswers is { Length: <= 30 } && p.ClarificationAnswers.All(x => x is not null && Id(x.QuestionId) && Text(x.Answer) && ContractTime.IsInstant(x.AnsweredAt)) && (p.PreferredLanguage is null || Text(p.PreferredLanguage, 50)));
     }
     public static void Submission(SubmissionState s, Opportunity opportunity)
     {

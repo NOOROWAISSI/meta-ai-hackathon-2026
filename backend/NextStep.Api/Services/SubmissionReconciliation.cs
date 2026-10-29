@@ -21,7 +21,7 @@ public static class SubmissionReconciliation
         var coverage = opportunity.SourceCoverage.Submission;
         var boundary = coverage.State == "incomplete" ? SubmissionSourceCoverage.Incomplete : SubmissionSourceCoverage.Unknown;
         // Source completeness is independent of whether the student's criteria are satisfied.
-        if (coverage.State == "complete" && opportunity.InformationFreshness != "stale" && DateTimeOffset.TryParse(coverage.ReviewedAt, out var checkedAt) && checkedAt <= DateTimeOffset.UtcNow && coverage.MissingChecks.Length == 0 && mandatory.Length > 0 && mandatory.All(r => coverage.ReviewedRequirementIds.Contains(r.Id) && Catalog.Reviewed(opportunity, r))) boundary = SubmissionSourceCoverage.Complete;
+        if (coverage.State == "complete" && opportunity.InformationFreshness != "stale" && ContractTime.TryInstant(coverage.ReviewedAt, out var checkedAt) && checkedAt <= DateTimeOffset.UtcNow && coverage.MissingChecks.Length == 0 && mandatory.Length > 0 && mandatory.All(r => coverage.ReviewedRequirementIds.Contains(r.Id) && Catalog.Reviewed(opportunity, r))) boundary = SubmissionSourceCoverage.Complete;
         var report = SubmissionCoverage.Reconcile(outstanding, candidateTasks, retained.Select(t => new ExistingPlanTask(t.Id, t.Title, t.Status, t.Target)).ToArray(), boundary);
         var context = Matching.Context(opportunity, profile, submission);
         return new(context, plan?.Version, candidateId, plan is not null && plan.Context != context, new(report.ReviewedOutstandingMandatoryRequirementIds.ToArray(), report.CandidateRequirementIds.ToArray(), report.RetainedRequirementIds.ToArray(), report.UnrepresentedRequirementIds.ToArray(), report.SourceCoverage.ToString().ToLowerInvariant()), unresolved);

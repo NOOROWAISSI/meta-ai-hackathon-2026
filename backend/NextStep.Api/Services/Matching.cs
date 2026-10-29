@@ -18,7 +18,7 @@ public static class Matching
         var matches = o.Requirements.Select(r => Evaluate(o, r, p, s)).ToArray();
         var warnings = new List<AnalysisWarning>();
         foreach (var match in matches.Where(m => m.Status is "unknown" or "source_conflict")) warnings.Add(new(match.ReasonCode, match.Explanation, match.RequirementId));
-        bool Complete(string lane, Coverage coverage) => coverage.State == "complete" && DateTimeOffset.TryParse(coverage.ReviewedAt, out _) && coverage.MissingChecks.Length == 0 && o.Requirements.Any(r => r.Lane == lane && r.IsMandatory && Applies(r, p) == true) && o.Requirements.Where(r => r.Lane == lane && r.IsMandatory && Applies(r, p) != false).All(r => coverage.ReviewedRequirementIds.Contains(r.Id) && Catalog.Reviewed(o, r) && matches.Single(m => m.RequirementId == r.Id).Status is "supported" or "not_applicable");
+        bool Complete(string lane, Coverage coverage) => coverage.State == "complete" && ContractTime.IsInstant(coverage.ReviewedAt) && coverage.MissingChecks.Length == 0 && o.Requirements.Any(r => r.Lane == lane && r.IsMandatory && Applies(r, p) == true) && o.Requirements.Where(r => r.Lane == lane && r.IsMandatory && Applies(r, p) != false).All(r => coverage.ReviewedRequirementIds.Contains(r.Id) && Catalog.Reviewed(o, r) && matches.Single(m => m.RequirementId == r.Id).Status is "supported" or "not_applicable");
         string Summary(string lane, Coverage coverage, string failed, string supported) {
             var rules = o.Requirements.Where(r => r.Lane == lane && r.IsMandatory).Select(r => matches.Single(m => m.RequirementId == r.Id)).ToArray();
             if (coverage.State != "complete") warnings.Add(new("incomplete_coverage", $"{lane} source coverage is incomplete."));
