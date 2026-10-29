@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>12</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="../NextStep.MetaAi/NextStep.MetaAi.csproj" />
+    <!-- Exercise the evaluation-only report code without a production dependency. -->
+    <Compile Include="../NextStep.MetaAi.Eval/EvaluationProvenance.cs" Link="EvaluationProvenance.cs" />
+    <Compile Include="../NextStep.MetaAi.Eval/EvaluationReport.cs" Link="EvaluationReport.cs" />
+  </ItemGroup>
+</Project>
