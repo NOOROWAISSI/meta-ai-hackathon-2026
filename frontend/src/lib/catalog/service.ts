@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isContractInstant } from "../contract/time";
 import type { Opportunity } from "@/lib/contract/types";
 
 const listingSchema = z.object({
@@ -11,10 +12,10 @@ const listingSchema = z.object({
   summary: z.string(),
   topics: z.array(z.string()),
   scope: z.enum(["palestine", "global_online"]),
-  registrationDeadline: z.string().nullable(),
+  registrationDeadline: z.string().refine(isContractInstant).nullable(),
   registrationState: z.enum(["open", "closed", "not_specified"]),
   costStatus: z.enum(["free", "paid", "unknown"]),
-  lastReviewedAt: z.string().nullable(),
+  lastReviewedAt: z.string().refine(isContractInstant).nullable(),
   sourceStatus: z.enum(["reviewed", "needs_verification"]),
   sourcePassage: z.string().nullable(),
   verificationNote: z.string(),

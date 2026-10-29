@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isContractInstant } from "../contract/time";
 import type { StudentProfile, Recommendation } from "@/lib/contract/types";
 import type { ListingSummary } from "./service";
 
@@ -23,7 +24,7 @@ const profileSchema = z.object({
     z.object({
       state: z.literal("known"),
       value: z.number().finite().min(0).max(168),
-      reportedAt: z.string(),
+      reportedAt: z.string().refine(isContractInstant),
     }),
     z.object({ state: z.literal("unknown"), reason: z.string().optional() }),
   ]),

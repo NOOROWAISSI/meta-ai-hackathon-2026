@@ -12,6 +12,10 @@ public static class ProfileEditorValidation
         Input.Require(editor is not null && Encoding.UTF8.GetByteCount(editor.ToJsonString()) <= 600000, "Profile details are too large.");
         var strings = new HashSet<string> { "displayName", "educationStatus", "fieldOfStudy", "studyLevel", "residence", "goalChoice", "goalDescription", "preferredFormat", "experience", "entrantType", "targetDate", "learningBudget", "currency", "learningLanguage", "constraints", "savedAt" };
         foreach (var (key, value) in editor) {
+            if (key is "targetDate" or "savedAt") {
+                Input.Require(value is JsonValue time && time.TryGetValue<string>(out var text) && (text.Length == 0 || (key == "targetDate" ? ContractTime.IsDate(text) : ContractTime.IsInstant(text))), key == "targetDate" ? "Enter a valid calendar date (YYYY-MM-DD)." : "Saved timestamps require an explicit UTC offset.");
+                continue;
+            }
             if (strings.Contains(key)) Input.Require(value is JsonValue text && text.TryGetValue<string>(out var content) && content.Length <= (key is "experience" or "goalDescription" or "constraints" ? 12000 : 1000), "Invalid profile text.");
             else if (key is "version" or "weeklyHours" or "teamSize" or "maxBudget") Input.Require(value is null || value is JsonValue numeric && numeric.TryGetValue<double>(out var number) && double.IsFinite(number) && number >= 0 && number <= (key == "maxBudget" ? 10000000 : int.MaxValue), "Invalid profile number.");
             else if (key is "interests" or "skills" or "goals") Input.Require(value is JsonArray tags && tags.Count <= 50 && tags.All(tag => tag is JsonValue v && v.TryGetValue<string>(out var label) && label.Length <= 4000), "Invalid profile list.");
