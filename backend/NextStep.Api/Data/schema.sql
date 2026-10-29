@@ -67,3 +67,23 @@ CREATE TABLE IF NOT EXISTS password_recovery (
   CONSTRAINT fk_recovery_account FOREIGN KEY(account_id) REFERENCES accounts(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 INSERT IGNORE INTO schema_migrations(version) VALUES (4);
+CREATE TABLE IF NOT EXISTS source_pages (
+  url_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+  source_id VARCHAR(100) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  url VARCHAR(2000) NOT NULL,
+  attempted_at DATETIME(6) NOT NULL,
+  checked_at DATETIME(6) NULL,
+  result VARCHAR(50) NOT NULL,
+  content_hash CHAR(64) NULL
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS discovered_listings (
+  id VARCHAR(100) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+  url_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL UNIQUE,
+  source_id VARCHAR(100) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  page_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  payload JSON NOT NULL,
+  first_seen_at DATETIME(6) NOT NULL,
+  checked_at DATETIME(6) NOT NULL,
+  INDEX ix_discovered_source(source_id)
+) ENGINE=InnoDB;
+INSERT IGNORE INTO schema_migrations(version) VALUES (5);
