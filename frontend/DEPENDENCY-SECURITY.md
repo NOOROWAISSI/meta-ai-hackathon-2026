@@ -13,3 +13,9 @@ References:
 - https://github.com/vitejs/vite/releases/tag/v8.3.5
 
 No unrelated framework migration or forced audit fix was applied. Existing schemas retain their validation behavior under Zod 4; application and contract regressions run against the upgraded dependencies.
+
+## Rolldown compatibility follow-up — 29 October 2026
+
+Removed the old root Rolldown 1.2.1 override rather than forcing another global version. Vite 8.3.5 declares rolldown ~1.2.14; the regenerated lockfile resolves Vite's dependency to 1.2.15 within that range. npm ls vite rolldown --all succeeds without invalid/extraneous override resolution. Other consumers retain their normal declared dependency resolution.
+
+Validation is rerun from a clean npm ci --legacy-peer-deps installation: TypeScript, the 71-test frontend suite, production build, and both full-tree and production-only npm audits. No provider code, credentials, backend schema or live Meta call is involved in this dependency fix. Final merge approval remains with the reviewers.
