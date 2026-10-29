@@ -26,7 +26,10 @@ export function LoginScreen({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(
     externalError === "existing_account"
-      ? t("Sign in using your existing account method.", "ادخل باستخدام طريقة حسابك الحالية.")
+      ? t(
+          "An account already uses this email. Sign in with your existing method; automatic account linking is unavailable.",
+          "في حساب موجود بنفس الإيميل. ادخل بالطريقة اللي استخدمتها قبل؛ الربط التلقائي للحسابات مش مفعّل.",
+        )
       : externalError
         ? t(
             "Google sign-in did not finish. Please retry.",

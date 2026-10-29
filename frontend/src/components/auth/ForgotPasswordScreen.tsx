@@ -296,6 +296,14 @@ export function ForgotPasswordScreen({ returnTo }: { returnTo?: string }) {
           )}
         </form>
       )}
+      {step === "email" && (
+        <p className="mt-5 text-center text-xs leading-6 text-muted-foreground">
+          {t(
+            "Signed up with Google? Return to sign in and choose Continue with Google. This recovery flow is for NextStep email/password accounts; it does not change your Google password.",
+            "سجّلت عبر Google؟ ارجع لتسجيل الدخول واختار المتابعة مع Google. الاستعادة هون لحسابات NextStep المسجّلة بإيميل وكلمة مرور، وما بتغيّر كلمة مرور Google.",
+          )}
+        </p>
+      )}
       {step !== "done" && (
         <Link
           to="/login"
