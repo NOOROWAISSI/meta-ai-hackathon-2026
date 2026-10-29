@@ -19,6 +19,7 @@ import { OpportunityGroups } from "@/components/discover/OpportunityGroups";
 import { useVisitState } from "@/components/VisitMemory";
 import { realCatalogService, type ListingSummary } from "@/lib/catalog/service";
 import { useLocale } from "@/components/LocaleProvider";
+import { formatContractInstant } from "@/lib/contract/time";
 import { isCatalogTranslationEnabled, translateCatalog } from "@/lib/catalog/translation";
 import {
   PreferenceActions,
@@ -379,10 +380,11 @@ export function RealOpportunities() {
                               ? t("Applications closed · ", "التقديم مغلق · ")
                               : t("Registration deadline · ", "آخر موعد للتسجيل · ")}
                             {item.registrationDeadline
-                              ? new Date(item.registrationDeadline).toLocaleString(language, {
-                                  dateStyle: "medium",
-                                  timeStyle: "short",
-                                }) + ` (${Intl.DateTimeFormat().resolvedOptions().timeZone})`
+                              ? formatContractInstant(
+                                  item.registrationDeadline,
+                                  Intl.DateTimeFormat().resolvedOptions().timeZone,
+                                  language,
+                                ) + ` (${Intl.DateTimeFormat().resolvedOptions().timeZone})`
                               : t("Not specified", "غير محدد")}
                           </p>
                           <p className="text-muted-foreground">

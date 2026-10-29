@@ -1,3 +1,4 @@
+import { isContractInstant } from "../contract/time";
 import type {
   AssessmentContext,
   Opportunity,
@@ -30,7 +31,7 @@ export function confirmedBlocker(opportunity: Opportunity, profile: StudentProfi
               e.id === id &&
               e.status === "reviewed" &&
               e.passage.trim() &&
-              Number.isFinite(Date.parse(e.checkedAt)),
+              isContractInstant(e.checkedAt),
           ),
       )
     )
@@ -83,11 +84,7 @@ export function reliableDeadline(opportunity: Opportunity): string | null {
     return null;
   const claims = events[0]!.claims;
   const times = claims.map((c) => c.dateTime);
-  if (
-    !times.length ||
-    times.some((t) => !t || !/T.*(?:Z|[+-]\d{2}:\d{2})$/.test(t) || !Number.isFinite(Date.parse(t)))
-  )
-    return null;
+  if (times.length !== 1 || times.some((t) => !isContractInstant(t))) return null;
   const instants = new Set(times.map((t) => Date.parse(t!)));
   if (instants.size !== 1) return null;
   if (
@@ -101,7 +98,7 @@ export function reliableDeadline(opportunity: Opportunity): string | null {
                 e.id === id &&
                 e.status === "reviewed" &&
                 e.passage.trim() &&
-                Number.isFinite(Date.parse(e.checkedAt)),
+                isContractInstant(e.checkedAt),
             ),
         ),
     )
@@ -236,7 +233,7 @@ export function currentResource(resource: ReviewedResource, now = Date.now()) {
       url.protocol === "https:" &&
       !/(^|\.)example\.(org|com|net)$/.test(url.hostname) &&
       resource.checkedAt !== null &&
-      Number.isFinite(Date.parse(resource.checkedAt)) &&
+      isContractInstant(resource.checkedAt) &&
       now - Date.parse(resource.checkedAt) >= 0
     );
   } catch {
@@ -309,14 +306,11 @@ export function validatePlan(value: unknown): value is Plan {
     const budget = plan.budget;
     return (
       !!budget &&
-      Number.isFinite(Date.parse(budget.evaluatedAt)) &&
+      isContractInstant(budget.evaluatedAt) &&
       (budget.hoursPerWeek === null ||
         (number(budget.hoursPerWeek) && budget.hoursPerWeek <= 168)) &&
       (budget.availableHours === null || number(budget.availableHours)) &&
-      (budget.deadlineInstant === null ||
-        (typeof budget.deadlineInstant === "string" &&
-          /T.*(?:Z|[+-]\d{2}:\d{2})$/.test(budget.deadlineInstant) &&
-          Number.isFinite(Date.parse(budget.deadlineInstant)))) &&
+      (budget.deadlineInstant === null || isContractInstant(budget.deadlineInstant)) &&
       budget.remainingEffortHours ===
         plan.tasks.reduce((sum, task) => sum + task.remainingEstimatedHours, 0) &&
       ["even_weekly_distribution", "untimed"].includes(budget.assumption) &&
