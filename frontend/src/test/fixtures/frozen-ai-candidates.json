@@ -1,0 +1,303 @@
+{
+  "provenance": {
+    "purpose": "Provider-free frozen candidate fixtures for Phase 4A; original archived reports remain unchanged.",
+    "sourceReports": [
+      {
+        "baselineId": "baseline-01-mandatory-missing-20261029T170005Z",
+        "scenarioId": "mandatory-missing",
+        "sha256": "d88ff905f2ae41fa687da73e19fe4a3856c895ddc3a8575d59c4f03170b7a167",
+        "promptFingerprint": "sha256:8c1051aed23f342cc5e8bc4e75ed7722add7b370f826ff1c2e75d87173617240"
+      },
+      {
+        "baselineId": "baseline-02-beginner-limited-20261029T170842Z",
+        "scenarioId": "beginner-limited",
+        "sha256": "16c13d0676de7e1ae2f8f25d2e86a9fa1ce9cc22937ee9ebb945615a5e663c72",
+        "promptFingerprint": "sha256:8c1051aed23f342cc5e8bc4e75ed7722add7b370f826ff1c2e75d87173617240"
+      },
+      {
+        "baselineId": "baseline-03-existing-progress-20261029T172302Z",
+        "scenarioId": "existing-progress",
+        "sha256": "1772f6480cfcb07f3ae932006ed82c468ee0fd2ce82ae99091a100bb4e4b8a06",
+        "promptFingerprint": "sha256:8c1051aed23f342cc5e8bc4e75ed7722add7b370f826ff1c2e75d87173617240"
+      },
+      {
+        "baselineId": "baseline-04-unknown-facts-20261029T173059Z",
+        "scenarioId": "unknown-facts",
+        "sha256": "3985da07cefa39a27f90a19e232f8bed52d3f957e715bfe9d7eb3221d26c2afe",
+        "promptFingerprint": "sha256:8c1051aed23f342cc5e8bc4e75ed7722add7b370f826ff1c2e75d87173617240"
+      },
+      {
+        "baselineId": "baseline-05-approved-resources-20261029T174425Z",
+        "scenarioId": "approved-resources",
+        "sha256": "8611c803e03ab763c140fbf64b7c88eebc6df1dae164a61059ac59d435a4a6dc",
+        "promptFingerprint": "sha256:8c1051aed23f342cc5e8bc4e75ed7722add7b370f826ff1c2e75d87173617240"
+      },
+      {
+        "baselineId": "baseline-06-experienced-20261029T174746Z",
+        "scenarioId": "experienced",
+        "sha256": "35388f29dc5209c1dd1c18f0e7d557f7334b091a718b88c5a2b91fd852a0b5ec",
+        "promptFingerprint": "sha256:8c1051aed23f342cc5e8bc4e75ed7722add7b370f826ff1c2e75d87173617240"
+      }
+    ]
+  },
+  "candidates": {
+    "mandatory-missing": {
+      "tasks": [
+        {
+          "title": "Finalize working prototype for demonstration",
+          "target": {
+            "kind": "goal",
+            "goalId": "g-mandatory"
+          },
+          "priority": "should",
+          "deliverable": "Working software prototype ready to demonstrate core functionality",
+          "completionCriteria": "Prototype runs end-to-end and shows intended functionality without blocking errors",
+          "estimatedHours": 8,
+          "resourceIds": []
+        },
+        {
+          "title": "Record and submit demonstration video of working prototype",
+          "target": {
+            "kind": "requirement",
+            "requirementId": "req-demo-video"
+          },
+          "priority": "must",
+          "deliverable": "Submitted demonstration video showing working prototype in operation",
+          "completionCriteria": "Video captures working prototype in operation and submission is confirmed per requirement",
+          "estimatedHours": 4,
+          "resourceIds": []
+        }
+      ],
+      "explanation": "Two tasks cover finalizing the demonstrable prototype building on reported React and prototype experience, and completing the missing mandatory demo video. No reviewed resources were supplied, so no resource IDs are attached."
+    },
+    "beginner-limited": {
+      "tasks": [
+        {
+          "title": "Outline task tracker user journey",
+          "target": {
+            "kind": "goal",
+            "goalId": "g-beginner"
+          },
+          "priority": "should",
+          "deliverable": "One-page outline of the task tracker user journey from entry to completed task view.",
+          "completionCriteria": "Outline lists each step, what the user does, and what is shown for entry, adding, completing, and viewing tasks.",
+          "estimatedHours": 1.5,
+          "resourceIds": []
+        },
+        {
+          "title": "Build static task list layout with HTML",
+          "target": {
+            "kind": "goal",
+            "goalId": "g-beginner"
+          },
+          "priority": "should",
+          "deliverable": "Static page markup for a task list with sample tasks and action controls.",
+          "completionCriteria": "Page displays sample tasks with visible add control and complete control built with HTML structure.",
+          "estimatedHours": 3,
+          "resourceIds": []
+        },
+        {
+          "title": "Add client-side add and complete behavior without backend",
+          "target": {
+            "kind": "goal",
+            "goalId": "g-beginner"
+          },
+          "priority": "should",
+          "deliverable": "Client-side interaction for adding tasks and marking tasks complete in the browser.",
+          "completionCriteria": "User can add a new task to the visible list and toggle a task between active and complete during a browser session without a backend service.",
+          "estimatedHours": 3,
+          "resourceIds": []
+        },
+        {
+          "title": "Prepare demonstration walkthrough script",
+          "target": {
+            "kind": "goal",
+            "goalId": "g-beginner"
+          },
+          "priority": "could",
+          "deliverable": "Short walkthrough script for demonstrating the user journey.",
+          "completionCriteria": "Script covers each journey step in order and notes what to show and say for each step.",
+          "estimatedHours": 1.5,
+          "resourceIds": []
+        }
+      ],
+      "explanation": "Drafts support g-beginner for a simple task management prototype, using reported Basic HTML and a no-backend approach consistent with reported constraints including first hackathon context. No reviewed requirements or reviewed resources were supplied, so priorities use should/could and no resource IDs are attached."
+    },
+    "existing-progress": {
+      "tasks": [
+        {
+          "title": "Build core prototype flows in existing repository",
+          "target": {
+            "kind": "goal",
+            "goalId": "g-progress"
+          },
+          "priority": "should",
+          "deliverable": "Working prototype screens implemented in the existing React repository following the existing wireframes",
+          "completionCriteria": "Core screens render from the existing repository, navigation between them works, and the implementation follows the existing wireframes without recreating them",
+          "estimatedHours": 8,
+          "resourceIds": []
+        },
+        {
+          "title": "Refine prototype styling from existing design",
+          "target": {
+            "kind": "goal",
+            "goalId": "g-progress"
+          },
+          "priority": "could",
+          "deliverable": "Refined CSS styling applied to existing prototype components",
+          "completionCriteria": "Styles are applied consistently across prototype screens and changes are visible in the existing repository without restructuring the setup",
+          "estimatedHours": 4,
+          "resourceIds": []
+        },
+        {
+          "title": "Prepare presentation outline for prototype",
+          "target": {
+            "kind": "goal",
+            "goalId": "g-progress"
+          },
+          "priority": "should",
+          "deliverable": "Presentation outline and draft explaining the prototype demo",
+          "completionCriteria": "Outline covers prototype purpose, demo walkthrough based on existing wireframes and prototype, and next steps, and draft is ready to rehearse",
+          "estimatedHours": 3,
+          "resourceIds": []
+        }
+      ],
+      "explanation": "Three drafts advance the prototype and presentation goal by reusing the completed wireframes and existing repository without repeating done or in-progress work, using reported React and CSS skills. No reviewed resources were available to attach and no reviewed requirements were listed for must-priority tasks."
+    },
+    "unknown-facts": {
+      "tasks": [
+        {
+          "title": "Record open questions about participation and submission",
+          "target": {
+            "kind": "goal",
+            "goalId": "g-unknown"
+          },
+          "priority": "could",
+          "deliverable": "A list of open questions to clarify",
+          "completionCriteria": "List distinguishes what is still unverified about participation conditions and submission expectations",
+          "estimatedHours": 1,
+          "resourceIds": []
+        },
+        {
+          "title": "Note areas of interest for general exploration",
+          "target": {
+            "kind": "goal",
+            "goalId": "g-unknown"
+          },
+          "priority": "could",
+          "deliverable": "A short written note on themes of interest",
+          "completionCriteria": "Note identifies themes of interest without committing to a specific plan",
+          "estimatedHours": 1,
+          "resourceIds": []
+        }
+      ],
+      "explanation": "Tasks are limited to general exploration linked to the stated goal. No reviewed requirements or resources were available to ground specific preparation, and timing and participation conditions remain unverified, so drafts avoid specific plans and feasibility remains unknown."
+    },
+    "approved-resources": {
+      "tasks": [
+        {
+          "title": "Inspect and clean CSV dataset for chart use",
+          "target": {
+            "kind": "goal",
+            "goalId": "g-resources"
+          },
+          "priority": "should",
+          "deliverable": "Cleaned CSV file plus short column summary for visualization use",
+          "completionCriteria": "Dataset parses without errors, chart-bound columns are identified, and cleaning decisions are recorded.",
+          "estimatedHours": 3,
+          "resourceIds": ["reviewed-resource-001"]
+        },
+        {
+          "title": "Draft JavaScript chart prototype with prepared data",
+          "target": {
+            "kind": "goal",
+            "goalId": "g-resources"
+          },
+          "priority": "should",
+          "deliverable": "Working draft JavaScript chart rendering the prepared data",
+          "completionCriteria": "Draft chart renders in browser from cleaned dataset without data errors and code is saved for iteration.",
+          "estimatedHours": 4,
+          "resourceIds": []
+        },
+        {
+          "title": "Add interactive controls to visualization draft",
+          "target": {
+            "kind": "goal",
+            "goalId": "g-resources"
+          },
+          "priority": "could",
+          "deliverable": "Updated prototype with interactive controls such as filtering or hover details",
+          "completionCriteria": "Selected interactions respond correctly with test data and updated prototype is saved.",
+          "estimatedHours": 3,
+          "resourceIds": []
+        }
+      ],
+      "explanation": "Drafts build on accepted CSV experience and reported JavaScript and Charting skills to support goal g-resources without assuming beginner status. CSV Data Preparation Notes is attached only to the data inspection task where its title and relevanceNote directly apply. Interview Preparation Guide is not attached because its relevanceNote states it is not relevant to visualization or CSV data. Estimates reflect task scope; feasibility is unknown with no deadline provided."
+    },
+    "experienced": {
+      "tasks": [
+        {
+          "title": "Define prototype scope and vertical slice",
+          "target": {
+            "kind": "goal",
+            "goalId": "g-experienced"
+          },
+          "priority": "should",
+          "deliverable": "One-page prototype scope with core user flow and vertical slice definition",
+          "completionCriteria": "Written scope defines one core user journey, included data entities, and explicit out-of-scope items for the first slice",
+          "estimatedHours": 3,
+          "resourceIds": []
+        },
+        {
+          "title": "Implement backend REST API and persistence",
+          "target": {
+            "kind": "goal",
+            "goalId": "g-experienced"
+          },
+          "priority": "should",
+          "deliverable": "C# REST API with endpoints and persistent storage for core entities",
+          "completionCriteria": "API serves CRUD operations for core entities with persisted data verified via API calls and handles validation errors",
+          "estimatedHours": 12,
+          "resourceIds": []
+        },
+        {
+          "title": "Build React TypeScript frontend shell",
+          "target": {
+            "kind": "goal",
+            "goalId": "g-experienced"
+          },
+          "priority": "should",
+          "deliverable": "React TypeScript app shell with routing and views for core screens",
+          "completionCriteria": "App builds and navigates between core screens with typed components and API client structure in place",
+          "estimatedHours": 10,
+          "resourceIds": []
+        },
+        {
+          "title": "Connect frontend to backend end to end",
+          "target": {
+            "kind": "goal",
+            "goalId": "g-experienced"
+          },
+          "priority": "should",
+          "deliverable": "Integrated end-to-end working slice from UI through API to storage",
+          "completionCriteria": "Demo flow creates and displays persisted data through the UI via the API without manual backend steps",
+          "estimatedHours": 8,
+          "resourceIds": []
+        },
+        {
+          "title": "Harden prototype for live demonstration",
+          "target": {
+            "kind": "goal",
+            "goalId": "g-experienced"
+          },
+          "priority": "could",
+          "deliverable": "Demo-ready prototype with seed data, error handling, and smoke-check notes",
+          "completionCriteria": "Prototype runs from clean start with seed data and shows user-facing handling for API failures and empty states",
+          "estimatedHours": 6,
+          "resourceIds": []
+        }
+      ],
+      "explanation": "Proposed as incremental full-stack slices building on reported React, TypeScript, C#, and REST API experience and prior shipped web apps, with no introductory tutorials per constraints. All tasks target the working prototype goal."
+    }
+  }
+}

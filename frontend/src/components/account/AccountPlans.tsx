@@ -39,6 +39,7 @@ import { PreparationEntry } from "@/components/preparation/PreparationEntry";
 import { JoinedHackathons } from "./JoinedHackathons";
 import { ReportedParticipation } from "@/components/catalog/ReportedParticipation";
 import { useLocale } from "@/components/LocaleProvider";
+import { DraftFeasibility } from "@/components/preparation/DraftFeasibility";
 
 interface Candidate {
   candidateId: string;
@@ -561,10 +562,13 @@ export function AccountPreparation({ opportunityId }: { opportunityId: string })
         <section className="glass rounded-3xl p-6">
           <p className="prep-eyebrow">Draft · not an accepted plan</p>
           <h2 className="mt-3 text-2xl font-bold">Review your preparation draft.</h2>
-          <p className="mt-3 text-sm text-muted-foreground">
-            {candidate.output.tasks.reduce((total, task) => total + task.estimatedHours, 0)}h
-            proposed effort
-          </p>
+          <DraftFeasibility
+            candidate={candidate.output}
+            plan={plan ?? null}
+            profile={bundle.profile}
+            opportunity={bundle.opportunity}
+            stale={candidateStale}
+          />
           <p className="mt-3 text-sm leading-7">{candidate.output.explanation}</p>
           <div className="mt-6 divide-y divide-border">
             {candidate.output.tasks.map((task, index) => (
