@@ -35,6 +35,10 @@ import {
 import { assessmentContext, sameContext } from "@/lib/preparation/adapters";
 import { TaskDrawer, STATUS_LABELS } from "@/components/preparation/TaskDrawer";
 import { TaskResources } from "@/components/preparation/Resources";
+import { PreparationEntry } from "@/components/preparation/PreparationEntry";
+import { JoinedHackathons } from "./JoinedHackathons";
+import { ReportedParticipation } from "@/components/catalog/ReportedParticipation";
+import { useLocale } from "@/components/LocaleProvider";
 
 interface Candidate {
   candidateId: string;
@@ -51,7 +55,12 @@ export function AccountPlans({ eventId }: { eventId?: string }) {
   return (
     <AppShell>
       {eventId ? (
-        <AccountPreparation key={`${auth?.user?.id}:${eventId}`} opportunityId={eventId} />
+        <PreparationEntry
+          opportunityId={eventId}
+          renderWorkspace={(id) => (
+            <AccountPreparation key={`${auth?.user?.id}:${id}`} opportunityId={id} />
+          )}
+        />
       ) : (
         <AccountPlanIndex />
       )}
@@ -60,6 +69,7 @@ export function AccountPlans({ eventId }: { eventId?: string }) {
 }
 function AccountPlanIndex() {
   const auth = useAuth();
+  const { t } = useLocale();
   const profile = useQuery({
     queryKey: ["account", auth?.user?.id, "profile"],
     queryFn: accountApi.profile,
@@ -93,8 +103,38 @@ function AccountPlanIndex() {
             Confirmed plans and self-reported progress from your account.
           </p>
         </div>
-        <span className="prep-index-count">{plans.data?.length ?? "—"}</span>
+        <div className="text-end">
+          <span className="prep-index-count">{plans.data?.length ?? "—"}</span>
+          <p className="text-xs text-muted-foreground">{t("Confirmed plans", "خطط مؤكّدة")}</p>
+        </div>
       </header>
+      {profile.isPending || catalog.isPending ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          {t("Loading your hackathons…", "جارٍ تحميل هاكاثوناتك…")}
+        </p>
+      ) : profile.isError || catalog.isError ? (
+        <div role="alert" className="prep-error">
+          <p>{t("Your participation list could not be loaded.", "تعذّر تحميل قائمة مشاركاتك.")}</p>
+          <button
+            type="button"
+            className="detail-secondary mt-3"
+            onClick={() => {
+              void profile.refetch();
+              void catalog.refetch();
+            }}
+          >
+            {t("Retry", "إعادة المحاولة")}
+          </button>
+        </div>
+      ) : (
+        plans.data && (
+          <JoinedHackathons
+            answers={profile.data.clarificationAnswers}
+            listings={catalog.data}
+            plans={plans.data}
+          />
+        )
+      )}
       {plans.isPending ? (
         <p role="status" className="prep-loading">
           Loading confirmed plans…
@@ -132,6 +172,10 @@ function AccountPlanIndex() {
                   {catalog.data?.find((o) => o.id === plan.context.opportunityId)?.title ??
                     plan.context.opportunityId}
                 </h2>
+                <ReportedParticipation
+                  opportunityId={plan.context.opportunityId}
+                  answers={profile.data?.clarificationAnswers}
+                />
                 <p className="mt-4 text-sm text-muted-foreground">
                   {done} / {plan.tasks.length} tasks completed · {plan.budget.remainingEffortHours}h
                   remaining

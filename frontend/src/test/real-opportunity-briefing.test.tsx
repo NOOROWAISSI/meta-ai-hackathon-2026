@@ -98,6 +98,15 @@ it("opens an internal opportunity briefing instead of navigating directly to an 
   expect(link).not.toHaveAttribute("target");
   expect(screen.queryByRole("link", { name: "View official course" })).toBeNull();
 });
+it("shows preparation for a hackathon with a real-world ID", async () => {
+  const event = { ...listing, id: "meta-global-ai-2026", kind: "hackathon" as const };
+  vi.spyOn(realCatalogService, "listings").mockResolvedValue([event]);
+  show(<RealOpportunityDetails opportunityId={event.id} />);
+  expect(await screen.findByRole("link", { name: "Prepare for this opportunity" })).toHaveAttribute(
+    "href",
+    "/plans?event=meta-global-ai-2026",
+  );
+});
 it("keeps public facts and the original source available without a profile or live Meta service", async () => {
   const service = { available: false, explain: vi.fn() };
   show(<RealOpportunityDetails opportunityId={listing.id} analysisService={service} />);

@@ -183,9 +183,9 @@ export function BackgroundFields({
           Your privacy & age information
         </summary>
         <p>
-          Age: not provided.{" "}
+          Age is not collected automatically.{" "}
           {eventTitle
-            ? "This demo event has no reviewed published age condition, so age is not requested."
+            ? "Review the selected event’s published age and legal-majority conditions separately."
             : "We only ask for the minimum age information when a selected event has a reviewed published condition."}{" "}
           Nothing is inferred from your name, language, or location.
         </p>

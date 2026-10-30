@@ -22,6 +22,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useVisitState } from "@/components/VisitMemory";
 import { AccountFitConstellation } from "./AccountFitConstellation";
 import { AccountPreparation } from "@/components/account/AccountPlans";
+import { PreparationEntry } from "@/components/preparation/PreparationEntry";
+import { ReportedParticipation } from "./ReportedParticipation";
+import { PublishedEventOverview } from "./PublishedEventOverview";
+import { accountApi, AccountApiError } from "@/lib/account/api";
 import {
   briefingContext,
   loadAccountProfile,
@@ -49,6 +53,12 @@ export function RealOpportunityDetails({
     retry: false,
   });
   const item = catalog.data?.find((row) => row.id === opportunityId);
+  const planningRecord = useQuery({
+    queryKey: ["canonical-opportunity", opportunityId],
+    queryFn: () => accountApi.opportunity(opportunityId),
+    enabled: item?.kind === "hackathon",
+    retry: false,
+  });
   const profile = useQuery({
     queryKey: ["account-profile-facts", auth?.user?.id],
     queryFn: ({ signal }) => loadAccountProfile(signal),
@@ -56,6 +66,9 @@ export function RealOpportunityDetails({
     retry: false,
   });
   const savedProfile = auth?.user ? profile.data : undefined;
+  const publishedSubmission = planningRecord.data?.timelineEvents.find(
+    (milestone) => milestone.kind === "submission_close" && milestone.claims.length,
+  );
   const context = item && savedProfile ? briefingContext(item, savedProfile, language) : null;
   const contextKey = context ? JSON.stringify(context) : null;
   const analysis = useQuery({
@@ -136,6 +149,10 @@ export function RealOpportunityDetails({
             <p className="mt-3 text-sm text-muted-foreground" dir="auto">
               {item.organizer}
             </p>
+            <ReportedParticipation
+              opportunityId={item.id}
+              answers={savedProfile?.clarificationAnswers}
+            />
             <div className="mt-6 flex flex-wrap gap-2">
               {item.topics.map((topic) => (
                 <span
@@ -148,7 +165,7 @@ export function RealOpportunityDetails({
             </div>
             <div className="mt-5 flex flex-wrap gap-3">
               <PreferenceActions item={item} />
-              {/^E\d+$/.test(item.id) && (
+              {item.kind === "hackathon" && (
                 <Link to="/plans" search={{ event: item.id }} className="detail-primary">
                   {t("Prepare for this opportunity", "حضّر لهذه الفرصة")}
                 </Link>
@@ -157,7 +174,9 @@ export function RealOpportunityDetails({
                 {t("Edit my profile", "تعديل ملفي")}
               </Link>
             </div>
-            <dl className="mt-7 grid gap-5 border-t border-border pt-5 sm:grid-cols-3">
+            <dl
+              className={`mt-7 grid gap-5 border-t border-border pt-5 ${publishedSubmission ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"}`}
+            >
               <div className="fit-insight !border-0 !py-0">
                 <span className="fit-insight-number !top-0" aria-hidden>
                   01
@@ -175,9 +194,22 @@ export function RealOpportunityDetails({
                   {t("Registration deadline", "آخر موعد للتسجيل")}
                 </dt>
                 <dd className="mt-1 text-sm font-semibold">
-                  {item.registrationDeadline
-                    ? `${new Date(item.registrationDeadline).toLocaleString(language)} (${Intl.DateTimeFormat().resolvedOptions().timeZone})`
-                    : t("Not specified", "غير محدد")}
+                  {planningRecord.data?.timelineEvents.some(
+                    (milestone) =>
+                      milestone.kind === "registration_close" &&
+                      milestone.sourceStatus === "conflicting",
+                  ) ? (
+                    <a
+                      href="#published-event-timeline"
+                      className="text-amber-700 underline underline-offset-4 dark:text-amber-300"
+                    >
+                      {t("Source conflict — see timeline", "تعارض بين المصادر — راجع المواعيد")}
+                    </a>
+                  ) : item.registrationDeadline ? (
+                    `${new Date(item.registrationDeadline).toLocaleString(language)} (${Intl.DateTimeFormat().resolvedOptions().timeZone})`
+                  ) : (
+                    t("Not specified", "غير محدد")
+                  )}
                 </dd>
               </div>
               <div className="fit-insight !border-0 !py-0">
@@ -195,6 +227,26 @@ export function RealOpportunityDetails({
                       : t("Not specified", "غير محددة")}
                 </dd>
               </div>
+              {publishedSubmission && (
+                <div className="fit-insight !border-0 !py-0">
+                  <span className="fit-insight-number !top-0" aria-hidden>
+                    04
+                  </span>
+                  <dt className="text-xs text-muted-foreground">
+                    {t("Project submission · published timing", "تسليم المشروع · التوقيت المنشور")}
+                  </dt>
+                  <dd className="mt-1 text-sm font-semibold" dir="auto">
+                    {publishedSubmission.sourceStatus === "conflicting"
+                      ? t("Conflicting source times", "تعارض بين المصادر")
+                      : publishedSubmission.claims[0]?.publishedText}
+                  </dd>
+                  {!publishedSubmission.claims[0]?.dateTime && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {t("Exact instant not confirmed", "اللحظة الزمنية الدقيقة غير مؤكدة")}
+                    </p>
+                  )}
+                </div>
+              )}
             </dl>
           </div>
         </header>
@@ -222,6 +274,25 @@ export function RealOpportunityDetails({
             </TabsTrigger>
           </TabsList>
           <TabsContent value="overview" className="space-y-6">
+            {planningRecord.isError &&
+              !(
+                planningRecord.error instanceof AccountApiError &&
+                planningRecord.error.status === 404
+              ) && (
+                <p className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                  {t(
+                    "Detailed planning information could not be loaded.",
+                    "تعذّر تحميل معلومات التخطيط التفصيلية.",
+                  )}
+                  <button
+                    type="button"
+                    className="min-h-11 font-semibold text-primary underline"
+                    onClick={() => void planningRecord.refetch()}
+                  >
+                    {t("Retry details", "إعادة تحميل التفاصيل")}
+                  </button>
+                </p>
+              )}
             <div className="grid gap-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
               <section className="space-y-5 px-1">
                 <div className="flex items-center gap-3">
@@ -247,15 +318,38 @@ export function RealOpportunityDetails({
                   <h3 className="font-semibold">
                     {t("What to check before committing", "شو تتأكد منه قبل ما تقرّر")}
                   </h3>
-                  <p className="mt-2 text-sm leading-7 text-muted-foreground" dir="auto">
-                    {item.verificationNote}
-                  </p>
-                  <p className="mt-3 text-xs leading-6 text-muted-foreground">
+                  <ul className="mt-4 space-y-3 text-sm leading-7 text-muted-foreground">
+                    {item.verificationNote
+                      .split(/(?<=[.!?؟])\s+|[;؛]\s*/u)
+                      .filter(Boolean)
+                      .map((point, index) => (
+                        <li key={`source-${index}`} className="flex items-start gap-3">
+                          <span
+                            className="mt-2.5 size-1.5 shrink-0 rounded-full bg-primary"
+                            aria-hidden
+                          />
+                          <span dir="auto">{point}</span>
+                        </li>
+                      ))}
                     {t(
-                      "Details absent from this source snapshot remain unknown. No prize, certificate, prerequisite or eligibility claim is added here.",
-                      "التفاصيل الناقصة بتظل غير معروفة؛ ما بنضيف جوائز أو شهادات أو متطلبات أو أحكام أهلية مش موجودة بالمصدر.",
-                    )}
-                  </p>
+                      "Unpublished details remain unknown. Confirm current benefits and participation conditions in the original source.",
+                      "التفاصيل غير المنشورة بتظل غير معروفة. راجع المزايا وشروط المشاركة الحالية من المصدر الأصلي.",
+                    )
+                      .split(/(?<=[.!?؟])\s+|[;؛]\s*/u)
+                      .filter(Boolean)
+                      .map((point, index) => (
+                        <li
+                          key={`unknown-${index}`}
+                          className="flex items-start gap-3 text-xs leading-6"
+                        >
+                          <span
+                            className="mt-2.5 size-1.5 shrink-0 rounded-full bg-border"
+                            aria-hidden
+                          />
+                          <span>{point}</span>
+                        </li>
+                      ))}
+                  </ul>
                 </div>
               </section>
               <section
@@ -371,10 +465,12 @@ export function RealOpportunityDetails({
                 )}
               </section>
             </div>
+            {planningRecord.data && <PublishedEventOverview event={planningRecord.data} />}
           </TabsContent>
           <TabsContent value="fit" className="space-y-6">
             <AccountFitConstellation
               opportunityId={opportunityId}
+              kind={item.kind}
               {...(savedProfile ? { profile: savedProfile } : {})}
             />
             <section
@@ -467,40 +563,10 @@ export function RealOpportunityDetails({
             </section>
           </TabsContent>
           <TabsContent value="preparation" className="space-y-6">
-            {/^E\d+$/.test(item.id) && auth?.user ? (
-              <AccountPreparation opportunityId={item.id} />
-            ) : (
-              <section className="discovery-hero relative overflow-hidden rounded-3xl border border-primary/15 p-7">
-                <p className="prep-eyebrow">03 · Preparation</p>
-                <h2 className="mt-3 text-2xl font-bold">
-                  {t("Turn an opportunity into your next step.", "حوّل الفرصة لخطوتك الجاية.")}
-                </h2>
-                <p className="mt-4 text-sm leading-7 text-muted-foreground">
-                  {/^E\d+$/.test(item.id)
-                    ? t(
-                        "Sign in to use your saved hours and goals, review a preparation draft and keep confirmed progress.",
-                        "سجّل الدخول لاستخدام وقتك وأهدافك ومراجعة خطة التحضير وحفظ تقدّمك.",
-                      )
-                    : t(
-                        "A reviewed hackathon planning record is not available for this listing yet. Check the source and keep your learning preferences up to date.",
-                        "هاي الفرصة ما إلها سجل تحضير هاكاثون مراجَع لسه. راجع المصدر وحدّث تفضيلات التعلّم.",
-                      )}
-                </p>
-                {auth?.user ? (
-                  <Link to="/profile" search={{ event: item.id }} className="detail-primary mt-5">
-                    {t("Edit my profile", "تعديل ملفي")}
-                  </Link>
-                ) : (
-                  <Link
-                    to="/login"
-                    search={{ returnTo: `/?opportunity=${item.id}` }}
-                    className="detail-primary mt-5"
-                  >
-                    {t("Sign in", "تسجيل الدخول")}
-                  </Link>
-                )}
-              </section>
-            )}
+            <PreparationEntry
+              opportunityId={item.id}
+              renderWorkspace={(id) => <AccountPreparation opportunityId={id} />}
+            />
           </TabsContent>
         </Tabs>
         <section className="flex flex-wrap items-center justify-between gap-5 rounded-3xl border border-border bg-card/40 p-5 sm:p-6">

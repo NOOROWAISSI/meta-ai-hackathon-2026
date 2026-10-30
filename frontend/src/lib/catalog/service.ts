@@ -43,12 +43,60 @@ const sourceSchema = z.object({
   note: z.string(),
 });
 export type SourceRegistration = z.infer<typeof sourceSchema>;
+const accessBase = z.object({
+  opportunityId: z.string(),
+  title: z.string(),
+  organizer: z.string(),
+  kind: z.enum(["hackathon", "course", "competition", "workshop"]),
+  officialUrl: z.string().url(),
+  reviewNeeds: z.array(
+    z.enum(["participation_rules", "submission_requirements", "source_evidence"]),
+  ),
+});
+const preparationAccessSchema = z.discriminatedUnion("state", [
+  accessBase.extend({
+    state: z.literal("workspace_available"),
+    planningOpportunityId: z.string().min(1),
+    kind: z.literal("hackathon"),
+  }),
+  accessBase.extend({
+    state: z.literal("source_review_required"),
+    planningOpportunityId: z.null(),
+    kind: z.literal("hackathon"),
+  }),
+  accessBase.extend({
+    state: z.literal("unsupported_kind"),
+    planningOpportunityId: z.null(),
+    kind: z.enum(["course", "competition", "workshop"]),
+  }),
+]);
+export type PreparationAccess = z.infer<typeof preparationAccessSchema>;
+export class CatalogRequestError extends Error {
+  constructor(public readonly status: number) {
+    super(
+      status === 404
+        ? "This opportunity is unavailable."
+        : "Real opportunities could not be loaded. Please retry.",
+    );
+  }
+}
 async function get(path: string) {
   const response = await fetch(path, { signal: AbortSignal.timeout(15000) });
-  if (!response.ok) throw new Error("Real opportunities could not be loaded. Please retry.");
+  if (!response.ok) throw new CatalogRequestError(response.status);
   return response.json() as Promise<unknown>;
 }
 export const realCatalogService = {
+  async preparationAccess(id: string): Promise<PreparationAccess> {
+    const access = preparationAccessSchema.parse(
+      await get(`/api/opportunities/${encodeURIComponent(id)}/preparation-access`),
+    );
+    if (
+      access.opportunityId !== id ||
+      (access.state === "workspace_available" && access.planningOpportunityId !== id)
+    )
+      throw new Error("Preparation information does not match the selected opportunity.");
+    return access;
+  },
   async listings(): Promise<ListingSummary[]> {
     return z.array(listingSchema).parse(await get("/api/listings"));
   },

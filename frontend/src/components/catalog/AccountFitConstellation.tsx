@@ -7,6 +7,7 @@ import { accountApi } from "@/lib/account/api";
 import type { FitStatus, Lane } from "@/lib/details/types";
 import type { MatchStatus } from "@/lib/contract/types";
 import type { AccountProfileFacts } from "@/lib/catalog/briefing";
+import { realCatalogService, type ListingSummary } from "@/lib/catalog/service";
 
 const LABELS: Record<MatchStatus, FitStatus> = {
   supported: "Supported",
@@ -40,12 +41,20 @@ const LANES: { id: Lane; title: string; description: string }[] = [
 export function AccountFitConstellation({
   opportunityId,
   profile,
+  kind,
 }: {
   opportunityId: string;
   profile?: AccountProfileFacts;
+  kind: ListingSummary["kind"];
 }) {
   const auth = useAuth();
-  const canonical = /^E\d+$/.test(opportunityId);
+  const access = useQuery({
+    queryKey: ["preparation-access", opportunityId],
+    queryFn: () => realCatalogService.preparationAccess(opportunityId),
+    enabled: kind === "hackathon",
+    retry: false,
+  });
+  const canonical = access.data?.state === "workspace_available";
   const opportunity = useQuery({
     queryKey: ["canonical-opportunity", opportunityId],
     queryFn: () => accountApi.opportunity(opportunityId),
@@ -93,20 +102,23 @@ export function AccountFitConstellation({
           Edit my profile
         </Link>
       </div>
-      {(opportunity.isFetching || comparison.isFetching) && (
+      {(access.isFetching || opportunity.isFetching || comparison.isFetching) && (
         <p role="status" className="text-sm text-muted-foreground">
           Updating source-backed checks…
         </p>
       )}
-      {(opportunity.isError || comparison.isError) && (
+      {(access.isError || opportunity.isError || comparison.isError) && (
         <div role="alert" className="prep-error">
           The checks could not be refreshed.{" "}
           <button
             type="button"
             className="underline"
             onClick={() => {
-              void opportunity.refetch();
-              void comparison.refetch();
+              void access.refetch();
+              if (canonical) {
+                void opportunity.refetch();
+                if (auth?.user && opportunity.data) void comparison.refetch();
+              }
             }}
           >
             Retry
@@ -118,7 +130,7 @@ export function AccountFitConstellation({
           Sign in to compare your saved profile. Published rules remain available to read.
         </p>
       )}
-      {!canonical && (
+      {!canonical && (kind !== "hackathon" || access.data) && (
         <p className="text-sm text-muted-foreground">
           A reviewed requirement record is not available for this listing yet. Conditions remain
           unknown.

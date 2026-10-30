@@ -100,10 +100,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               key={to}
               to={to}
               search={{
-                ...((to === "/profile" || (to === "/plans" && /^E\d+$/.test(eventId ?? ""))) &&
-                eventId
-                  ? { event: eventId }
-                  : {}),
+                ...(to === "/profile" && eventId ? { event: eventId } : {}),
                 ...(to === "/profile" && location.pathname === "/plans"
                   ? { returnTo: "plans" as const }
                   : {}),
@@ -157,10 +154,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             key={to}
             to={to}
             search={{
-              ...((to === "/profile" || (to === "/plans" && /^E\d+$/.test(eventId ?? ""))) &&
-              eventId
-                ? { event: eventId }
-                : {}),
+              ...(to === "/profile" && eventId ? { event: eventId } : {}),
               ...(to === "/profile" && location.pathname === "/plans"
                 ? { returnTo: "plans" as const }
                 : {}),
