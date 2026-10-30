@@ -190,8 +190,8 @@ export function RealOpportunities() {
         )}
         <p className="prep-demo-notice">
           {t(
-            "Real source snapshots · registration, access, and personal participation conditions must be checked separately. New sources are reviewed before their announcements appear here.",
-            "معلومات من مصادر حقيقية؛ التسجيل وإمكانية الوصول وشروط المشاركة تُراجع بشكل منفصل. نراجع المصادر الجديدة قبل عرض إعلاناتها.",
+            "Real source snapshots · registration, access, and personal participation conditions must be checked separately. Automatically extracted listings may appear before human review and are labelled as needing verification.",
+            "معلومات من مصادر حقيقية؛ التسجيل وإمكانية الوصول وشروط المشاركة تُراجع بشكل منفصل. قد تظهر الإعلانات المستخرجة آليًا قبل المراجعة البشرية، وتُوسم بأنها بحاجة للتحقق.",
           )}
         </p>
         <div className="glass rounded-3xl p-5">

@@ -24,9 +24,11 @@ public sealed class DiscoveryFeed(DiscoveryCatalog catalog, MySqlStateStore stor
             var current = item with { FirstSeenAt = Instant(rows.GetDateTime(1)), LastCheckedAt = Instant(checkedAt), SourceFreshness = fresh ? "current" : "stale", AvailabilityState = item.AvailabilityState == "cancelled" ? "cancelled" : ContractTime.IsInstant(item.EventEndAt) && DateTimeOffset.Parse(item.EventEndAt!) < DateTimeOffset.UtcNow ? "ended" : "unknown" };
             var existing = items.FindIndex(old => SameUrl(old.OfficialUrl, item.OfficialUrl));
             if (existing >= 0) {
-                // Discovery-only course refresh keeps the original ID and never turns an old listing into a new one.
-                // Canonical hackathon planning/rule records require their own reviewed source-revision update.
-                if (items[existing].Kind == "course" && current.Kind == "course") items[existing] = current with { Id = items[existing].Id, FirstSeenAt = null };
+                // Curated content remains authoritative; automatic observations only describe freshness.
+                items[existing] = items[existing] with {
+                    LastCheckedAt = current.LastCheckedAt,
+                    SourceFreshness = current.SourceFreshness
+                };
             } else items.Add(current);
         }
         return items.ToArray();
