@@ -17,7 +17,8 @@ public sealed record SourceRegistration(string Id, string Name, string Url, stri
 public sealed class DiscoveryCatalog(Catalog catalog)
 {
     public SourceRegistration[] Sources() => Read<SourceRegistration[]>("sources.json");
-    public ListingSummary[] Listings() => Read<ListingSummary[]>("listings.json").Concat(catalog.All().Select(o => new ListingSummary(o.Id, "hackathon", o.Title, o.Organizer, o.Format, o.OfficialUrl, o.Theme, [], "global_online", null, "not_specified", o.CostStatus, o.LastReviewedAt, "needs_verification", null, "Document-derived source snapshot; material-rule coverage is incomplete. Registration and submission deadlines are separate."))).Select(WithTimeSemantics).ToArray();
+    // A detailed planning record can share an existing discovery ID; keep its richer listing projection once.
+    public ListingSummary[] Listings() => Read<ListingSummary[]>("listings.json").Concat(catalog.All().Select(o => new ListingSummary(o.Id, "hackathon", o.Title, o.Organizer, o.Format, o.OfficialUrl, o.Theme, [], "global_online", null, "not_specified", o.CostStatus, o.LastReviewedAt, "needs_verification", null, "Source-backed planning snapshot; inspect coverage and original passages before participating. Registration and submission deadlines are separate."))).GroupBy(item => item.Id, StringComparer.Ordinal).Select(group => group.First()).Select(WithTimeSemantics).ToArray();
     public static ListingSummary WithTimeSemantics(ListingSummary listing) => listing with {
         RegistrationDeadline = ContractTime.IsInstant(listing.RegistrationDeadline) ? listing.RegistrationDeadline : null,
         LastReviewedAt = ContractTime.IsInstant(listing.LastReviewedAt) ? listing.LastReviewedAt : null,
