@@ -10,11 +10,11 @@ public interface IOfficialPageReader { Task<SourcePage> Read(Uri address, Cancel
 // Server-owned source URLs and same-origin links only. No credentials, redirects or social-login bypass.
 public sealed class OfficialPageReader : IOfficialPageReader, IDisposable
 {
-    private readonly HttpClient client = new(new HttpClientHandler { AllowAutoRedirect = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate }) { Timeout = TimeSpan.FromSeconds(12) };
+    private readonly HttpClient client = new(new SocketsHttpHandler { AllowAutoRedirect = false, UseProxy = false, ConnectCallback = PublicSourceConnection.Connect, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, PooledConnectionLifetime = TimeSpan.FromMinutes(5) }) { Timeout = TimeSpan.FromSeconds(12) };
     public OfficialPageReader() => client.DefaultRequestHeaders.UserAgent.ParseAdd("NextStep-SourceReview/0.2");
     public async Task<SourcePage> Read(Uri address, CancellationToken ct)
     {
-        if (address.Scheme != "https" || address.IsLoopback || !string.IsNullOrEmpty(address.UserInfo)) return new("unsafe_address", null);
+        if (address.Scheme != "https" || address.Port != 443 || address.IsLoopback || !string.IsNullOrEmpty(address.UserInfo)) return new("unsafe_address", null);
         try {
             using var robots = await client.GetAsync(new Uri(address, "/robots.txt"), HttpCompletionOption.ResponseHeadersRead, ct);
             if (robots.IsSuccessStatusCode) {
