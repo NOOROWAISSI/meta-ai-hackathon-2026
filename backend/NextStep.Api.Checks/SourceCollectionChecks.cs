@@ -61,6 +61,34 @@ public static class SourceCollectionChecks
             Check(StructuredOpportunityReader.Read(conflicting, page, source).Length == 0);
             return Task.CompletedTask;
         });
+        test("automatic matching URL preserves all curated metadata and only updates observation freshness", async () => {
+            await using var host = new Factory();
+            var curated = host.Services.GetRequiredService<DiscoveryCatalog>().Listings().First(item => item.Kind == "course" && item.SourceStatus == "reviewed" && item.LastReviewedAt is not null);
+            var id = "check-curated-" + Guid.NewGuid().ToString("N");
+            var source = new SourceRegistration(id, "Synthetic observation", curated.OfficialUrl, "global_online", "official_website", "public_html", null, "Synthetic only");
+            var feed = host.Services.GetRequiredService<DiscoveryFeed>();
+            var observation = curated with { Id = id, Title = "Unreviewed replacement", Organizer = "Unreviewed organizer", Summary = "Unreviewed content", SourceStatus = "needs_verification", LastReviewedAt = null, SourcePassage = null, VerificationNote = "Automatic only" };
+            await using var db = new MySqlConnection(host.Services.GetRequiredService<IConfiguration>().GetConnectionString("NextStep")); await db.OpenAsync();
+            // Restore any real previously collected observation after this isolated check.
+            await using var read = new MySqlCommand("SELECT source_id,page_hash,payload,first_seen_at,checked_at FROM discovered_listings WHERE url_hash=@hash", db);
+            read.Parameters.AddWithValue("@hash", MySqlStateStore.Hash(curated.OfficialUrl));
+            object[]? previous = null;
+            await using (var row = await read.ExecuteReaderAsync()) { if (await row.ReadAsync()) { previous = new object[5]; row.GetValues(previous); } }
+            try {
+                await feed.StorePage(source, new Uri("https://source.example.invalid/" + id), new("checked", "Synthetic source observation"), [observation], CancellationToken.None);
+                var actual = (await feed.Listings(CancellationToken.None)).Single(item => item.Id == curated.Id);
+                Check(actual.LastCheckedAt is not null && actual.SourceFreshness == "current");
+                Check(JsonSerializer.Serialize(actual with { LastCheckedAt = curated.LastCheckedAt, SourceFreshness = curated.SourceFreshness }, Wire.Json) == JsonSerializer.Serialize(curated, Wire.Json));
+                Check(!(await feed.Listings(CancellationToken.None)).Any(item => item.Id == id));
+            } finally {
+                if (previous is not null) {
+                    await using var restore = new MySqlCommand("UPDATE discovered_listings SET source_id=@source,page_hash=@page,payload=@payload,first_seen_at=@first,checked_at=@checked WHERE url_hash=@hash", db);
+                    foreach (var pair in new[] { ("@source", previous[0]), ("@page", previous[1]), ("@payload", previous[2]), ("@first", previous[3]), ("@checked", previous[4]), ("@hash", (object)MySqlStateStore.Hash(curated.OfficialUrl)) }) restore.Parameters.AddWithValue(pair.Item1, pair.Item2);
+                    await restore.ExecuteNonQueryAsync();
+                } else { await using var remove = new MySqlCommand("DELETE FROM discovered_listings WHERE source_id=@id", db); remove.Parameters.AddWithValue("@id", id); await remove.ExecuteNonQueryAsync(); }
+                await using var cleanup = new MySqlCommand("DELETE FROM source_pages WHERE source_id=@id", db); cleanup.Parameters.AddWithValue("@id", id); await cleanup.ExecuteNonQueryAsync();
+            }
+        });
         test("scheduled collection deduplicates MySQL records, preserves first-seen and retains stale data after failure", async () => {
             var reader = new FakePages();
             await using var host = new Factory().WithWebHostBuilder(builder => builder.ConfigureTestServices(services => { services.RemoveAll<IOfficialPageReader>(); services.AddSingleton<IOfficialPageReader>(reader); }));
