@@ -8,6 +8,7 @@ import type {
   ReviewedResource,
   StudentProfile,
   SubmissionState,
+  TimelineKind,
 } from "../contract/types";
 
 export const FEASIBILITY_LABELS: Record<Plan["feasibility"], string> = {
@@ -75,7 +76,13 @@ export function confirmedBlocker(opportunity: Opportunity, profile: StudentProfi
   return null;
 }
 export function reliableDeadline(opportunity: Opportunity): string | null {
-  const events = opportunity.timelineEvents.filter((t) => t.kind === "submission_close");
+  return reviewedTimelineInstant(opportunity, "submission_close");
+}
+export function reviewedTimelineInstant(
+  opportunity: Opportunity,
+  kind: TimelineKind,
+): string | null {
+  const events = opportunity.timelineEvents.filter((t) => t.kind === kind);
   if (
     events.length !== 1 ||
     events[0]!.sourceStatus !== "reviewed" ||
