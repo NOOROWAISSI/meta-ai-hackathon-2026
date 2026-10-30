@@ -21,4 +21,4 @@ Robots checks, response-size limits, timeouts, cancellation, same-origin collect
 - The hardened reader retrieved the official Google machine-learning catalog successfully without persisting a collection run.
 - No live Meta call, key provisioning, shared-client change, production data reset or private account record is included.
 
-The isolated browser workflow uses a disposable synthetic account, real frontend and ASP.NET/MySQL, replacing only the Meta provider. Its exact outcome is recorded in the PR, separately from live provider verification.
+The isolated browser workflow passed with a disposable synthetic account, real frontend and ASP.NET/MySQL, replacing only the Meta provider. It verified draft preview without a committed plan, explicit acceptance, task start through the drawer, controlled failed Done save without false success, retry, Done after page reload, rejected stale-version writes, mobile width and return to event details. The temporary account was deleted afterward. The unchanged production rate-limit window was respected between the fast automated desktop and mobile phases. This is separate from live provider verification.
