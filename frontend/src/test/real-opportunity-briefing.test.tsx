@@ -162,7 +162,7 @@ it("does not display a late explanation or start a new model request after profi
     button: 0,
     ctrlKey: false,
   });
-  const button = await screen.findByRole("button", { name: "Explain this opportunity for me" });
+  const button = await screen.findByRole("button", { name: "Compare my starting point" });
   await waitFor(() => expect(button).toBeEnabled());
   fireEvent.click(button);
   await waitFor(() => expect(explain).toHaveBeenCalledTimes(1));
@@ -182,7 +182,11 @@ it("does not display a late explanation or start a new model request after profi
   });
   expect(screen.queryByText("Outdated private explanation")).toBeNull();
   expect(explain).toHaveBeenCalledTimes(1);
-  expect(await screen.findByText("The context changed. Request a new explanation.")).toBeVisible();
+  expect(
+    await screen.findByText(
+      "Your profile changed. Compare again to use the confirmed starting point.",
+    ),
+  ).toBeVisible();
 });
 it("shows a recoverable backend configuration error without inventing AI output", async () => {
   state.signedIn = true;
@@ -200,7 +204,7 @@ it("shows a recoverable backend configuration error without inventing AI output"
     button: 0,
     ctrlKey: false,
   });
-  const button = await screen.findByRole("button", { name: "Explain this opportunity for me" });
+  const button = await screen.findByRole("button", { name: "Compare my starting point" });
   await waitFor(() => expect(button).toBeEnabled());
   fireEvent.click(button);
   expect(await screen.findByText(/The Meta key is not configured on this server/)).toBeVisible();

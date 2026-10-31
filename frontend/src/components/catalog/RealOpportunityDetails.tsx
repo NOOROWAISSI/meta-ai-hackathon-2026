@@ -516,7 +516,7 @@ export function RealOpportunityDetails({
                     )}
                     {analysis.isFetching
                       ? t("Preparing explanation…", "جارٍ تجهيز التفسير…")
-                      : t("Explain this opportunity for me", "اشرحلي الفرصة بالنسبة إلي")}
+                      : t("Compare my starting point", "قارن نقطة بدايتي")}
                   </button>
                   {analysis.isError && (
                     <p role="alert" className="prep-error mt-4">
@@ -530,14 +530,14 @@ export function RealOpportunityDetails({
                   {requestedContext && requestedContext !== contextKey && (
                     <p role="status" className="mt-3 text-sm text-muted-foreground">
                       {t(
-                        "The context changed. Request a new explanation.",
-                        "المعلومات تغيّرت؛ اطلب تفسيرًا محدّثًا.",
+                        "Your profile changed. Compare again to use the confirmed starting point.",
+                        "البروفايل تغيّر؛ حدّث المقارنة عشان تستخدم نقطة البداية المؤكدة.",
                       )}
                     </p>
                   )}
                   <MetaSnapshot
                     briefing={analysis.data}
-                    interests={interests}
+
                     loading={analysis.isFetching}
                   />
                 </>

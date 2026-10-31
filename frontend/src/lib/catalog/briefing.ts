@@ -2,7 +2,7 @@ import { z } from "zod";
 import { isContractInstant } from "../contract/time";
 import type { StudentProfile, Recommendation } from "@/lib/contract/types";
 import type { ListingSummary } from "./service";
-import { apiJson } from "@/lib/account/api";
+import { apiJson, accountDataChanged } from "@/lib/account/api";
 
 export type AccountProfileFacts = Pick<
   StudentProfile,
@@ -76,6 +76,31 @@ export interface MetaBriefing {
   questionsToClarify: string[];
   sources?: Array<{ label: string; url: string }> | undefined;
   generatedAt?: string | undefined;
+  startingPoint?: BriefingStartingPoint | null | undefined;
+}
+export interface BriefingStartingPoint {
+  questionId: string;
+  challenge: string;
+  question: string;
+  answer: "not_yet" | "guided" | "independent" | "not_sure" | null;
+  label: string;
+  explanation: string;
+  nextAction: string;
+  options: Array<{ value: "not_yet" | "guided" | "independent" | "not_sure"; label: string }>;
+  evidence: Array<{ kind: string; label: string; text: string }>;
+}
+export async function saveBriefingStartingPoint(
+  context: BriefingContext,
+  questionId: string,
+  answer: string,
+) {
+  const profile = await apiJson<StudentProfile>(
+    `/listings/${encodeURIComponent(context.opportunityId)}/starting-point`,
+    "PUT",
+    { context, questionId, answer },
+  );
+  accountDataChanged();
+  return profile;
 }
 export interface MetaBriefingService {
   available: boolean;
@@ -132,6 +157,27 @@ export function validateBriefing(input: unknown, expected: BriefingContext): Met
         .max(30)
         .optional(),
       generatedAt: z.string().refine(isContractInstant).optional(),
+      startingPoint: z
+        .object({
+          questionId: z.string(),
+          challenge: text,
+          question: text,
+          answer: z.enum(["not_yet", "guided", "independent", "not_sure"]).nullable(),
+          label: text,
+          explanation: text,
+          nextAction: text,
+          options: z
+            .array(
+              z.object({
+                value: z.enum(["not_yet", "guided", "independent", "not_sure"]),
+                label: text,
+              }),
+            )
+            .max(4),
+          evidence: z.array(z.object({ kind: z.string(), label: text, text })).max(20),
+        })
+        .nullable()
+        .optional(),
     })
     .strict()
     .parse(input);
