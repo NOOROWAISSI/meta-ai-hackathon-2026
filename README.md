@@ -1,41 +1,31 @@
-# Meta Hackathon 2026
+# Meta Hackathon 2026 / NextStep
 
-A hackathon discovery and preparation platform for Palestinian university students.
+A student opportunity discovery and preparation application. The expanded scope starts with Palestine and global online opportunities.
 
-## Project Overview
+## Team ownership
 
-This platform helps students discover relevant hackathons,
-understand participation requirements, generate personalized
-preparation plans, and track their progress.
+- Noor Owaissi: frontend, application backend and MySQL.
+- Rofi Ibnu: Meta integration, prompts, eligibility/evaluation coordination and AI quality.
+- Integration contracts and deployment are coordinated together.
 
-## Team
+## Projects
 
-- Noor Owaissi — Frontend, Backend & Database
-- Rofi Ibnu — Product, Meta AI Integration, Eligibility & Evaluation
+- [frontend](frontend/README.md): React, TypeScript, Tailwind and labelled fictional demo workflows; authentication and real catalog reads use the API.
+- [backend](backend/README.md): ASP.NET Core controllers/services/repositories, accounts, recovery, transactional MySQL state and preparation orchestration.
+- [ai/dotnet](ai/dotnet/README-INTEGRATION.md): Rofi's original preparation client, dependency PR #10.
+- [integration handoff](backend/HANDOFF-ROFI.md): current contracts, review requests and unverified live paths.
 
-## Tech Stack
+    powershell -NoProfile -ExecutionPolicy Bypass -File backend/Setup-Database.ps1
+    powershell -NoProfile -ExecutionPolicy Bypass -File backend/Start-Api.ps1
 
-- Frontend: React + TypeScript
-- Backend: ASP.NET Core Web API 
-- Database: MySQL 
-- AI: Meta Models
+In another terminal:
 
-## Documentation
+    cd frontend
+    npm ci --legacy-peer-deps
+    npm run dev
 
-Product specifications are maintained in our shared Google Drive.
+## Review status
 
-## Project Status
+This is an integration foundation, not a production-complete MVP. The noor application PR depends on Rofi's provider PR #10. Meta search/content translation are isolated in a separate proposal for Rofi; no live Meta, Google OAuth or Gmail delivery is claimed tested. No browser demo profile/plan is silently imported on sign-in.
 
-MVP Development — Draft v0.2
-
-## Frontend
-
-The React + TypeScript interface lives in [frontend/](./frontend/README.md).
-
-```sh
-cd frontend
-npm ci --legacy-peer-deps
-npm run dev
-```
-
-The current frontend uses fictional demo records and local browser storage. Backend, database, and live Meta AI integration are not connected yet.
+Optional demo student accounts: [DEMO-STUDENTS.md](backend/DEMO-STUDENTS.md). Scope decisions: [PRODUCT-SCOPE-UPDATE.md](PRODUCT-SCOPE-UPDATE.md). Secrets belong in private backend configuration, never Git or frontend code. No direct merge to main is part of this publication.

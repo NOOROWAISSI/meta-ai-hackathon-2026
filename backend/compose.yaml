@@ -1,0 +1,19 @@
+services:
+  mysql:
+    image: mysql:8.4
+    ports:
+      - "127.0.0.1:33306:3306"
+    environment:
+      MYSQL_DATABASE: nextstep
+      MYSQL_USER: nextstep
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in the private env file}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in the private env file}
+    volumes:
+      - nextstep_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_PASSWORD mysql -u$$MYSQL_USER -e 'SELECT 1' nextstep >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+volumes:
+  nextstep_mysql:

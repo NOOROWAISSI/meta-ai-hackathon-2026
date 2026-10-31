@@ -10,7 +10,7 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,8 +37,12 @@ interface Props {
   reason?: string | undefined;
   saved: boolean;
   onToggleSave: () => void;
-  onDismiss: (reason?: string) => void;
+  onDismiss?: (reason?: string) => void;
   onView: () => void;
+  viewLabel?: string;
+  reasonLabel?: string;
+  savePending?: boolean;
+  children?: ReactNode;
 }
 
 export function DeadlineLine({ h }: { h: Hackathon }) {
@@ -54,10 +58,20 @@ export function DeadlineLine({ h }: { h: Hackathon }) {
   );
 }
 
-export function HackathonCard({ h, reason, saved, onToggleSave, onDismiss, onView }: Props) {
+export function HackathonCard({
+  h,
+  reason,
+  saved,
+  onToggleSave,
+  onDismiss,
+  onView,
+  viewLabel = "View opportunity",
+  reasonLabel = "Generic suggestion",
+  savePending = false,
+  children,
+}: Props) {
   const a = ACCENTS[h.accent];
   const [open, setOpen] = useState(false);
-  const [pop, setPop] = useState(false);
   const team = teamLabel(h);
 
   return (
@@ -85,43 +99,40 @@ export function HackathonCard({ h, reason, saved, onToggleSave, onDismiss, onVie
         <div className="absolute right-3 top-3 flex gap-1.5">
           <button
             type="button"
-            onClick={() => {
-              onToggleSave();
-              setPop(true);
-            }}
-            onAnimationEnd={() => setPop(false)}
+            onClick={onToggleSave}
+            disabled={savePending}
+            aria-busy={savePending}
             aria-pressed={saved}
             aria-label={saved ? `Unsave ${h.title}` : `Save ${h.title}`}
             className={cn(
-              "transition-soft grid size-9 place-items-center rounded-xl backdrop-blur-md active:scale-90",
+              "transition-soft grid size-11 place-items-center rounded-xl backdrop-blur-md active:scale-90 disabled:opacity-60",
               saved ? "bg-card text-primary" : "bg-card/70 text-foreground hover:bg-card",
             )}
           >
-            <Bookmark
-              className={cn("size-4", saved && "fill-current", pop && "animate-save-pop")}
-              aria-hidden
-            />
+            <Bookmark className={cn("size-4", saved && "fill-current")} aria-hidden />
           </button>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              aria-label={`More options for ${h.title}`}
-              className="transition-soft grid size-9 place-items-center rounded-xl bg-card/70 text-foreground backdrop-blur-md hover:bg-card active:scale-90"
-            >
-              <MoreHorizontal className="size-4" aria-hidden />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 rounded-2xl">
-              <DropdownMenuItem onSelect={() => onDismiss()}>Not interested</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                Tell us why (optional)
-              </DropdownMenuLabel>
-              {NOT_INTERESTED_REASONS.map((r) => (
-                <DropdownMenuItem key={r} onSelect={() => onDismiss(r)}>
-                  {r}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {onDismiss && (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                aria-label={`More options for ${h.title}`}
+                className="transition-soft grid size-9 place-items-center rounded-xl bg-card/70 text-foreground backdrop-blur-md hover:bg-card active:scale-90"
+              >
+                <MoreHorizontal className="size-4" aria-hidden />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 rounded-2xl">
+                <DropdownMenuItem onSelect={() => onDismiss()}>Not interested</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                  Tell us why (optional)
+                </DropdownMenuLabel>
+                {NOT_INTERESTED_REASONS.map((r) => (
+                  <DropdownMenuItem key={r} onSelect={() => onDismiss(r)}>
+                    {r}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
 
@@ -167,7 +178,9 @@ export function HackathonCard({ h, reason, saved, onToggleSave, onDismiss, onVie
           </div>
           <div className="flex items-start gap-2">
             <CalendarClock className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-            <dt className="shrink-0 whitespace-nowrap text-muted-foreground">Register by</dt>
+            <dt className="shrink-0 text-muted-foreground">
+              {viewLabel === "View details" ? "Registration deadline" : "Register by"}
+            </dt>
             <dd>
               <DeadlineLine h={h} />
             </dd>
@@ -199,14 +212,16 @@ export function HackathonCard({ h, reason, saved, onToggleSave, onDismiss, onVie
         {reason && (
           <div className={cn("rounded-2xl border p-3", a.tint)}>
             <div className="flex flex-col gap-0.5">
-              <p className="text-sm font-semibold">Why it's here</p>
+              <p className="text-sm font-semibold">
+                {reasonLabel === "Generic suggestion" ? "Why it's here" : "Why it relates to you"}
+              </p>
               <span
                 className={cn(
                   "inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide",
                   a.ink,
                 )}
               >
-                <Sparkles className="size-3" aria-hidden /> Generic suggestion
+                <Sparkles className="size-3" aria-hidden /> {reasonLabel}
               </span>
             </div>
             <p
@@ -241,6 +256,7 @@ export function HackathonCard({ h, reason, saved, onToggleSave, onDismiss, onVie
           </div>
         )}
 
+        {children}
         <div className="mt-auto flex items-center justify-between gap-2 pt-2">
           <span className="text-xs text-muted-foreground">
             Unverified fixture
@@ -251,7 +267,7 @@ export function HackathonCard({ h, reason, saved, onToggleSave, onDismiss, onVie
             onClick={onView}
             className="transition-soft whitespace-nowrap rounded-xl bg-foreground px-3.5 py-2 text-sm font-semibold text-background hover:bg-primary active:scale-95"
           >
-            View opportunity
+            {viewLabel}
           </button>
         </div>
       </div>

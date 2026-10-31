@@ -73,22 +73,3 @@ export interface OpportunityAnswer {
   sourceLabel: string;
   sourceUrl: string;
 }
-export interface PreparationPlan {
-  eventId: string;
-  title: string;
-  context: string;
-  createdAt: string;
-  weeklyHours: number;
-  freeOnly: boolean;
-  budget: number | null;
-  currency?: string;
-  deadline: string | null;
-  tasks: {
-    id: string;
-    title: string;
-    deliverable: string;
-    completionCriteria: string;
-    hours: number;
-    status: "not_started" | "in_progress" | "done";
-  }[];
-}

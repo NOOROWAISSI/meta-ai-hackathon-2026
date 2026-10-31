@@ -1,0 +1,90 @@
+{
+  "sourceCommit": "10840279ca22fbd30fb79e8f72172041b32ae9f8",
+  "sourceReportSha256": "57ac692968e3d8b93c5dd6bb52204a12807dde390b998bee430bac63e0f8ed78",
+  "executedAtUtc": "2026-10-31T03:06:11.437049+00:00",
+  "promptFingerprint": "sha256:8c1051aed23f342cc5e8bc4e75ed7722add7b370f826ff1c2e75d87173617240",
+  "candidates": {
+    "beginner-limited": {
+      "tasks": [
+        {
+          "title": "Map core user journey for adding and completing tasks",
+          "target": {
+            "kind": "goal",
+            "goalId": "g-beginner"
+          },
+          "priority": "should",
+          "deliverable": "One-page outline and simple sketch of the task tracker user journey",
+          "completionCriteria": "Written flow lists entry, add-task, view-list, and complete-task steps and identifies the demo path to be built.",
+          "estimatedHours": 1.5,
+          "resourceIds": []
+        },
+        {
+          "title": "Build static task list layout",
+          "target": {
+            "kind": "goal",
+            "goalId": "g-beginner"
+          },
+          "priority": "should",
+          "deliverable": "Static HTML page laying out the task list interface",
+          "completionCriteria": "Page renders a task input, task list, and labeled complete and delete controls using reported HTML skills.",
+          "estimatedHours": 3,
+          "resourceIds": []
+        },
+        {
+          "title": "Add client-side task interactions without backend",
+          "target": {
+            "kind": "goal",
+            "goalId": "g-beginner"
+          },
+          "priority": "should",
+          "deliverable": "Browser-only interactive prototype for add, complete, and delete actions",
+          "completionCriteria": "Prototype allows adding a task, marking it complete, and removing it in the browser without backend code.",
+          "estimatedHours": 3,
+          "resourceIds": []
+        },
+        {
+          "title": "Prepare demonstration walkthrough",
+          "target": {
+            "kind": "goal",
+            "goalId": "g-beginner"
+          },
+          "priority": "could",
+          "deliverable": "Short demo script and walkthrough notes for the user journey",
+          "completionCriteria": "Script covers start-to-finish user journey and includes notes for showing each interaction during demonstration.",
+          "estimatedHours": 1.5,
+          "resourceIds": []
+        }
+      ],
+      "explanation": "Drafts build on reported Basic HTML and first-hackathon context toward goal g-beginner, focusing on a frontend-only task tracker with a clear user journey and no backend work. No reviewed resources were available, so no resource links are attached."
+    },
+    "mandatory-missing": {
+      "tasks": [
+        {
+          "title": "Record demonstration video of working prototype",
+          "target": {
+            "kind": "requirement",
+            "requirementId": "req-demo-video"
+          },
+          "priority": "must",
+          "deliverable": "Video file showing the working prototype operating through its main flow",
+          "completionCriteria": "Recording shows the prototype functioning end to end and is stored in a format ready to submit",
+          "estimatedHours": 3.5,
+          "resourceIds": []
+        },
+        {
+          "title": "Stabilize prototype main flow for demonstration",
+          "target": {
+            "kind": "goal",
+            "goalId": "g-mandatory"
+          },
+          "priority": "should",
+          "deliverable": "Tested prototype build that completes its main demonstration flow",
+          "completionCriteria": "Prototype launches and completes the intended demonstration path without blocking errors in a rehearsal run",
+          "estimatedHours": 6,
+          "resourceIds": []
+        }
+      ],
+      "explanation": "Includes the missing mandatory demo video as a must task and a supporting prototype stabilization task aligned to reported React and prototype experience."
+    }
+  }
+}

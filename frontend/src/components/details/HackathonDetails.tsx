@@ -85,6 +85,7 @@ export function HackathonDetails({
   saved,
   onToggleSave,
   onEditProfile,
+  onPrepare,
   requestUpdate = false,
   onBack,
 }: {
@@ -93,6 +94,7 @@ export function HackathonDetails({
   saved: boolean;
   onToggleSave: () => void;
   onEditProfile?: () => void;
+  onPrepare?: () => void;
   requestUpdate?: boolean;
   onSaveProfile?: (profile: UserProfile) => boolean;
   onBack: () => void;
@@ -217,6 +219,10 @@ export function HackathonDetails({
     qa.mutate({ text: text.trim(), record: details, facts: effectiveProfile });
   };
   const openPreparation = () => {
+    if (!blocked && onPrepare) {
+      onPrepare();
+      return;
+    }
     setTab("preparation");
     requestAnimationFrame(() => {
       document.getElementById("prep-heading")?.focus({ preventScroll: true });
@@ -798,7 +804,7 @@ export function HackathonDetails({
       <div className="detail-mobile-action glass-strong fixed inset-x-4 bottom-[5.4rem] z-20 rounded-2xl p-2 lg:hidden">
         <button type="button" onClick={openPreparation} className="detail-primary w-full">
           <Sparkles className="size-4" aria-hidden />
-          {blocked ? "Review participation blocker" : "Preparation options"}
+          {blocked ? "Review participation blocker" : "Prepare for this opportunity"}
           <ArrowRight className="size-4" aria-hidden />
         </button>
       </div>

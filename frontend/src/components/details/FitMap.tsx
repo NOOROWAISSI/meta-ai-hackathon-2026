@@ -1,6 +1,6 @@
 import { FileCheck2, GraduationCap, MapPin, ShieldCheck, UserRound } from "lucide-react";
-import { useState } from "react";
-import type { AnalysisSnapshot, FitMatch, Lane } from "@/lib/details/types";
+import { useState, type ReactNode } from "react";
+import type { AnalysisSnapshot, FitMatch, FitStatus, Lane } from "@/lib/details/types";
 import { RequirementRow } from "./DetailSections";
 
 const ICONS = {
@@ -10,12 +10,18 @@ const ICONS = {
   preparation: GraduationCap,
 };
 
-export function FitMap({
+interface VisualMatch {
+  requirement: { id: string; lane: Lane };
+  status: FitStatus;
+}
+export function FitMap<T extends VisualMatch = FitMatch>({
   matches,
   lanes,
+  renderMatch,
 }: {
-  matches: FitMatch[];
+  matches: T[];
   lanes: { id: Lane; title: string; description: string }[];
+  renderMatch?: (match: T) => ReactNode;
 }) {
   const [selected, setSelected] = useState<Lane | null>(null);
   const active = lanes.find((lane) => lane.id === selected);
@@ -98,7 +104,8 @@ export function FitMap({
         </div>
       </div>
       <p className="mb-5 text-[10px] text-muted-foreground">
-        Each dot is one check. Planet sizes are decorative, not scores. Select a group to inspect it.
+        Each dot is one check. Planet sizes are decorative, not scores. Select a group to inspect
+        it.
       </p>
       {active && (
         <section
@@ -114,8 +121,20 @@ export function FitMap({
             {matches
               .filter((match) => match.requirement.lane === selected)
               .map((match) => (
-                <RequirementRow key={match.requirement.id} match={match} />
+                <div key={match.requirement.id}>
+                  {renderMatch ? (
+                    renderMatch(match)
+                  ) : (
+                    <RequirementRow match={match as unknown as FitMatch} />
+                  )}
+                </div>
               ))}
+            {!matches.some((match) => match.requirement.lane === selected) && (
+              <p className="text-sm text-muted-foreground">
+                No published checks are available in this group. This is not a confirmation that no
+                conditions apply.
+              </p>
+            )}
           </div>
         </section>
       )}
