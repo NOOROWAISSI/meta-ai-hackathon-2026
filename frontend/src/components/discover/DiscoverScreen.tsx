@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import {
   AlertCircle,
   Inbox,
+  Globe,
   RotateCcw,
   Search,
   SearchX,
@@ -107,7 +108,7 @@ export function DiscoverScreen() {
     DEFAULT_PROFILE,
   );
   const [saved, setSaved] = useLocalState<string[]>("nextstep.saved", []);
-  const [dismissed, setDismissed] = useVisitState<string[]>("discover.dismissed", []);
+  const [dismissed, setDismissed, , hiddenError] = useLocalState<string[]>("nextstep.hidden", []);
   const [queryDraft, setQueryDraft] = useVisitState("discover.queryDraft", "");
   const [query, setQuery] = useVisitState("discover.query", "");
   const [filters, setFilters] = useVisitState<Filters>("discover.filters", EMPTY_FILTERS);
@@ -165,9 +166,9 @@ export function DiscoverScreen() {
     setQueryDraft("");
     setTiming(null);
   };
-  const toggleSave = (id: string) => {
+  const toggleSave = async (id: string) => {
     const removing = saved.includes(id);
-    if (setSaved((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))) {
+    if (await setSaved((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))) {
       toast.success(removing ? "Removed from saved" : "Saved in this browser");
     } else {
       toast.error("Couldn't save your change", {
@@ -182,11 +183,21 @@ export function DiscoverScreen() {
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
     void navigate({ to: "/", search: { event: event.id }, resetScroll: true });
   };
-  const dismiss = (h: Hackathon, reason?: string) => {
-    setDismissed((d) => [...d, h.id]);
+  const restoreHidden = async (id?: string) => {
+    if (await setDismissed((items) => (id ? items.filter((value) => value !== id) : [])))
+      toast.success("Restored to Discovery");
+    else toast.error("Couldn't restore this opportunity. Please retry.");
+  };
+  const dismiss = async (h: Hackathon, reason?: string) => {
+    if (!(await setDismissed((items) => (items.includes(h.id) ? items : [...items, h.id])))) {
+      toast.error("Couldn't hide this opportunity. Please retry.");
+      return;
+    }
     toast(`Hidden “${h.title}”`, {
-      description: reason ? `Reason: ${reason}` : "We'll show fewer like this.",
-      action: { label: "Undo", onClick: () => setDismissed((d) => d.filter((x) => x !== h.id)) },
+      description: reason
+        ? `Reason: ${reason}. Restore it in Not interested below.`
+        : "Find it in Not interested below to restore it anytime.",
+      action: { label: "Undo", onClick: () => void restoreHidden(h.id) },
     });
   };
 
@@ -231,6 +242,10 @@ export function DiscoverScreen() {
   return (
     <>
       <div hidden={!!eventId} className="space-y-6">
+        <Link to="/opportunities" className="detail-primary min-h-12">
+          Explore real opportunities · Courses & hackathons
+          <Globe className="size-4" aria-hidden />
+        </Link>
         {import.meta.env.DEV && (
           <details className="text-xs text-muted-foreground">
             <summary className="w-fit cursor-pointer rounded-lg px-2 py-1">
@@ -621,7 +636,7 @@ export function DiscoverScreen() {
             icon={<Inbox className="size-6" aria-hidden />}
             title="You've hidden every opportunity"
             body="Restore the demo catalog to explore these opportunities again."
-            action={{ label: "Restore opportunities", onClick: () => setDismissed([]) }}
+            action={{ label: "Restore opportunities", onClick: () => void restoreHidden() }}
           />
         ) : gridItems.length === 0 ? (
           <StateCard
@@ -659,6 +674,66 @@ export function DiscoverScreen() {
           />
         )}
 
+        <details id="not-interested" className="glass rounded-3xl p-5">
+          <summary className="cursor-pointer rounded-xl text-sm font-semibold">
+            Not interested · {dismissed.length} hidden opportunities
+          </summary>
+          <p className="mt-3 text-sm text-muted-foreground">
+            These opportunities are hidden from Discovery. Restore one whenever you change your
+            mind. Your saved bookmarks and preparation plans stay intact.
+          </p>
+          {hiddenError && (
+            <p role="alert" className="prep-error mt-3">
+              {hiddenError} Your last confirmed preferences are kept.
+            </p>
+          )}
+          {!dismissed.length ? (
+            <p className="mt-4 text-sm text-muted-foreground">No hidden opportunities.</p>
+          ) : (
+            <div className="mt-4 divide-y divide-border">
+              {dismissed.map((id) => {
+                const event = list.find((item) => item.id === id);
+                return (
+                  <div key={id} className="flex flex-wrap items-center justify-between gap-3 py-4">
+                    <div>
+                      <p className="font-semibold">
+                        {event?.title ?? "Opportunity currently unavailable"}
+                      </p>
+                      {event && (
+                        <p className="mt-1 text-xs text-muted-foreground">{event.organizer}</p>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {event && (
+                        <button
+                          type="button"
+                          className="detail-secondary min-h-11"
+                          onClick={() => openOpportunity(event)}
+                        >
+                          View details
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="detail-secondary min-h-11"
+                        onClick={() => void restoreHidden(id)}
+                      >
+                        Restore opportunity
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+              <button
+                type="button"
+                className="detail-secondary mt-4"
+                onClick={() => void restoreHidden()}
+              >
+                Restore all
+              </button>
+            </div>
+          )}
+        </details>
         <p className="text-center text-xs text-muted-foreground">
           Demo opportunities. All events, organizers, and AI recommendations are fictional and not
           verified. Links point to example.org placeholders.
@@ -674,6 +749,7 @@ export function DiscoverScreen() {
           saved={saved.includes(eventId)}
           onToggleSave={() => toggleSave(eventId)}
           onEditProfile={openProfile}
+          onPrepare={() => void navigate({ to: "/plans", search: { event: eventId } })}
           onBack={() => void navigate({ to: "/", search: {}, resetScroll: false })}
         />
       )}

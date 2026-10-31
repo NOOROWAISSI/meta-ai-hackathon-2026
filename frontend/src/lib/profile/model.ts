@@ -1,3 +1,4 @@
+import { isContractDate } from "../contract/time";
 import type { UserProfile } from "../discover/types";
 
 export const GOALS = {
@@ -53,12 +54,7 @@ export function validateDraft(draft: ProfileDraft): ProfileErrors {
     !/^[A-Z]{3}$/.test(draft.currency ?? "")
   )
     errors["currency"] = "Choose a currency for your maximum budget.";
-  if (
-    draft.targetDate &&
-    (!/^\d{4}-\d{2}-\d{2}$/.test(draft.targetDate) ||
-      Number.isNaN(Date.parse(draft.targetDate)) ||
-      new Date(`${draft.targetDate}T12:00:00Z`).toISOString().slice(0, 10) !== draft.targetDate)
-  )
+  if (draft.targetDate && !isContractDate(draft.targetDate))
     errors["targetDate"] = "Enter a valid calendar date.";
   for (const project of draft.projects ?? []) {
     const prefix = `project.${project.id}`;

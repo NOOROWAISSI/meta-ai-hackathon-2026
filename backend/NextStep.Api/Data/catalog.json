@@ -1,0 +1,2062 @@
+[
+  {
+    "id": "E01",
+    "title": "LaunchPad Hacks",
+    "organizer": "Hack4TodayOrg",
+    "listingHost": "Devpost",
+    "canonicalEventUrl": "https://launchpad-hacks.devpost.com/",
+    "officialUrl": "https://launchpad-hacks.devpost.com/",
+    "rulesUrl": "https://launchpad-hacks.devpost.com/rules",
+    "format": "online",
+    "theme": "Useful prototypes for real users",
+    "sourceRevision": "source-fixtures-v0.2-2026-10-27",
+    "lastReviewedAt": "2026-10-27T11:20:05Z",
+    "informationFreshness": "needs_verification",
+    "costStatus": "unknown",
+    "benefits": [],
+    "sourceEvidence": [
+      {
+        "id": "ev-lp-student",
+        "sourceUrl": "https://launchpad-hacks.devpost.com/rules",
+        "sourceSection": "Eligibility and teams",
+        "passage": "must be students",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-lp-majority",
+        "sourceUrl": "https://launchpad-hacks.devpost.com/rules",
+        "sourceSection": "Eligibility and teams",
+        "passage": "above the legal age of majority",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-lp-team",
+        "sourceUrl": "https://launchpad-hacks.devpost.com/rules",
+        "sourceSection": "Eligibility and teams",
+        "passage": "Solo entries and teams are welcome",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-lp-demo",
+        "sourceUrl": "https://launchpad-hacks.devpost.com/rules",
+        "sourceSection": "Submission requirements",
+        "passage": "accessible demo, build, or recorded walkthrough",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-lp-screens",
+        "sourceUrl": "https://launchpad-hacks.devpost.com/",
+        "sourceSection": "What to submit",
+        "passage": "Screenshots of the main experience",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-lp-video",
+        "sourceUrl": "https://launchpad-hacks.devpost.com/",
+        "sourceSection": "What to submit",
+        "passage": "encouraged but optional",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      }
+    ],
+    "sourceCoverage": {
+      "participation": {
+        "state": "incomplete",
+        "reviewedRequirementIds": [],
+        "missingChecks": [
+          "The document provides selected excerpts, not a complete material-rule inventory."
+        ],
+        "reviewedAt": null
+      },
+      "submission": {
+        "state": "incomplete",
+        "reviewedRequirementIds": [],
+        "missingChecks": [
+          "The document provides selected excerpts, not a complete material-rule inventory."
+        ],
+        "reviewedAt": null
+      },
+      "prize": {
+        "state": "incomplete",
+        "reviewedRequirementIds": [],
+        "missingChecks": [
+          "The document provides selected excerpts, not a complete material-rule inventory."
+        ],
+        "reviewedAt": null
+      }
+    },
+    "requirements": [
+      {
+        "id": "E01-p-enrollment",
+        "statement": "Enrollment at a recognized institution",
+        "subject": "individual",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "enrollment",
+          "allowed": [
+            "school",
+            "higher_education"
+          ]
+        },
+        "claims": [
+          {
+            "value": "must be students",
+            "evidenceIds": [
+              "ev-lp-student"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-lp-student"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "E01-p-majority",
+        "statement": "Majority in residence jurisdiction",
+        "subject": "individual",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "majority",
+          "jurisdiction": "residence"
+        },
+        "claims": [
+          {
+            "value": "above the legal age of majority",
+            "evidenceIds": [
+              "ev-lp-majority"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-lp-majority"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "E01-s-demo",
+        "statement": "Accessible demo, build, or recorded walkthrough",
+        "subject": "project",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "submission_criterion",
+          "criterion": "functionality",
+          "parameters": {}
+        },
+        "claims": [
+          {
+            "value": "accessible demo, build, or recorded walkthrough",
+            "evidenceIds": [
+              "ev-lp-demo"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-lp-demo"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "submission_mandatory",
+        "lane": "submission",
+        "isMandatory": true
+      },
+      {
+        "id": "E01-s-screens",
+        "statement": "Screenshots of the main experience",
+        "subject": "project",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "submission_criterion",
+          "criterion": "presence",
+          "parameters": {
+            "artifact": "screenshots"
+          }
+        },
+        "claims": [
+          {
+            "value": "Screenshots of the main experience",
+            "evidenceIds": [
+              "ev-lp-screens"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-lp-screens"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "submission_mandatory",
+        "lane": "submission",
+        "isMandatory": true
+      },
+      {
+        "id": "E01-p-geography",
+        "statement": "Applicable geographic and platform conditions need review",
+        "subject": "individual",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "unresolved",
+          "reason": "Individual geographic/policy applicability is not reviewed"
+        },
+        "claims": [
+          {
+            "value": "Applicable geographic and platform conditions need review",
+            "evidenceIds": []
+          }
+        ],
+        "sourceEvidenceIds": [],
+        "sourceStatus": "unverified",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      }
+    ],
+    "timelineEvents": [
+      {
+        "id": "E01-submission-close",
+        "kind": "submission_close",
+        "claims": [
+          {
+            "id": "E01-close-claim",
+            "publishedText": "Source-summary document reports 2026-11-20T17:00:00-05:00",
+            "dateTime": "2026-11-20T17:00:00-05:00",
+            "evidenceIds": []
+          }
+        ],
+        "sourceStatus": "unverified"
+      }
+    ],
+    "interestTags": []
+  },
+  {
+    "id": "E02",
+    "title": "Global AI Builder's Challenge",
+    "organizer": "Refactor The World",
+    "listingHost": "Devpost",
+    "canonicalEventUrl": "https://global-ai-builders-challenge.devpost.com/",
+    "officialUrl": "https://global-ai-builders-challenge.devpost.com/",
+    "rulesUrl": "https://global-ai-builders-challenge.devpost.com/rules",
+    "format": "online",
+    "theme": "Student technology projects with AI encouraged",
+    "sourceRevision": "source-fixtures-v0.2-2026-10-27",
+    "lastReviewedAt": "2026-10-27T11:20:05Z",
+    "informationFreshness": "needs_verification",
+    "costStatus": "free",
+    "benefits": [],
+    "sourceEvidence": [
+      {
+        "id": "ev-gai-age",
+        "sourceUrl": "https://global-ai-builders-challenge.devpost.com/",
+        "sourceSection": "About the challenge",
+        "passage": "students aged 13 and older",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-gai-team",
+        "sourceUrl": "https://global-ai-builders-challenge.devpost.com/",
+        "sourceSection": "About the challenge",
+        "passage": "up to six",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-gai-video",
+        "sourceUrl": "https://global-ai-builders-challenge.devpost.com/rules",
+        "sourceSection": "Event rules",
+        "passage": "2–4 minute demonstration video",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-gai-repo",
+        "sourceUrl": "https://global-ai-builders-challenge.devpost.com/rules",
+        "sourceSection": "Event rules",
+        "passage": "public GitHub access to all project code",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-gai-disclosures",
+        "sourceUrl": "https://global-ai-builders-challenge.devpost.com/rules",
+        "sourceSection": "Event rules",
+        "passage": "the complete team roster, a development disclosure, and an AI disclosure",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      }
+    ],
+    "sourceCoverage": {
+      "participation": {
+        "state": "incomplete",
+        "reviewedRequirementIds": [],
+        "missingChecks": [
+          "The document provides selected excerpts, not a complete material-rule inventory."
+        ],
+        "reviewedAt": null
+      },
+      "submission": {
+        "state": "incomplete",
+        "reviewedRequirementIds": [],
+        "missingChecks": [
+          "The document provides selected excerpts, not a complete material-rule inventory."
+        ],
+        "reviewedAt": null
+      },
+      "prize": {
+        "state": "incomplete",
+        "reviewedRequirementIds": [],
+        "missingChecks": [
+          "The document provides selected excerpts, not a complete material-rule inventory."
+        ],
+        "reviewedAt": null
+      }
+    },
+    "requirements": [
+      {
+        "id": "E02-p-age",
+        "statement": "Students aged thirteen and older",
+        "subject": "individual",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "minimum_age",
+          "minimum": 13
+        },
+        "claims": [
+          {
+            "value": "students aged 13 and older",
+            "evidenceIds": [
+              "ev-gai-age"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-gai-age"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "E02-p-enrollment",
+        "statement": "Current student enrollment",
+        "subject": "individual",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "enrollment",
+          "allowed": [
+            "school",
+            "higher_education"
+          ]
+        },
+        "claims": [
+          {
+            "value": "students aged 13 and older",
+            "evidenceIds": [
+              "ev-gai-age"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-gai-age"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "E02-p-team-max",
+        "statement": "Teams up to six including the submitter",
+        "subject": "team",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "team_bound",
+          "bound": "maximum",
+          "count": 6
+        },
+        "claims": [
+          {
+            "value": "up to six",
+            "evidenceIds": [
+              "ev-gai-team"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-gai-team"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "E02-s-video",
+        "statement": "Two-to-four-minute demo video",
+        "subject": "project",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "submission_criterion",
+          "criterion": "duration",
+          "parameters": {
+            "minimumMinutes": 2,
+            "maximumMinutes": 4
+          }
+        },
+        "claims": [
+          {
+            "value": "2–4 minute demonstration video",
+            "evidenceIds": [
+              "ev-gai-video"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-gai-video"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "submission_mandatory",
+        "lane": "submission",
+        "isMandatory": true
+      },
+      {
+        "id": "E02-s-repo",
+        "statement": "Public project code repository",
+        "subject": "project",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "submission_criterion",
+          "criterion": "visibility",
+          "parameters": {
+            "artifact": "repository",
+            "visibility": "public"
+          }
+        },
+        "claims": [
+          {
+            "value": "public GitHub access to all project code",
+            "evidenceIds": [
+              "ev-gai-repo"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-gai-repo"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "submission_mandatory",
+        "lane": "submission",
+        "isMandatory": true
+      },
+      {
+        "id": "E02-p-geography",
+        "statement": "Applicable geographic and platform conditions need review",
+        "subject": "individual",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "unresolved",
+          "reason": "Individual geographic/policy applicability is not reviewed"
+        },
+        "claims": [
+          {
+            "value": "Applicable geographic and platform conditions need review",
+            "evidenceIds": []
+          }
+        ],
+        "sourceEvidenceIds": [],
+        "sourceStatus": "unverified",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      }
+    ],
+    "timelineEvents": [
+      {
+        "id": "E02-submission-close",
+        "kind": "submission_close",
+        "claims": [
+          {
+            "id": "E02-close-claim",
+            "publishedText": "Source-summary document reports 2026-11-28T15:00:00-08:00",
+            "dateTime": "2026-11-28T15:00:00-08:00",
+            "evidenceIds": []
+          }
+        ],
+        "sourceStatus": "unverified"
+      }
+    ],
+    "interestTags": []
+  },
+  {
+    "id": "E03",
+    "title": "AI Agents for Founders Challenge — HETIC 2026",
+    "organizer": "HETIC (France)",
+    "listingHost": "Devpost",
+    "canonicalEventUrl": "https://ai-agents-founders-hetic-26.devpost.com/",
+    "officialUrl": "https://ai-agents-founders-hetic-26.devpost.com/",
+    "rulesUrl": "https://ai-agents-founders-hetic-26.devpost.com/rules",
+    "format": "online",
+    "theme": "Agents and workflows for founder tasks",
+    "sourceRevision": "source-fixtures-v0.2-2026-10-27",
+    "lastReviewedAt": "2026-10-27T11:20:05Z",
+    "informationFreshness": "needs_verification",
+    "costStatus": "unknown",
+    "benefits": [],
+    "sourceEvidence": [
+      {
+        "id": "ev-hetic-enrollment",
+        "sourceUrl": "https://ai-agents-founders-hetic-26.devpost.com/rules",
+        "sourceSection": "3. Eligibility",
+        "passage": "currently enrolled in a higher-education institution",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-hetic-age",
+        "sourceUrl": "https://ai-agents-founders-hetic-26.devpost.com/rules",
+        "sourceSection": "3. Eligibility",
+        "passage": "at least 18 years old, or of legal age of majority",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-hetic-cap-rules",
+        "sourceUrl": "https://ai-agents-founders-hetic-26.devpost.com/rules",
+        "sourceSection": "3. Eligibility",
+        "passage": "Teams of 2 to 4 members",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-hetic-cap-overview",
+        "sourceUrl": "https://ai-agents-founders-hetic-26.devpost.com/",
+        "sourceSection": "Who can join",
+        "passage": "in teams of 2 to 5",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-hetic-architecture",
+        "sourceUrl": "https://ai-agents-founders-hetic-26.devpost.com/",
+        "sourceSection": "What to submit",
+        "passage": "An architecture diagram.",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-hetic-disclosure",
+        "sourceUrl": "https://ai-agents-founders-hetic-26.devpost.com/",
+        "sourceSection": "What to submit",
+        "passage": "AI Disclosure Statement",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-hetic-time",
+        "sourceUrl": "https://ai-agents-founders-hetic-26.devpost.com/",
+        "sourceSection": "What to submit",
+        "passage": "Time-Saved Report",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-hetic-human",
+        "sourceUrl": "https://ai-agents-founders-hetic-26.devpost.com/",
+        "sourceSection": "What to submit",
+        "passage": "Human Judgment",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-hetic-responsible",
+        "sourceUrl": "https://ai-agents-founders-hetic-26.devpost.com/",
+        "sourceSection": "What to submit",
+        "passage": "Responsible AI",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      }
+    ],
+    "sourceCoverage": {
+      "participation": {
+        "state": "incomplete",
+        "reviewedRequirementIds": [],
+        "missingChecks": [
+          "The document provides selected excerpts, not a complete material-rule inventory."
+        ],
+        "reviewedAt": null
+      },
+      "submission": {
+        "state": "incomplete",
+        "reviewedRequirementIds": [],
+        "missingChecks": [
+          "The document provides selected excerpts, not a complete material-rule inventory."
+        ],
+        "reviewedAt": null
+      },
+      "prize": {
+        "state": "incomplete",
+        "reviewedRequirementIds": [],
+        "missingChecks": [
+          "The document provides selected excerpts, not a complete material-rule inventory."
+        ],
+        "reviewedAt": null
+      }
+    },
+    "requirements": [
+      {
+        "id": "E03-p-enrollment",
+        "statement": "Higher-education enrollment",
+        "subject": "individual",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "enrollment",
+          "allowed": [
+            "higher_education"
+          ]
+        },
+        "claims": [
+          {
+            "value": "currently enrolled in a higher-education institution",
+            "evidenceIds": [
+              "ev-hetic-enrollment"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-hetic-enrollment"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "E03-p-age",
+        "statement": "Published age-or-majority wording requires jurisdiction review",
+        "subject": "individual",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "unresolved",
+          "reason": "Age-or-majority interpretation remains unresolved"
+        },
+        "claims": [
+          {
+            "value": "at least 18 years old, or of legal age of majority",
+            "evidenceIds": [
+              "ev-hetic-age"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-hetic-age"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "E03-p-team-min",
+        "statement": "At least two team members",
+        "subject": "team",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "team_bound",
+          "bound": "minimum",
+          "count": 2
+        },
+        "claims": [
+          {
+            "value": "Teams of 2 to 4 members",
+            "evidenceIds": [
+              "ev-hetic-cap-rules"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-hetic-cap-rules"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "E03-p-team-max",
+        "statement": "Team maximum conflicts: four versus five",
+        "subject": "team",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "unresolved",
+          "reason": "Conflicting published team caps"
+        },
+        "claims": [
+          {
+            "value": "Teams of 2 to 4 members",
+            "evidenceIds": [
+              "ev-hetic-cap-rules"
+            ]
+          },
+          {
+            "value": "in teams of 2 to 5",
+            "evidenceIds": [
+              "ev-hetic-cap-overview"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-hetic-cap-rules",
+          "ev-hetic-cap-overview"
+        ],
+        "sourceStatus": "conflicting",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "E03-s-architecture",
+        "statement": "Architecture diagram",
+        "subject": "project",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "submission_criterion",
+          "criterion": "presence",
+          "parameters": {
+            "artifact": "architecture_diagram"
+          }
+        },
+        "claims": [
+          {
+            "value": "An architecture diagram.",
+            "evidenceIds": [
+              "ev-hetic-architecture"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-hetic-architecture"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "submission_mandatory",
+        "lane": "submission",
+        "isMandatory": true
+      },
+      {
+        "id": "E03-s-ai",
+        "statement": "AI disclosure statement",
+        "subject": "project",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "submission_criterion",
+          "criterion": "disclosure",
+          "parameters": {}
+        },
+        "claims": [
+          {
+            "value": "AI Disclosure Statement",
+            "evidenceIds": [
+              "ev-hetic-disclosure"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-hetic-disclosure"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "submission_mandatory",
+        "lane": "submission",
+        "isMandatory": true
+      },
+      {
+        "id": "E03-p-geography",
+        "statement": "Applicable geographic and platform conditions need review",
+        "subject": "individual",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "unresolved",
+          "reason": "Individual geographic/policy applicability is not reviewed"
+        },
+        "claims": [
+          {
+            "value": "Applicable geographic and platform conditions need review",
+            "evidenceIds": []
+          }
+        ],
+        "sourceEvidenceIds": [],
+        "sourceStatus": "unverified",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      }
+    ],
+    "timelineEvents": [
+      {
+        "id": "E03-submission-close",
+        "kind": "submission_close",
+        "claims": [
+          {
+            "id": "E03-close-claim",
+            "publishedText": "Source-summary document reports 2026-12-18T17:00:00+01:00",
+            "dateTime": "2026-12-18T17:00:00+01:00",
+            "evidenceIds": []
+          }
+        ],
+        "sourceStatus": "unverified"
+      },
+      {
+        "id": "E03-submission-open",
+        "kind": "submission_open",
+        "claims": [
+          {
+            "id": "E03-open-rules",
+            "publishedText": "Rules: 16 November 2026, 09:00 Europe/Paris",
+            "dateTime": "2026-11-16T09:00:00+01:00",
+            "timeZone": "Europe/Paris",
+            "evidenceIds": []
+          },
+          {
+            "id": "E03-open-schedule",
+            "publishedText": "Schedule: 4 November 2026, 06:00 CET",
+            "dateTime": "2026-11-04T06:00:00+01:00",
+            "timeZone": "Europe/Paris",
+            "evidenceIds": []
+          }
+        ],
+        "sourceStatus": "conflicting"
+      }
+    ],
+    "interestTags": []
+  },
+  {
+    "id": "E04",
+    "title": "PayPal AI Hackathon",
+    "organizer": "PayPal Inc.",
+    "listingHost": "Devpost",
+    "canonicalEventUrl": "https://paypalaihackathon.devpost.com/",
+    "officialUrl": "https://paypalaihackathon.devpost.com/",
+    "rulesUrl": "https://paypalaihackathon.devpost.com/rules",
+    "format": "online",
+    "theme": "Meaningful PayPal sandbox and AI integration",
+    "sourceRevision": "source-fixtures-v0.2-2026-10-27",
+    "lastReviewedAt": "2026-10-27T11:20:05Z",
+    "informationFreshness": "needs_verification",
+    "costStatus": "free",
+    "benefits": [],
+    "sourceEvidence": [
+      {
+        "id": "ev-pp-repo",
+        "sourceUrl": "https://paypalaihackathon.devpost.com/rules",
+        "sourceSection": "Submission Requirements",
+        "passage": "public code repository",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-pp-license",
+        "sourceUrl": "https://paypalaihackathon.devpost.com/rules",
+        "sourceSection": "Submission Requirements",
+        "passage": "open source license file",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-pp-demo",
+        "sourceUrl": "https://paypalaihackathon.devpost.com/rules",
+        "sourceSection": "Submission Requirements",
+        "passage": "functional demo",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-pp-video",
+        "sourceUrl": "https://paypalaihackathon.devpost.com/rules",
+        "sourceSection": "Submission Requirements",
+        "passage": "demonstration video",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-pp-youtube",
+        "sourceUrl": "https://paypalaihackathon.devpost.com/rules",
+        "sourceSection": "Submission Requirements",
+        "passage": "publicly visible on YouTube",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-pp-duration",
+        "sourceUrl": "https://paypalaihackathon.devpost.com/rules",
+        "sourceSection": "Submission Requirements",
+        "passage": "less than three (3) minutes",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      }
+    ],
+    "sourceCoverage": {
+      "participation": {
+        "state": "incomplete",
+        "reviewedRequirementIds": [],
+        "missingChecks": [
+          "The document provides selected excerpts, not a complete material-rule inventory."
+        ],
+        "reviewedAt": null
+      },
+      "submission": {
+        "state": "incomplete",
+        "reviewedRequirementIds": [],
+        "missingChecks": [
+          "The document provides selected excerpts, not a complete material-rule inventory."
+        ],
+        "reviewedAt": null
+      },
+      "prize": {
+        "state": "incomplete",
+        "reviewedRequirementIds": [],
+        "missingChecks": [
+          "The document provides selected excerpts, not a complete material-rule inventory."
+        ],
+        "reviewedAt": null
+      }
+    },
+    "requirements": [
+      {
+        "id": "E04-p-majority",
+        "statement": "Majority in residence jurisdiction",
+        "subject": "individual",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "majority",
+          "jurisdiction": "residence"
+        },
+        "claims": [
+          {
+            "value": "Majority in residence jurisdiction",
+            "evidenceIds": []
+          }
+        ],
+        "sourceEvidenceIds": [],
+        "sourceStatus": "unverified",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "E04-s-repo",
+        "statement": "Public code repository",
+        "subject": "project",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "submission_criterion",
+          "criterion": "visibility",
+          "parameters": {
+            "artifact": "repository",
+            "visibility": "public"
+          }
+        },
+        "claims": [
+          {
+            "value": "public code repository",
+            "evidenceIds": [
+              "ev-pp-repo"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-pp-repo"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "submission_mandatory",
+        "lane": "submission",
+        "isMandatory": true
+      },
+      {
+        "id": "E04-s-video",
+        "statement": "Public YouTube demonstration video under three minutes",
+        "subject": "project",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "submission_criterion",
+          "criterion": "duration",
+          "parameters": {
+            "maximumMinutes": 3,
+            "exclusiveMaximum": true
+          }
+        },
+        "claims": [
+          {
+            "value": "demonstration video",
+            "evidenceIds": [
+              "ev-pp-video"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-pp-video"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "submission_mandatory",
+        "lane": "submission",
+        "isMandatory": true
+      },
+      {
+        "id": "E04-l-sandbox",
+        "statement": "Confirm PayPal sandbox access separately from entry eligibility",
+        "subject": "individual",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "unresolved",
+          "reason": "User-specific developer access remains to be checked"
+        },
+        "claims": [
+          {
+            "value": "Confirm PayPal sandbox access separately from entry eligibility",
+            "evidenceIds": []
+          }
+        ],
+        "sourceEvidenceIds": [],
+        "sourceStatus": "unverified",
+        "kind": "logistics",
+        "lane": "logistics",
+        "isMandatory": true
+      },
+      {
+        "id": "E04-p-geography",
+        "statement": "Applicable geographic and platform conditions need review",
+        "subject": "individual",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "unresolved",
+          "reason": "Individual geographic/policy applicability is not reviewed"
+        },
+        "claims": [
+          {
+            "value": "Applicable geographic and platform conditions need review",
+            "evidenceIds": []
+          }
+        ],
+        "sourceEvidenceIds": [],
+        "sourceStatus": "unverified",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      }
+    ],
+    "timelineEvents": [
+      {
+        "id": "E04-submission-close",
+        "kind": "submission_close",
+        "claims": [
+          {
+            "id": "E04-close-claim",
+            "publishedText": "Source-summary document reports 2026-11-12T12:00:00-08:00",
+            "dateTime": "2026-11-12T12:00:00-08:00",
+            "evidenceIds": []
+          }
+        ],
+        "sourceStatus": "unverified"
+      }
+    ],
+    "interestTags": []
+  },
+  {
+    "id": "E05",
+    "title": "Cosmo Hacks 2026",
+    "organizer": "Cosmo Hacks",
+    "listingHost": "Devpost",
+    "canonicalEventUrl": "https://cosmohacks.devpost.com/",
+    "officialUrl": "https://cosmohacks.devpost.com/",
+    "rulesUrl": "https://cosmohacks.devpost.com/rules",
+    "format": "online",
+    "theme": "Student and community-life projects",
+    "sourceRevision": "source-fixtures-v0.2-2026-10-27",
+    "lastReviewedAt": "2026-10-27T11:20:05Z",
+    "informationFreshness": "needs_verification",
+    "costStatus": "unknown",
+    "benefits": [],
+    "sourceEvidence": [
+      {
+        "id": "ev-cosmo-age",
+        "sourceUrl": "https://cosmohacks.devpost.com/rules",
+        "sourceSection": "Eligibility",
+        "passage": "students ages 13 and older",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-cosmo-team",
+        "sourceUrl": "https://cosmohacks.devpost.com/rules",
+        "sourceSection": "Teams",
+        "passage": "up to four students",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-cosmo-division",
+        "sourceUrl": "https://cosmohacks.devpost.com/rules",
+        "sourceSection": "Teams",
+        "passage": "same division",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-cosmo-repo",
+        "sourceUrl": "https://cosmohacks.devpost.com/rules",
+        "sourceSection": "Submission requirements",
+        "passage": "public GitHub repository",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-cosmo-video",
+        "sourceUrl": "https://cosmohacks.devpost.com/rules",
+        "sourceSection": "Submission requirements",
+        "passage": "two to three minute demo video",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "ev-cosmo-ai",
+        "sourceUrl": "https://cosmohacks.devpost.com/rules",
+        "sourceSection": "AI tools",
+        "passage": "explain how AI was used",
+        "status": "reviewed",
+        "checkedAt": "2026-10-27T11:20:05Z"
+      }
+    ],
+    "sourceCoverage": {
+      "participation": {
+        "state": "incomplete",
+        "reviewedRequirementIds": [],
+        "missingChecks": [
+          "The document provides selected excerpts, not a complete material-rule inventory."
+        ],
+        "reviewedAt": null
+      },
+      "submission": {
+        "state": "incomplete",
+        "reviewedRequirementIds": [],
+        "missingChecks": [
+          "The document provides selected excerpts, not a complete material-rule inventory."
+        ],
+        "reviewedAt": null
+      },
+      "prize": {
+        "state": "incomplete",
+        "reviewedRequirementIds": [],
+        "missingChecks": [
+          "The document provides selected excerpts, not a complete material-rule inventory."
+        ],
+        "reviewedAt": null
+      }
+    },
+    "requirements": [
+      {
+        "id": "E05-p-age",
+        "statement": "Students aged thirteen and older",
+        "subject": "individual",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "minimum_age",
+          "minimum": 13
+        },
+        "claims": [
+          {
+            "value": "students ages 13 and older",
+            "evidenceIds": [
+              "ev-cosmo-age"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-cosmo-age"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "E05-p-team-max",
+        "statement": "Teams of at most four",
+        "subject": "team",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "team_bound",
+          "bound": "maximum",
+          "count": 4
+        },
+        "claims": [
+          {
+            "value": "up to four students",
+            "evidenceIds": [
+              "ev-cosmo-team"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-cosmo-team"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "E05-p-same-division",
+        "statement": "All team members in the same division",
+        "subject": "team",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "same_division"
+        },
+        "claims": [
+          {
+            "value": "same division",
+            "evidenceIds": [
+              "ev-cosmo-division"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-cosmo-division"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "E05-s-video",
+        "statement": "Two-to-three-minute project demo",
+        "subject": "project",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "submission_criterion",
+          "criterion": "duration",
+          "parameters": {
+            "minimumMinutes": 2,
+            "maximumMinutes": 3
+          }
+        },
+        "claims": [
+          {
+            "value": "Two-to-three-minute project demo",
+            "evidenceIds": []
+          }
+        ],
+        "sourceEvidenceIds": [],
+        "sourceStatus": "unverified",
+        "kind": "submission_mandatory",
+        "lane": "submission",
+        "isMandatory": true
+      },
+      {
+        "id": "E05-p-geography",
+        "statement": "Applicable geographic and platform conditions need review",
+        "subject": "individual",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "unresolved",
+          "reason": "Individual geographic/policy applicability is not reviewed"
+        },
+        "claims": [
+          {
+            "value": "Applicable geographic and platform conditions need review",
+            "evidenceIds": []
+          }
+        ],
+        "sourceEvidenceIds": [],
+        "sourceStatus": "unverified",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      }
+    ],
+    "timelineEvents": [
+      {
+        "id": "E05-submission-close",
+        "kind": "submission_close",
+        "claims": [
+          {
+            "id": "E05-close-claim",
+            "publishedText": "Source-summary document reports 2027-01-18T16:00:00-06:00",
+            "dateTime": "2027-01-18T16:00:00-06:00",
+            "evidenceIds": []
+          }
+        ],
+        "sourceStatus": "unverified"
+      }
+    ],
+    "interestTags": []
+  },
+  {
+    "id": "meta-global-ai-2026",
+    "title": "Meta Global AI Developer Hackathon 2026",
+    "organizer": "Meta & Cerebral Valley",
+    "listingHost": "Cerebral Valley",
+    "canonicalEventUrl": "https://dev.meta.ai/events/global-hackathon",
+    "officialUrl": "https://dev.meta.ai/events/global-hackathon",
+    "rulesUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+    "format": "online",
+    "theme": "Build a practical AI project for a real-world problem or a technical frontier using Meta tools.",
+    "sourceRevision": "meta-public-source-review-2026-10-29-v1",
+    "lastReviewedAt": "2026-10-29T20:01:01.231Z",
+    "informationFreshness": "current",
+    "costStatus": "free",
+    "benefits": [
+      "Cash prize pool advertised at US$1,000,000; awards require winner verification.",
+      "Selected participants receive US$150 in Meta API credits for a ten-day window, subject to credit terms.",
+      "Live workshops and Discord office hours."
+    ],
+    "sourceEvidence": [
+      {
+        "id": "ev-meta-selection",
+        "sourceUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+        "sourceSection": "Application and acceptance",
+        "passage": "be accepted",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-age",
+        "sourceUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+        "sourceSection": "Eligibility / minimum age",
+        "passage": "18",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-majority",
+        "sourceUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+        "sourceSection": "Eligibility",
+        "passage": "age of majority",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-team",
+        "sourceUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+        "sourceSection": "Indie Developer track / maximum team size",
+        "passage": "four (4)",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-portal",
+        "sourceUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+        "sourceSection": "Event overview / project submission",
+        "passage": "Cerebral Valley’s portal",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-track",
+        "sourceUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+        "sourceSection": "Participant tracks",
+        "passage": "track only",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-original",
+        "sourceUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+        "sourceSection": "Hackathon Submission / originality and ownership",
+        "passage": "original",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-licence",
+        "sourceUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+        "sourceSection": "Hackathon Submission",
+        "passage": "open source licenses",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-judging-impact",
+        "sourceUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+        "sourceSection": "Hackathon Judging Criteria / impact",
+        "passage": "Impact (30%)",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-judging-tooling",
+        "sourceUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+        "sourceSection": "Hackathon Judging Criteria / Meta tooling",
+        "passage": "Tooling (25%)",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-judging-engineering",
+        "sourceUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+        "sourceSection": "Hackathon Judging Criteria / engineering",
+        "passage": "Execution (20%)",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-judging-demo",
+        "sourceUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+        "sourceSection": "Hackathon Judging Criteria / demo",
+        "passage": "Demo (25%)",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-dates",
+        "sourceUrl": "https://dev.meta.ai/events/global-hackathon",
+        "sourceSection": "Key Dates",
+        "passage": "Key Dates",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-rules",
+        "sourceUrl": "https://dev.meta.ai/events/global-hackathon",
+        "sourceSection": "Official rules acceptance",
+        "passage": "must be accepted",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-tools",
+        "sourceUrl": "https://dev.meta.ai/events/global-hackathon",
+        "sourceSection": "About the hackathon",
+        "passage": "Muse Spark series",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-benefits",
+        "sourceUrl": "https://dev.meta.ai/events/global-hackathon",
+        "sourceSection": "About / workshops",
+        "passage": "live workshops",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-policy",
+        "sourceUrl": "https://dev.meta.ai/events/global-hackathon",
+        "sourceSection": "Participation exclusions / applicable laws",
+        "passage": "Void where prohibited by law.",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-affiliation",
+        "sourceUrl": "https://dev.meta.ai/events/global-hackathon",
+        "sourceSection": "Participation exclusions / affiliations",
+        "passage": "Employees, contractors, and interns",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      }
+    ],
+    "sourceCoverage": {
+      "participation": {
+        "state": "incomplete",
+        "reviewedRequirementIds": [
+          "meta-global-ai-2026-p-selection",
+          "meta-global-ai-2026-p-age",
+          "meta-global-ai-2026-p-majority",
+          "meta-global-ai-2026-p-team",
+          "meta-global-ai-2026-p-policy",
+          "meta-global-ai-2026-p-rules"
+        ],
+        "missingChecks": [
+          "Full sanctions/affiliation policy interpretation and team-member conditions need confirmation.",
+          "Event track and rules acknowledgement are not inferred from acceptance."
+        ],
+        "reviewedAt": "2026-10-29T20:01:01.231Z"
+      },
+      "submission": {
+        "state": "incomplete",
+        "reviewedRequirementIds": [
+          "meta-global-ai-2026-s-portal",
+          "meta-global-ai-2026-s-rights",
+          "meta-global-ai-2026-s-track"
+        ],
+        "missingChecks": [
+          "Required portal fields, artifact formats and final deliverable specifications have not been confirmed.",
+          "A judging preference for a demo video is not treated as a mandatory video specification."
+        ],
+        "reviewedAt": "2026-10-29T20:01:01.231Z"
+      },
+      "prize": {
+        "state": "incomplete",
+        "reviewedRequirementIds": [],
+        "missingChecks": [
+          "Winner verification, award allocation and payout conditions are separate from entry acceptance."
+        ],
+        "reviewedAt": "2026-10-29T20:01:01.231Z"
+      }
+    },
+    "requirements": [
+      {
+        "id": "meta-global-ai-2026-p-selection",
+        "statement": "An accepted application is required.",
+        "subject": "individual",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "unresolved",
+          "reason": "Student-reported selection is shown separately; organizer acceptance is not independently verified."
+        },
+        "claims": [
+          {
+            "value": "Organizer selection required",
+            "evidenceIds": [
+              "ev-meta-selection"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-selection"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "meta-global-ai-2026-p-age",
+        "statement": "Be at least 18 years old.",
+        "subject": "individual",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "minimum_age",
+          "minimum": 18
+        },
+        "claims": [
+          {
+            "value": "Minimum 18",
+            "evidenceIds": [
+              "ev-meta-age"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-age"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "meta-global-ai-2026-p-majority",
+        "statement": "Meet the age of majority where you reside.",
+        "subject": "individual",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "majority",
+          "jurisdiction": "residence"
+        },
+        "claims": [
+          {
+            "value": "Local majority required",
+            "evidenceIds": [
+              "ev-meta-majority"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-majority"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "meta-global-ai-2026-p-team",
+        "statement": "Indie entries may be solo or teams up to four; startup-team rules need separate confirmation.",
+        "subject": "team",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "unresolved",
+          "reason": "The indie/startup track is not represented by the school/college division field; do not apply a universal team cap."
+        },
+        "claims": [
+          {
+            "value": "Indie: one to four; startup: confirm",
+            "evidenceIds": [
+              "ev-meta-team"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-team"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "meta-global-ai-2026-p-policy",
+        "statement": "Confirm published residence, sanctions and affiliation exclusions with the organizers.",
+        "subject": "individual",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "geographic_policy",
+          "policyId": "meta-2026-official-policy-review"
+        },
+        "claims": [
+          {
+            "value": "Legal and affiliation restrictions",
+            "evidenceIds": [
+              "ev-meta-policy",
+              "ev-meta-affiliation"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-policy",
+          "ev-meta-affiliation"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "meta-global-ai-2026-p-rules",
+        "statement": "Accept the official rules and waiver.",
+        "subject": "individual",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "unresolved",
+          "reason": "Acceptance of the event is not evidence of separately confirmed rules acknowledgement."
+        },
+        "claims": [
+          {
+            "value": "Rules acknowledgement required",
+            "evidenceIds": [
+              "ev-meta-rules"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-rules"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "meta-global-ai-2026-s-portal",
+        "statement": "Submit the project through the official event portal.",
+        "subject": "project",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "submission_criterion",
+          "criterion": "presence",
+          "parameters": {
+            "portal": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/hackathon/submit"
+          }
+        },
+        "claims": [
+          {
+            "value": "Official event portal",
+            "evidenceIds": [
+              "ev-meta-portal"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-portal"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "submission_mandatory",
+        "lane": "submission",
+        "isMandatory": true
+      },
+      {
+        "id": "meta-global-ai-2026-s-rights",
+        "statement": "Use original work and comply with ownership and applicable open-source licensing conditions.",
+        "subject": "project",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "submission_criterion",
+          "criterion": "license",
+          "parameters": {}
+        },
+        "claims": [
+          {
+            "value": "Original work and applicable licences",
+            "evidenceIds": [
+              "ev-meta-original",
+              "ev-meta-licence"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-original",
+          "ev-meta-licence"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "submission_mandatory",
+        "lane": "submission",
+        "isMandatory": true
+      },
+      {
+        "id": "meta-global-ai-2026-s-track",
+        "statement": "Enter the project in one track only.",
+        "subject": "project",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "submission_criterion",
+          "criterion": "content",
+          "parameters": {
+            "scope": "single_event_track"
+          }
+        },
+        "claims": [
+          {
+            "value": "One event track",
+            "evidenceIds": [
+              "ev-meta-track"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-track"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "submission_mandatory",
+        "lane": "submission",
+        "isMandatory": true
+      },
+      {
+        "id": "meta-global-ai-2026-judging-impact",
+        "statement": "Show who benefits and why the project matters.",
+        "subject": "project",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "unresolved",
+          "reason": "A published judging dimension is preparation advice, not an automated student skill score or mandatory file format."
+        },
+        "claims": [
+          {
+            "value": "Impact: 30%",
+            "evidenceIds": [
+              "ev-meta-judging-impact"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-judging-impact"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "preparation_advice",
+        "lane": "preparation",
+        "isMandatory": false
+      },
+      {
+        "id": "meta-global-ai-2026-judging-tooling",
+        "statement": "Explain the creative use of Meta AI tools.",
+        "subject": "project",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "unresolved",
+          "reason": "A published judging dimension is preparation advice, not an automated student skill score or mandatory file format."
+        },
+        "claims": [
+          {
+            "value": "Meta tooling: 25%",
+            "evidenceIds": [
+              "ev-meta-judging-tooling"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-judging-tooling"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "preparation_advice",
+        "lane": "preparation",
+        "isMandatory": false
+      },
+      {
+        "id": "meta-global-ai-2026-judging-engineering",
+        "statement": "Demonstrate sound, thoughtfully refined engineering.",
+        "subject": "project",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "unresolved",
+          "reason": "A published judging dimension is preparation advice, not an automated student skill score or mandatory file format."
+        },
+        "claims": [
+          {
+            "value": "Engineering: 20%",
+            "evidenceIds": [
+              "ev-meta-judging-engineering"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-judging-engineering"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "preparation_advice",
+        "lane": "preparation",
+        "isMandatory": false
+      },
+      {
+        "id": "meta-global-ai-2026-judging-demo",
+        "statement": "Prepare a working demonstration and explain the demo video.",
+        "subject": "project",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "unresolved",
+          "reason": "A published judging dimension is preparation advice, not an automated student skill score or mandatory file format."
+        },
+        "claims": [
+          {
+            "value": "Demo: 25%",
+            "evidenceIds": [
+              "ev-meta-judging-demo"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-judging-demo"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "preparation_advice",
+        "lane": "preparation",
+        "isMandatory": false
+      }
+    ],
+    "timelineEvents": [
+      {
+        "id": "meta-global-ai-2026-time-applications-open",
+        "kind": "registration_open",
+        "sourceStatus": "reviewed",
+        "claims": [
+          {
+            "id": "meta-global-ai-2026-claim-applications-open",
+            "publishedText": "13 October 2026, 09:00 ET — applications open.",
+            "dateTime": null,
+            "timeZone": "ET",
+            "evidenceIds": [
+              "ev-meta-dates"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "meta-global-ai-2026-time-applications-close",
+        "kind": "registration_close",
+        "sourceStatus": "conflicting",
+        "claims": [
+          {
+            "id": "meta-global-ai-2026-claim-close-main",
+            "publishedText": "Main event page: 25 October 2026, 23:59 ET.",
+            "dateTime": null,
+            "timeZone": "ET",
+            "evidenceIds": [
+              "ev-meta-dates"
+            ]
+          },
+          {
+            "id": "meta-global-ai-2026-claim-close-rules",
+            "publishedText": "Official rules: 25 October 2026, 23:59 EST.",
+            "dateTime": null,
+            "timeZone": "EST",
+            "evidenceIds": [
+              "ev-meta-selection"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "meta-global-ai-2026-time-begins",
+        "kind": "build_start",
+        "sourceStatus": "reviewed",
+        "claims": [
+          {
+            "id": "meta-global-ai-2026-claim-begins",
+            "publishedText": "26 October 2026 — kickoff; time not specified.",
+            "dateTime": null,
+            "evidenceIds": [
+              "ev-meta-dates"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "meta-global-ai-2026-time-submission",
+        "kind": "submission_close",
+        "sourceStatus": "reviewed",
+        "claims": [
+          {
+            "id": "meta-global-ai-2026-claim-submission",
+            "publishedText": "4 November 2026, 21:00 ET — project submission.",
+            "dateTime": null,
+            "timeZone": "ET",
+            "evidenceIds": [
+              "ev-meta-dates"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "meta-global-ai-2026-time-judging-start",
+        "kind": "judging_start",
+        "sourceStatus": "reviewed",
+        "claims": [
+          {
+            "id": "meta-global-ai-2026-claim-judging-start",
+            "publishedText": "4 November 2026 — judging begins; time not specified.",
+            "dateTime": null,
+            "evidenceIds": [
+              "ev-meta-dates"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "meta-global-ai-2026-time-judging-end",
+        "kind": "judging_end",
+        "sourceStatus": "reviewed",
+        "claims": [
+          {
+            "id": "meta-global-ai-2026-claim-judging-end",
+            "publishedText": "8 November 2026 — judging ends; time not specified.",
+            "dateTime": null,
+            "evidenceIds": [
+              "ev-meta-dates"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "meta-global-ai-2026-time-results",
+        "kind": "results",
+        "sourceStatus": "reviewed",
+        "claims": [
+          {
+            "id": "meta-global-ai-2026-claim-results",
+            "publishedText": "9 November 2026 — finals and winners; time not specified.",
+            "dateTime": null,
+            "evidenceIds": [
+              "ev-meta-dates"
+            ]
+          }
+        ]
+      }
+    ],
+    "interestTags": [
+      {
+        "id": "meta-ai",
+        "label": "AI",
+        "evidenceIds": [
+          "ev-meta-tools"
+        ]
+      },
+      {
+        "id": "meta-project",
+        "label": "Programming",
+        "evidenceIds": [
+          "ev-meta-tools"
+        ]
+      }
+    ]
+  }
+]

@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { ExperienceHelper } from "@/components/profile/ExperienceHelper";
-import { demoProfileService } from "@/lib/profile/service";
+import { demoProfileService } from "@/test/fixtures/profile-service";
 
 afterEach(cleanup);
 it("keeps demo wording and skills unconfirmed until explicitly accepted, and rejects stale suggestions", async () => {

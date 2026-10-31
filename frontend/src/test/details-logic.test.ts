@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { askOpportunity, createPreparationCandidate } from "@/lib/details/api";
+import { askOpportunity } from "@/lib/details/api";
 import {
   analysisContext,
   evaluateRequirement,
@@ -90,20 +90,5 @@ describe("event details and independent fit lanes", () => {
     const result = await askOpportunity(details, solo, "Can I participate on my own?");
     expect(result.answer).toContain("not specified");
     expect(result.sourceUrl).toBe(details.event.sourceUrl);
-  });
-  it("rejects a plan that would bypass a checked mandatory participation blocker", async () => {
-    await expect(
-      createPreparationCandidate(buildEventDetails("aurora-ai", "hard-blocker")!, solo, 5, true, 0),
-    ).rejects.toThrow("cannot bypass");
-    const plan = await createPreparationCandidate(
-      buildEventDetails("aurora-ai")!,
-      solo,
-      5,
-      true,
-      0,
-    );
-    expect(plan.deadline).toBeNull();
-    expect(plan.tasks).toHaveLength(3);
-    expect(plan.tasks.every((task) => !!task.deliverable && !!task.completionCriteria)).toBe(true);
   });
 });

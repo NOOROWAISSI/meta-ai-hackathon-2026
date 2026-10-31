@@ -9,7 +9,11 @@ export function daysUntil(iso: string | null, now = new Date()): number | null {
 
 export function formatDate(iso: string | null): string {
   if (!iso) return "Not published";
-  return new Date(iso + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  return new Date(iso + "T12:00:00").toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 export function formatEventDates(h: Hackathon): string {
@@ -43,7 +47,13 @@ export function matchesQuery(h: Hackathon, q: string): boolean {
   return [h.title, h.organizer, h.summary, ...h.topics].some((v) => v.toLowerCase().includes(s));
 }
 
-export function applyFilters(list: Hackathon[], f: Filters, query: string, timing: TimingChip, now = new Date()) {
+export function applyFilters(
+  list: Hackathon[],
+  f: Filters,
+  query: string,
+  timing: TimingChip,
+  now = new Date(),
+) {
   return list.filter((h) => {
     if (!matchesQuery(h, query)) return false;
     if (f.topics.length && !f.topics.some((t) => h.topics.includes(t))) return false;
@@ -54,7 +64,8 @@ export function applyFilters(list: Hackathon[], f: Filters, query: string, timin
     }
     if (f.participation !== "any") {
       if (!h.team) return false;
-      if (f.participation === "solo" && h.team.kind === "team" && (h.team.min ?? 2) > 1) return false;
+      if (f.participation === "solo" && h.team.kind === "team" && (h.team.min ?? 2) > 1)
+        return false;
       if (f.participation === "team" && h.team.kind === "solo") return false;
     }
     if (timing && timingOf(h, now) !== timing) return false;
@@ -63,7 +74,12 @@ export function applyFilters(list: Hackathon[], f: Filters, query: string, timin
 }
 
 export function activeFilterCount(f: Filters): number {
-  return f.topics.length + f.modes.length + (f.deadline !== "any" ? 1 : 0) + (f.participation !== "any" ? 1 : 0);
+  return (
+    f.topics.length +
+    f.modes.length +
+    (f.deadline !== "any" ? 1 : 0) +
+    (f.participation !== "any" ? 1 : 0)
+  );
 }
 
 const ci = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
