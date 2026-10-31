@@ -1,0 +1,363 @@
+{
+  "schemaVersion": 2,
+  "provenance": {
+    "executedAtUtc": "2026-10-31T17:38:11.8016248+00:00",
+    "gitCommitSha": "8ebef71222091e8a9db08986ccfb99ab767e3699",
+    "relevantSourceHasUncommittedChanges": false,
+    "sourceMatchesWorkingTree": true,
+    "sourceFingerprint": "sha256:fc4a5fcdf8f388e1f2a4ee9b3f89ede2a22eef3876ccf2f15ee8bf5ae8e1908d",
+    "promptFingerprint": "sha256:1cdaeea76e5517f299b6d1f1cf35af9e2d9e70c7f6a7e4c65f2e6c5842850e3d",
+    "scenarioVersion": "synthetic-v1",
+    "scenarioFingerprint": "sha256:a44f272bd411d3f43c2f064908bda3970ddae083094a34020851fa7c095ec5f1",
+    "configuration": {
+      "model": "muse-spark-1.3",
+      "attemptTimeoutSeconds": 30,
+      "overallTimeoutSeconds": 60,
+      "maxRetries": 1,
+      "maxRetryDelaySeconds": 5,
+      "maxResponseBytes": 131072
+    }
+  },
+  "results": [
+    {
+      "id": "beginner-limited",
+      "focus": "Beginner with 2 h/week and a verified 14-day deadline",
+      "status": "ok",
+      "elapsedMilliseconds": 13490,
+      "taskCount": 4,
+      "candidate": {
+        "tasks": [
+          {
+            "title": "Define one simple add and complete user journey",
+            "target": {
+              "kind": "goal",
+              "goalId": "g-beginner"
+            },
+            "priority": "should",
+            "deliverable": "One-paragraph user story plus numbered click-by-click steps for the single demo flow.",
+            "completionCriteria": "Written flow names start state, user actions, and end state for view, add, and mark-complete only, with no extra features retained.",
+            "estimatedHours": 2,
+            "resourceIds": []
+          },
+          {
+            "title": "Build static task list page structure",
+            "target": {
+              "kind": "goal",
+              "goalId": "g-beginner"
+            },
+            "priority": "should",
+            "deliverable": "Single local HTML page with hardcoded example tasks, add input, and complete controls.",
+            "completionCriteria": "Page opens locally and shows a task list, an add input, and complete controls that match the defined flow.",
+            "estimatedHours": 4,
+            "resourceIds": []
+          },
+          {
+            "title": "Add front-end-only add and complete behavior",
+            "target": {
+              "kind": "goal",
+              "goalId": "g-beginner"
+            },
+            "priority": "should",
+            "deliverable": "Front-end-only interaction on the page for adding tasks and marking tasks complete, with time to practice unfamiliar scripting.",
+            "completionCriteria": "During a single session adding shows a new item and activating the complete control visibly changes that item without blocking the demo flow.",
+            "estimatedHours": 6,
+            "resourceIds": []
+          },
+          {
+            "title": "Rehearse clear demonstration walkthrough",
+            "target": {
+              "kind": "goal",
+              "goalId": "g-beginner"
+            },
+            "priority": "could",
+            "deliverable": "Short narration notes for the single user flow plus a practice walkthrough.",
+            "completionCriteria": "Notes list what to click and say for each step and a practice run covers start to finish without extra setup.",
+            "estimatedHours": 2,
+            "resourceIds": []
+          }
+        ],
+        "explanation": "Building on reported Basic HTML and the reported no-backend constraint, all tasks stay front-end only with time allowed to learn and practice unfamiliar interaction work. Minimum demo scope is one demonstrable user flow on a single page: view tasks, add a task, mark a task complete. Dependency-ordered critical path is 1 define that single flow, then 2 build the static page, then 3 add front-end-only interaction, then 4 rehearse the walkthrough. Optional work to defer is persistence across reloads, filtering or search, styling polish, accounts, and any backend. Combined estimates exceed reported weekly availability, so feasibility is unknown and the application will compute it from retained work. If it still cannot fit, decide whether to keep only the minimum flow with reduced polish or to change availability, then ask for re-estimation; the reduced scope is not promised to fit."
+      },
+      "feasibility": "infeasible",
+      "availableHours": 3.9999542841835316,
+      "remainingEffortHours": 14,
+      "flags": [
+        "Estimated workload exceeds reported capacity. Review a minimum demo scope, dependency-ordered critical path, optional deferrals and a concrete scope/availability decision. Include learning time; do not shrink real effort, omit mandatory work or claim the fallback fits."
+      ],
+      "errorCode": null
+    },
+    {
+      "id": "experienced",
+      "focus": "Experienced student; avoid generic beginner advice",
+      "status": "ok",
+      "elapsedMilliseconds": 8201,
+      "taskCount": 5,
+      "candidate": {
+        "tasks": [
+          {
+            "title": "Define single end-to-end user flow and incremental build plan",
+            "target": {
+              "kind": "goal",
+              "goalId": "g-experienced"
+            },
+            "priority": "should",
+            "deliverable": "Scoped demo flow definition and incremental build plan",
+            "completionCriteria": "Single user flow documented with UI steps, API operations, and data needs, plus explicit list of deferred features outside the demo.",
+            "estimatedHours": 3,
+            "resourceIds": []
+          },
+          {
+            "title": "Build front-end slice incrementally",
+            "target": {
+              "kind": "goal",
+              "goalId": "g-experienced"
+            },
+            "priority": "should",
+            "deliverable": "Front-end slice for the demo flow using React and TypeScript",
+            "completionCriteria": "UI implements the defined flow steps and handles loading and error states against stubbed responses.",
+            "estimatedHours": 8,
+            "resourceIds": []
+          },
+          {
+            "title": "Build back-end API slice incrementally",
+            "target": {
+              "kind": "goal",
+              "goalId": "g-experienced"
+            },
+            "priority": "should",
+            "deliverable": "Back-end REST API slice using C# for the demo flow",
+            "completionCriteria": "API exposes the operations needed for the demo flow with persisted data and basic validation.",
+            "estimatedHours": 10,
+            "resourceIds": []
+          },
+          {
+            "title": "Integrate full stack and stabilize demo path",
+            "target": {
+              "kind": "goal",
+              "goalId": "g-experienced"
+            },
+            "priority": "should",
+            "deliverable": "Integrated full-stack demo path with stabilization notes",
+            "completionCriteria": "Defined flow runs front-end to back-end without stubs, with demo-path smoke check and known issues listed.",
+            "estimatedHours": 8,
+            "resourceIds": []
+          },
+          {
+            "title": "Rehearse prototype walkthrough",
+            "target": {
+              "kind": "goal",
+              "goalId": "g-experienced"
+            },
+            "priority": "could",
+            "deliverable": "Demo walkthrough notes and deferred improvement list",
+            "completionCriteria": "Walkthrough rehearsed end-to-end and follow-up improvements captured as deferred work.",
+            "estimatedHours": 3,
+            "resourceIds": []
+          }
+        ],
+        "explanation": "Tasks build on reported React, TypeScript, C#, and REST API experience and prior shipped web apps, using incremental slices for one demonstrable user flow and avoiding introductory tutorials. No reviewed resources to attach and no mandatory submission steps in this data, so all work is goal-directed preparation for a working full-stack prototype with deferred extras listed separately."
+      },
+      "feasibility": "fits_reported_budget",
+      "availableHours": 39.999635729646165,
+      "remainingEffortHours": 32,
+      "flags": [],
+      "errorCode": null
+    },
+    {
+      "id": "unknown-facts",
+      "focus": "Unknown availability and unverified deadline",
+      "status": "ok",
+      "elapsedMilliseconds": 14413,
+      "taskCount": 0,
+      "candidate": {
+        "tasks": [],
+        "explanation": "No tasks are proposed because there are no reviewed requirements or reviewed resources to scope work from, and participation conditions and submission timing remain unverified. Proposing build or submission preparation now would require assuming eligibility and schedule, which the stated goal explicitly avoids, and there is no accepted experience or reported skills to tailor optional work from without inventing details. Even a minimum single-flow demo cannot be scoped without organizer-confirmed expectations, so no critical path or deferral list is defined and feasibility remains unknown. Next decision is to obtain organizer-confirmed criteria and submission expectations, then request re-estimation for goal-aligned exploration."
+      },
+      "feasibility": "no_remaining_gap",
+      "availableHours": null,
+      "remainingEffortHours": 0,
+      "flags": [
+        "Zero tasks: manually check whether the explanation justifies no remaining preparation work.",
+        "Manually verify no definite dates, deadlines, eligibility verdicts or experience claims were invented."
+      ],
+      "errorCode": null
+    },
+    {
+      "id": "mandatory-missing",
+      "focus": "Reviewed mandatory submission requirement is missing",
+      "status": "ok",
+      "elapsedMilliseconds": 13410,
+      "taskCount": 3,
+      "candidate": {
+        "tasks": [
+          {
+            "title": "Stabilize one demonstrable prototype flow for filming",
+            "target": {
+              "kind": "goal",
+              "goalId": "g-mandatory"
+            },
+            "priority": "should",
+            "deliverable": "Working prototype build running one end-to-end user flow suitable for filming",
+            "completionCriteria": "Single flow runs without blocking errors for filming, demo steps noted, preparation progress recorded as self-report only",
+            "estimatedHours": 8,
+            "resourceIds": []
+          },
+          {
+            "title": "Record demo video of working prototype as ready file",
+            "target": {
+              "kind": "requirement",
+              "requirementId": "req-demo-video"
+            },
+            "priority": "must",
+            "deliverable": "Ready-to-submit demo video file showing the working prototype, preparation only with no submission claimed",
+            "completionCriteria": "Video file plays end-to-end and shows the working prototype flow, marked as ready only; readiness is not submission evidence",
+            "estimatedHours": 6,
+            "resourceIds": []
+          },
+          {
+            "title": "Verify confirmed channel then submit video and record confirmation",
+            "target": {
+              "kind": "requirement",
+              "requirementId": "req-demo-video"
+            },
+            "priority": "must",
+            "deliverable": "Verification of organizer-confirmed channel plus submit action and receipt or confirmation record",
+            "completionCriteria": "Organizer-confirmed channel documented without invented details, video sent or uploaded through that channel only after verification, receipt or confirmation record saved separately from preparation progress",
+            "estimatedHours": 2,
+            "resourceIds": []
+          }
+        ],
+        "explanation": "Uses reported React experience and one prior prototype without assuming missing competence. Addresses the reported constraint that the demo video is not created. Minimum demo scope is one end-to-end user flow that runs for filming, preferring a single demonstrable flow over extra features. Dependency-ordered critical path is stabilize that flow, then record a ready-to-submit file, then verify the organizer-confirmed channel and submit with receipt check. Extra flows, polish, and extended editing are deferred as optional. Preparation progress is self-reported only and separate from delivery confirmation evidence. If retained work still cannot fit reported weekly availability, a scope or availability decision and re-estimation is needed; the application computes feasibility."
+      },
+      "feasibility": "fits_reported_budget",
+      "availableHours": 17.999505406740077,
+      "remainingEffortHours": 16,
+      "flags": [
+        "Action coverage review required for req-demo-video: compare every action in the full reviewed statement with deliverables and completion criteria. Where delivery is required, check conditional sending and receipt/confirmation steps; ready-to-submit is preparation only. Done is not submission evidence. Full reviewed requirement: Mandatory submission: record and submit a demonstration video of the working prototype; this item is currently missing."
+      ],
+      "errorCode": null
+    },
+    {
+      "id": "existing-progress",
+      "focus": "Preserve completed/in-progress work and avoid semantic duplicates",
+      "status": "ok",
+      "elapsedMilliseconds": 9800,
+      "taskCount": 4,
+      "candidate": {
+        "tasks": [
+          {
+            "title": "Build one core user flow in existing repository from wireframes",
+            "target": {
+              "kind": "goal",
+              "goalId": "g-progress"
+            },
+            "priority": "should",
+            "deliverable": "Working implementation of one core user flow built in the existing React repository from the existing wireframes",
+            "completionCriteria": "One end-to-end flow can be clicked through start to finish in the existing repository and follows the structure of the existing wireframes",
+            "estimatedHours": 8,
+            "resourceIds": []
+          },
+          {
+            "title": "Style prototype screens with CSS for readability",
+            "target": {
+              "kind": "goal",
+              "goalId": "g-progress"
+            },
+            "priority": "should",
+            "deliverable": "CSS styling applied to the prototype flow for clear layout and readability",
+            "completionCriteria": "All screens in the chosen flow show consistent layout and readable content with no major visual blockers",
+            "estimatedHours": 4,
+            "resourceIds": []
+          },
+          {
+            "title": "Draft presentation outline for prototype demo",
+            "target": {
+              "kind": "goal",
+              "goalId": "g-progress"
+            },
+            "priority": "should",
+            "deliverable": "Presentation draft covering problem, demo steps, and current prototype scope",
+            "completionCriteria": "Draft includes problem statement, step-by-step demo script aligned to the implemented flow, and known limits with next steps",
+            "estimatedHours": 3,
+            "resourceIds": []
+          },
+          {
+            "title": "Rehearse demo walkthrough and fix blockers",
+            "target": {
+              "kind": "goal",
+              "goalId": "g-progress"
+            },
+            "priority": "could",
+            "deliverable": "Walkthrough notes and fixes for blocking demo issues in the existing prototype",
+            "completionCriteria": "Demo flow rehearsed end-to-end and blocking issues are fixed or documented as known limits with workarounds",
+            "estimatedHours": 3,
+            "resourceIds": []
+          }
+        ],
+        "explanation": "Proposes next steps that reuse the completed wireframes and in-progress repository without restarting them, using reported React and CSS experience to build one demonstrable prototype flow and a clear presentation draft."
+      },
+      "feasibility": "fits_reported_budget",
+      "availableHours": 20.999309540966436,
+      "remainingEffortHours": 18,
+      "flags": [],
+      "errorCode": null
+    },
+    {
+      "id": "approved-resources",
+      "focus": "Do not hallucinate resource IDs or URLs",
+      "status": "ok",
+      "elapsedMilliseconds": 9637,
+      "taskCount": 3,
+      "candidate": {
+        "tasks": [
+          {
+            "title": "Prepare clean CSV dataset for visualization",
+            "target": {
+              "kind": "goal",
+              "goalId": "g-resources"
+            },
+            "priority": "should",
+            "deliverable": "Cleaned CSV draft plus short notes describing fields selected for the chart",
+            "completionCriteria": "Dataset parses without errors, columns used for the planned chart are identified, and cleaning steps are noted for reuse",
+            "estimatedHours": 3,
+            "resourceIds": [
+              "reviewed-resource-001"
+            ]
+          },
+          {
+            "title": "Build single-view interactive chart prototype",
+            "target": {
+              "kind": "goal",
+              "goalId": "g-resources"
+            },
+            "priority": "should",
+            "deliverable": "Working JavaScript chart prototype code showing one user flow with interactive controls",
+            "completionCriteria": "Prototype renders from the prepared dataset, one interaction updates the view, and code is saved for iteration",
+            "estimatedHours": 6,
+            "resourceIds": []
+          },
+          {
+            "title": "Test and refine prototype interaction",
+            "target": {
+              "kind": "goal",
+              "goalId": "g-resources"
+            },
+            "priority": "could",
+            "deliverable": "Short test notes and updated prototype addressing observed issues",
+            "completionCriteria": "One walkthrough of the main flow is completed, observed issues are listed, and fixes are applied in the prototype",
+            "estimatedHours": 2,
+            "resourceIds": []
+          }
+        ],
+        "explanation": "Builds on accepted CSV experience and reported JavaScript and charting skills without assuming deficits. Minimum demo scope is one demonstrable flow: clean dataset to single interactive view. Critical path in order is dataset preparation, then single-view prototype, then test and refine; extra views and features are deferred. CSV task uses reviewed-resource-001 where its title and relevanceNote support it; other tasks use no resources and no external links per the reported constraint. Deadline is unknown so feasibility is unknown; estimates are total work and weekly availability is context only."
+      },
+      "feasibility": "untimed",
+      "availableHours": null,
+      "remainingEffortHours": 11,
+      "flags": [
+        "Resource IDs are allowlisted and described, but semantic fit still needs manual review."
+      ],
+      "errorCode": null
+    }
+  ]
+}
