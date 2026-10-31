@@ -12,8 +12,13 @@ public sealed class FakePersonalBriefingModel : IPersonalBriefingModel
     public int Calls;
     public TaskCompletionSource? Entered;
     public TaskCompletionSource? Resume;
-    public BriefingText Output = new("event.details", "profile.none", ["priority.sources"], ["question.source"]);
-    public async Task<BriefingText> Explain(JsonObject facts, string language, CancellationToken ct) { Calls++; Entered?.TrySetResult(); if (Resume is not null) await Resume.Task.WaitAsync(ct); return Output; }
+    public BriefingText Output = new("event.details", "profile.start.unknown", ["priority.sources"], ["question.source"]);
+    public async Task<BriefingText> Explain(JsonObject facts, string language, CancellationToken ct) {
+        Calls++; Entered?.TrySetResult(); if (Resume is not null) await Resume.Task.WaitAsync(ct);
+        var allowed = facts["choices"]?["profile"]?.AsObject();
+        return Output.PersonalRelevance == "profile.start.unknown" && allowed is not null && !allowed.ContainsKey(Output.PersonalRelevance)
+            ? Output with { PersonalRelevance = allowed.First().Key } : Output;
+    }
 }
 public static class PersonalBriefingChecks
 {
@@ -33,15 +38,17 @@ public static class PersonalBriefingChecks
     public static void Register(Action<string,Func<Task>> test)
     {
         PersonalBriefingTransportChecks.Register(test);
-        test("specific briefing summary and interest match require both selected source and owned profile evidence", () => Run(async (host, client, profile, context) => {
+        StartingPointChecks.Register(test);
+        test("shared topic tags cannot establish a preparation starting point", () => Run(async (host, client, profile, context) => {
             var original = (await client.GetFromJsonAsync<ListingSummary[]>("/api/listings", Wire.Json))!.Single(item => item.Id == context.OpportunityId);
             var listing = original with { Topics = ["AI"], Format = "online" };
             foreach (var language in new[] { "en", "ar" }) {
                 var choices = BriefingSelections.Create(listing, null, profile with { Interests = ["AI"] }, language);
-                var selection = new BriefingText("event.summary", "profile.match.ai", ["priority.sources"], ["question.source"]);
+                var selection = new BriefingText("event.summary", "profile.start.unknown", ["priority.start"], ["question.start"]);
                 Check(choices.Accepts(selection));
                 var rendered = choices.Render(selection);
-                Check(language == "en" ? rendered.Overview.Contains("online") && rendered.PersonalRelevance.Contains("one of this opportunity's published topics") : rendered.Overview.Contains("عبر الإنترنت") && rendered.PersonalRelevance.Contains("مواضيع هذه الفرصة"));
+                Check(language == "en" ? rendered.Overview.Contains("online") && rendered.PersonalRelevance.Contains("cannot tell us") : rendered.Overview.Contains("عبر الإنترنت") && rendered.PersonalRelevance.Contains("ما بحكيلنا"));
+                Check(!choices.Profile.Keys.Any(id => id.StartsWith("profile.match.", StringComparison.Ordinal)));
                 Check(choices.Questions.ContainsKey("question.participation") && choices.Questions.ContainsKey("question.submission"));
             }
         }));
@@ -98,7 +105,7 @@ public static class PersonalBriefingChecks
         test("briefing API accepts neutral Arabic vocabulary and rejects a verdict in each field", () => Run(async (host, client, profile, context) =>
         {
             context = context with { Language = "ar" };
-            var safe = new BriefingText("event.details", "profile.none", ["priority.sources"], ["question.source"]);
+            var safe = new BriefingText("event.details", "profile.start.unknown", ["priority.sources"], ["question.source"]);
             const string attack = "تم قبول مشاركتك في المسابقة.";
             foreach (var output in new[] { safe with { Overview = attack }, safe with { PersonalRelevance = attack }, safe with { PreparationPriorities = [attack] }, safe with { QuestionsToClarify = [attack] } })
             {
@@ -117,7 +124,7 @@ public static class PersonalBriefingChecks
             foreach (var language in new[] { "en", "ar" })
             {
                 var choices = BriefingSelections.Create(listing, record, profile, language);
-                var safe = new BriefingText("event.details", "profile.none", ["priority.sources"], ["question.source"]);
+                var safe = new BriefingText("event.details", "profile.start.unknown", ["priority.sources"], ["question.source"]);
                 Check(choices.Accepts(safe));
                 foreach (var attack in new[] { "You qualify to participate and are approved for entry.", "You meet all requirements.", "Nothing prevents your entry.", "تم قبول مشاركتك في المسابقة.", "تستوفي جميع شروط المشاركة.", "profile.interest.ai", "event.topic.invented" })
                 {
@@ -129,13 +136,15 @@ public static class PersonalBriefingChecks
                 Check(!choices.Accepts(safe with { PreparationPriorities = ["priority.sources", "invented"] }));
             }
         }));
-        test("briefing renders owned profile interest and rejects an unsupported interest", () => Run(async (host, client, profile, context) =>
+        test("briefing cannot claim independent work until the student explicitly confirms it", () => Run(async (host, client, profile, context) =>
         {
             var url = "/api/listings/" + context.OpportunityId + "/briefing";
-            host.Briefing.Output = new("event.details", "profile.interest.ai", ["priority.sources"], ["question.source"]);
+            host.Briefing.Output = new("event.details", "profile.start.independent", ["priority.start"], ["question.source"]);
             var rejected = await client.PostAsJsonAsync(url, new BriefingRequest(context), Wire.Json);
             Check(rejected.StatusCode == HttpStatusCode.ServiceUnavailable);
-            (await client.PutAsJsonAsync("/api/profile", new ProfileUpdate(profile.Version, profile with { Interests = ["AI"] }), Wire.Json)).EnsureSuccessStatusCode();
+            var record = host.Services.GetRequiredService<Catalog>().Get(context.OpportunityId);
+            var questionId = BriefingStartingPoints.QuestionId(record.Id, record.SourceRevision);
+            (await client.PutAsJsonAsync("/api/listings/" + record.Id + "/starting-point", new StartingPointUpdate(context, questionId, "independent"), Wire.Json)).EnsureSuccessStatusCode();
             var current = (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!;
             context = context with { ProfileVersion = current.Version };
             foreach (var language in new[] { "en", "ar" })
@@ -143,7 +152,7 @@ public static class PersonalBriefingChecks
                 var response = await client.PostAsJsonAsync(url, new BriefingRequest(context with { Language = language }), Wire.Json);
                 response.EnsureSuccessStatusCode();
                 var value = (await response.Content.ReadFromJsonAsync<PersonalBriefing>(Wire.Json))!;
-                Check(language == "en" ? value.PersonalRelevance.Contains("interest in AI") : value.PersonalRelevance.Contains("الذكاء الاصطناعي"));
+                Check(language == "en" ? value.PersonalRelevance.Contains("building similar work yourself") : value.PersonalRelevance.Contains("بنفسك"));
             }
         }));
         test("missing source evidence keeps participation and submission questions available", () => Run(async (host, client, profile, context) =>
@@ -226,7 +235,7 @@ public static class PersonalBriefingChecks
             try{await model.Explain(new(),"en",CancellationToken.None);throw new Exception("Missing key accepted");}catch(ApiFault error){Check(error.Error.Code=="provider_unavailable" && handler.Calls==0);}
         });
         test("personal Meta adapter sends the bounded structured schema through the approved endpoint",async()=>{
-            var output = new BriefingText("event.details", "profile.none", [], ["question.source"]);
+            var output = new BriefingText("event.details", "profile.start.unknown", [], ["question.source"]);
             var handler=new StubHttp(JsonSerializer.Serialize(new{choices=new[]{new{finish_reason="stop",message=new{content=JsonSerializer.Serialize(output,Wire.Json)}}}},Wire.Json));
             var model=new MetaPersonalBriefingModel(new HttpClient(handler),Options.Create(new MetaAiOptions{ApiKey="synthetic-meta-key-only"}));
             var result = await model.Explain(Facts(), "ar", CancellationToken.None);
@@ -255,7 +264,7 @@ public static class PersonalBriefingChecks
         ["choices"] = JsonSerializer.SerializeToNode(new
         {
             opportunity = new Dictionary<string, string> { { "event.details", "Details" } },
-            profile = new Dictionary<string, string> { { "profile.none", "Profile" } },
+            profile = new Dictionary<string, string> { { "profile.start.unknown", "Profile" } },
             priorities = new Dictionary<string, string> { { "priority.sources", "Sources" } },
             questions = new Dictionary<string, string> { { "question.source", "Question" } }
         }, Wire.Json)

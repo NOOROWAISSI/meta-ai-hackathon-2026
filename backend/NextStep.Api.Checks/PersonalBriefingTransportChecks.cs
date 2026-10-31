@@ -13,7 +13,7 @@ using NextStep.MetaAi;
 // The production adapter is exercised, but every HTTP response is in memory. No live provider calls.
 internal static class PersonalBriefingTransportChecks
 {
-    private static readonly BriefingText Output = new("event.details", "profile.none", ["priority.sources"], ["question.source"]);
+    private static readonly BriefingText Output = new("event.details", "profile.start.unknown", ["priority.sources"], ["question.source"]);
     private static void Check(bool value) { if (!value) throw new Exception("Briefing transport assertion failed"); }
     private static string Envelope(string finish = "stop", string? content = null) => JsonSerializer.Serialize(new { choices = new[] { new { finish_reason = finish, message = new { content = content ?? JsonSerializer.Serialize(Output, Wire.Json) } } } }, Wire.Json);
     private static MetaPersonalBriefingModel Adapter(HttpClient http, int timeout = 90) => new(http, Options.Create(new MetaAiOptions { ApiKey = "synthetic-transport-key-only", OverallTimeoutSeconds = timeout }));
@@ -102,7 +102,7 @@ internal static class PersonalBriefingTransportChecks
         ["choices"] = JsonSerializer.SerializeToNode(new
         {
             opportunity = new Dictionary<string, string> { { "event.details", "Details" } },
-            profile = new Dictionary<string, string> { { "profile.none", "Profile" } },
+            profile = new Dictionary<string, string> { { "profile.start.unknown", "Profile" } },
             priorities = new Dictionary<string, string> { { "priority.sources", "Sources" } },
             questions = new Dictionary<string, string> { { "question.source", "Question" } }
         }, Wire.Json)
