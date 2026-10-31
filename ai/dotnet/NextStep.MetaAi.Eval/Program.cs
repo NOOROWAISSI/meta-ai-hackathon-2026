@@ -8,21 +8,27 @@ using NextStep.MetaAi.Evaluation;
 // Explicit opt-in for paid external requests. All contexts below are synthetic.
 var executedAtUtc = DateTimeOffset.UtcNow;
 var scenarios = CreateScenarios(executedAtUtc);
-var live = args.Contains("--live", StringComparer.Ordinal);
-var help = args.Contains("--help", StringComparer.Ordinal);
-var invalid = args.Where(a => a is not ("--help" or "--live" or "--list")).ToArray();
-if (help || invalid.Length != 0)
+EvaluationOptions selection;
+try { selection = EvaluationOptions.Parse(args, scenarios.Select(s => s.Id)); }
+catch (ArgumentException error)
 {
-    Console.WriteLine("Usage: dotnet run --project ai/dotnet/NextStep.MetaAi.Eval -- [--list | --live]");
-    Console.WriteLine("Without --live, no network calls are made. --live makes 6 real Meta API calls.");
-    return invalid.Length == 0 ? 0 : 2;
+    Console.Error.WriteLine(error.Message);
+    return 2;
 }
-if (!live || args.Contains("--list", StringComparer.Ordinal))
+if (selection.Help)
 {
-    Console.WriteLine("NextStep Meta quality evaluation — dry run (NO provider calls)");
+    Console.WriteLine("Usage: dotnet run --project ai/dotnet/NextStep.MetaAi.Eval -- [--list | --live] [--scenario ID ...]");
+    Console.WriteLine("Repeat --scenario ID to select several; omitted selection means all six.");
+    Console.WriteLine("Without --live, no network calls are made. --list always suppresses live calls.");
+    return 0;
+}
+scenarios = scenarios.Where(s => selection.ScenarioIds.Contains(s.Id)).ToArray();
+if (!selection.Live || selection.List)
+{
+    Console.WriteLine("NextStep Meta quality evaluation - dry run (NO provider calls)");
     foreach (var s in scenarios)
         Console.WriteLine($"  {s.Id}: {s.Focus}");
-    Console.WriteLine("Run with --live and MODEL_API_KEY set to perform six calls.");
+    Console.WriteLine($"Run with --live and MODEL_API_KEY set for {scenarios.Count} logical call(s), plus configured retries.");
     return 0;
 }
 var key = Environment.GetEnvironmentVariable("MODEL_API_KEY");
@@ -52,7 +58,7 @@ foreach (var scenario in scenarios)
             DateTimeOffset.UtcNow,
             candidate,
             Array.Empty<RetainedWork>()); // Only a diagnostic: existing tasks do not expose remaining hours here.
-        var flags = QualityFlags(scenario, candidate, budget);
+        var flags = EvaluationQuality.Flags(scenario.Id, scenario.Context, candidate, budget);
         results.Add(new EvaluationResult(scenario.Id, scenario.Focus, "ok", sw.ElapsedMilliseconds,
             candidate.Tasks.Count, candidate, budget.Feasibility,
             budget.AvailableHours, budget.RemainingEffortHours, flags, null));
@@ -93,35 +99,6 @@ Console.WriteLine(markdownPath);
 Console.WriteLine(jsonPath);
 Console.WriteLine("Complete the manual rubric in REVIEW.md before claiming quality is acceptable.");
 return results.All(r => r.Status == "ok") ? 0 : 1;
-
-static string[] QualityFlags(EvaluationScenario s, PlanCandidateOutput c, BudgetAssessment b)
-{
-    var flags = new List<string>();
-    if (c.Tasks.Count == 0)
-        flags.Add("Zero tasks: manually check whether the explanation justifies no remaining preparation work.");
-    if (s.Id == "mandatory-missing" && !c.Tasks.Any(t =>
-            t.Target.Kind == "requirement" && t.Target.RequirementId == "req-demo-video" && t.Priority == "must"))
-        flags.Add("Missing mandatory submission work: verify why the explicit missing required video was not scheduled as must.");
-    if (s.Id == "experienced" && c.Tasks.Any(t =>
-            t.Title.Contains("learn basic", StringComparison.OrdinalIgnoreCase) ||
-            t.Title.Contains("intro to", StringComparison.OrdinalIgnoreCase)))
-        flags.Add("Possibly generic beginner work despite accepted experience; inspect relevance.");
-    if (s.Id == "existing-progress" && c.Tasks.Any(t =>
-            t.Title.Contains("create initial wireframes", StringComparison.OrdinalIgnoreCase) ||
-            t.Title.Contains("set up react repository", StringComparison.OrdinalIgnoreCase)))
-        flags.Add("Possible semantic duplication of retained work; inspect manually.");
-    if (b.Feasibility == "infeasible")
-        flags.Add("Estimated workload exceeds reported capacity; assess transparency. Do NOT silently shrink real effort.");
-    if (s.Id == "unknown-facts")
-        flags.Add("Manually verify no definite dates, deadlines, eligibility verdicts or experience claims were invented.");
-    if (s.Id == "approved-resources")
-    {
-        if (c.Tasks.Any(t => t.ResourceIds.Contains("reviewed-resource-002", StringComparer.Ordinal)))
-            flags.Add("IRRELEVANT RESOURCE: model selected the reviewed interview guide for a visualization task.");
-        flags.Add("Resource IDs are allowlisted and described, but semantic fit still needs manual review.");
-    }
-    return flags.ToArray();
-}
 
 static IReadOnlyList<EvaluationScenario> CreateScenarios(DateTimeOffset now)
 {
