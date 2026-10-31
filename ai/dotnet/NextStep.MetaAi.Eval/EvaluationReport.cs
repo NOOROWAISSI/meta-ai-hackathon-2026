@@ -40,8 +40,8 @@ internal sealed record EvaluationReport(int SchemaVersion, EvaluationProvenance 
         b.AppendLine("- Groundedness (0 invented facts, deadlines, eligibility verdicts, URLs, achievements).");
         b.AppendLine("- Personalization (matches reported skills, accepted experience and constraints without treating self-reports as verified).");
         b.AppendLine("- Actionability (specific deliverable and verifiable completion criteria; minimal filler).");
-        b.AppendLine("- Effort realism (credible estimated hours, workload feasibility is transparently interpreted).");
-        b.AppendLine("- Existing/mandatory work (avoids semantic duplicates; surfaces necessary missing submission work).");
+        b.AppendLine("- Effort realism (credible estimated hours, workload feasibility is transparently interpreted; infeasible work has minimum scope, critical path, deferrals and a concrete next decision).");
+        b.AppendLine("- Existing/mandatory work (avoids semantic duplicates; covers every required action including conditional delivery and confirmation, with evidence separate from Done).");
         b.AppendLine();
         b.AppendLine("Scoring: 0 = materially fails, 1 = mixed/minor limitations, 2 = strong. A 0 in groundedness or existing/mandatory work is a release blocker regardless of average.");
         b.AppendLine();
