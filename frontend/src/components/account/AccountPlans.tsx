@@ -39,6 +39,7 @@ import { PreparationEntry } from "@/components/preparation/PreparationEntry";
 import { JoinedHackathons } from "./JoinedHackathons";
 import { ReportedParticipation } from "@/components/catalog/ReportedParticipation";
 import { useLocale } from "@/components/LocaleProvider";
+import { PlanProgress } from "@/components/preparation/PlanProgress";
 import { DraftFeasibility } from "@/components/preparation/DraftFeasibility";
 
 interface Candidate {
@@ -109,33 +110,6 @@ function AccountPlanIndex() {
           <p className="text-xs text-muted-foreground">{t("Confirmed plans", "خطط مؤكّدة")}</p>
         </div>
       </header>
-      {profile.isPending || catalog.isPending ? (
-        <p role="status" className="text-sm text-muted-foreground">
-          {t("Loading your hackathons…", "جارٍ تحميل هاكاثوناتك…")}
-        </p>
-      ) : profile.isError || catalog.isError ? (
-        <div role="alert" className="prep-error">
-          <p>{t("Your participation list could not be loaded.", "تعذّر تحميل قائمة مشاركاتك.")}</p>
-          <button
-            type="button"
-            className="detail-secondary mt-3"
-            onClick={() => {
-              void profile.refetch();
-              void catalog.refetch();
-            }}
-          >
-            {t("Retry", "إعادة المحاولة")}
-          </button>
-        </div>
-      ) : (
-        plans.data && (
-          <JoinedHackathons
-            answers={profile.data.clarificationAnswers}
-            listings={catalog.data}
-            plans={plans.data}
-          />
-        )
-      )}
       {plans.isPending ? (
         <p role="status" className="prep-loading">
           Loading confirmed plans…
@@ -167,7 +141,7 @@ function AccountPlanIndex() {
           {plans.data.map((plan) => {
             const done = plan.tasks.filter((t) => t.status === "done").length;
             return (
-              <article key={plan.id} className="glass rounded-3xl p-6">
+              <article key={plan.id} className="glass plan-index-card rounded-3xl p-5 sm:p-6">
                 <p className="prep-eyebrow">{FEASIBILITY_LABELS[plan.feasibility]}</p>
                 <h2 className="mt-3 text-xl font-bold">
                   {catalog.data?.find((o) => o.id === plan.context.opportunityId)?.title ??
@@ -177,10 +151,11 @@ function AccountPlanIndex() {
                   opportunityId={plan.context.opportunityId}
                   answers={profile.data?.clarificationAnswers}
                 />
-                <p className="mt-4 text-sm text-muted-foreground">
-                  {done} / {plan.tasks.length} tasks completed · {plan.budget.remainingEffortHours}h
-                  remaining
-                </p>
+                <PlanProgress
+                  done={done}
+                  total={plan.tasks.length}
+                  remainingHours={plan.budget.remainingEffortHours}
+                />
                 <p className="mt-2 text-xs text-muted-foreground">
                   {plan.budget.deadlineInstant
                     ? new Date(plan.budget.deadlineInstant).toLocaleString()
@@ -211,10 +186,44 @@ function AccountPlanIndex() {
           })}
         </div>
       )}
+      {profile.isPending || catalog.isPending ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          {t("Loading your hackathons…", "جارٍ تحميل هاكاثوناتك…")}
+        </p>
+      ) : profile.isError || catalog.isError ? (
+        <div role="alert" className="prep-error">
+          <p>{t("Your participation list could not be loaded.", "تعذّر تحميل قائمة مشاركاتك.")}</p>
+          <button
+            type="button"
+            className="detail-secondary mt-3"
+            onClick={() => {
+              void profile.refetch();
+              void catalog.refetch();
+            }}
+          >
+            {t("Retry", "إعادة المحاولة")}
+          </button>
+        </div>
+      ) : (
+        plans.data && (
+          <JoinedHackathons
+            answers={profile.data.clarificationAnswers}
+            listings={catalog.data}
+            plans={plans.data}
+          />
+        )
+      )}
     </div>
   );
 }
-export function AccountPreparation({ opportunityId }: { opportunityId: string }) {
+export function AccountPreparation({
+  opportunityId,
+  embedded = false,
+}: {
+  opportunityId: string;
+  embedded?: boolean;
+}) {
+  const Heading = embedded ? "h2" : "h1";
   const auth = useAuth();
   const query = useQueryClient();
   const key = ["account", auth?.user?.id, "preparation", opportunityId];
@@ -244,6 +253,7 @@ export function AccountPreparation({ opportunityId }: { opportunityId: string })
   });
   const bundle = data.data;
   const plan = bundle?.plan;
+  const taskTrigger = useRef<HTMLButtonElement | null>(null);
   const [candidate, setCandidate] = useState<Candidate | null>(null);
   const coverage = useQuery({
     queryKey: [
@@ -282,7 +292,7 @@ export function AccountPreparation({ opportunityId }: { opportunityId: string })
     void query.invalidateQueries({ queryKey: ["account", auth?.user?.id] });
     void data.refetch();
   };
-  const back = (
+  const back = !embedded && (
     <Link to="/" search={{ opportunity: opportunityId }} className="prep-back">
       <ArrowLeft className="size-4 rtl:rotate-180" aria-hidden />
       Back to opportunity
@@ -438,10 +448,13 @@ export function AccountPreparation({ opportunityId }: { opportunityId: string })
             <Sparkles className="size-4" aria-hidden />
             Preparation & progress
           </p>
-          <h1>{bundle.opportunity.title}</h1>
-          <p className="prep-organizer">{bundle.opportunity.organizer}</p>
+          <Heading>{embedded ? "Your next steps" : bundle.opportunity.title}</Heading>
+          {!embedded && <p className="prep-organizer">{bundle.opportunity.organizer}</p>}
         </div>
-        <span className="prep-index-count">{plan ? `${done}/${tasks.length}` : "01"}</span>
+        <div className="prep-header-metric">
+          <strong>{plan ? done + " / " + tasks.length : "Setup"}</strong>
+          <span>{plan ? "Tasks completed" : "No accepted plan yet"}</span>
+        </div>
       </header>
       <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
         <span className="inline-flex items-center gap-2">
@@ -481,8 +494,8 @@ export function AccountPreparation({ opportunityId }: { opportunityId: string })
       )}
       {stale && (
         <p role="status" className="prep-error">
-          Profile, submission or source context changed. Your confirmed progress is preserved.
-          Review current details before requesting a new draft.
+          Your profile or event details changed. Your saved progress is safe. Review current details
+          before requesting a new draft.
         </p>
       )}
       {blocked && (
@@ -497,24 +510,11 @@ export function AccountPreparation({ opportunityId }: { opportunityId: string })
         <>
           <section className="glass rounded-3xl p-6">
             <p className="prep-eyebrow">{FEASIBILITY_LABELS[plan.feasibility]}</p>
-            <div className="mt-5 grid grid-cols-2 gap-5">
-              <div>
-                <p className="text-3xl font-bold">
-                  {tasks.length ? Math.round((done / tasks.length) * 100) : 0}%
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">Task progress</p>
-              </div>
-              <div>
-                <p className="text-3xl font-bold">{plan.budget.remainingEffortHours}h</p>
-                <p className="mt-1 text-xs text-muted-foreground">Remaining estimated effort</p>
-              </div>
-            </div>
-            <div className="mt-5 h-2 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-primary"
-                style={{ width: `${tasks.length ? (done / tasks.length) * 100 : 0}%` }}
-              />
-            </div>
+            <PlanProgress
+              done={done}
+              total={tasks.length}
+              remainingHours={plan.budget.remainingEffortHours}
+            />
             <details className="mt-5 text-sm">
               <summary className="cursor-pointer">Plan context and limitations</summary>
               <ul className="mt-3 list-disc space-y-2 ps-5 text-muted-foreground">
@@ -531,11 +531,15 @@ export function AccountPreparation({ opportunityId }: { opportunityId: string })
           {!tasks.length && (
             <p className="prep-empty">No remaining preparation tasks in this plan.</p>
           )}
+          <p className="text-xs leading-5 text-muted-foreground">
+            Suggested task priorities: must / should / could. Organizer requirements are shown
+            separately in the submission checklist and linked sources.
+          </p>
           <div className="grid gap-4 md:grid-cols-2">
             {tasks.map((task) => (
               <article key={task.id} className="glass rounded-3xl p-5">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="prep-priority">{task.priority}</span>
+                  <span className="prep-priority">Suggested priority: {task.priority}</span>
                   <span className="prep-status">{STATUS_LABELS[task.status]}</span>
                 </div>
                 <h2 className="mt-4 text-lg font-bold">{task.title}</h2>
@@ -543,11 +547,14 @@ export function AccountPreparation({ opportunityId }: { opportunityId: string })
                 <p className="mt-3 text-xs text-muted-foreground">
                   {task.estimatedHours}h original · {task.remainingEstimatedHours}h remaining
                 </p>
-                <TaskResources ids={task.resourceIds} catalog={bundle.resources} />
+                <TaskResources ids={task.resourceIds} catalog={bundle.resources} compact />
                 <button
                   type="button"
                   className="detail-secondary mt-4"
-                  onClick={() => setTaskId(task.id)}
+                  onClick={(event) => {
+                    taskTrigger.current = event.currentTarget;
+                    setTaskId(task.id);
+                  }}
                 >
                   View task
                 </button>
@@ -569,25 +576,6 @@ export function AccountPreparation({ opportunityId }: { opportunityId: string })
             opportunity={bundle.opportunity}
             stale={candidateStale}
           />
-          <p className="mt-3 text-sm leading-7">{candidate.output.explanation}</p>
-          <div className="mt-6 divide-y divide-border">
-            {candidate.output.tasks.map((task, index) => (
-              <div key={index} className="py-4">
-                <span className="prep-priority">{task.priority}</span>
-                <h3 className="mt-2 font-semibold">{task.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{task.deliverable}</p>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Complete when: {task.completionCriteria} · {task.estimatedHours}h
-                </p>
-              </div>
-            ))}
-          </div>
-          {candidateStale && (
-            <p role="alert" className="prep-error mt-4">
-              This draft is outdated. The previous confirmed plan is unchanged; generate a fresh
-              draft.
-            </p>
-          )}
           <div className="mt-5 flex flex-wrap gap-3">
             <button
               type="button"
@@ -622,6 +610,31 @@ export function AccountPreparation({ opportunityId }: { opportunityId: string })
               Discard draft
             </button>
           </div>
+
+          <details className="mt-4 text-sm">
+            <summary className="cursor-pointer text-primary">
+              Why these preparation priorities?
+            </summary>
+            <p className="mt-3 leading-7 text-muted-foreground">{candidate.output.explanation}</p>
+          </details>
+          <div className="mt-6 divide-y divide-border">
+            {candidate.output.tasks.map((task, index) => (
+              <div key={index} className="py-4">
+                <span className="prep-priority">Suggested priority: {task.priority}</span>
+                <h3 className="mt-2 font-semibold">{task.title}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">{task.deliverable}</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Complete when: {task.completionCriteria} · {task.estimatedHours}h
+                </p>
+              </div>
+            ))}
+          </div>
+          {candidateStale && (
+            <p role="alert" className="prep-error mt-4">
+              This draft is outdated. The previous confirmed plan is unchanged; generate a fresh
+              draft.
+            </p>
+          )}
         </section>
       ) : (
         <section className="glass rounded-3xl p-6">
@@ -728,6 +741,7 @@ export function AccountPreparation({ opportunityId }: { opportunityId: string })
         <TaskDrawer
           key={selectedTask.id}
           task={selectedTask}
+          returnFocusTo={taskTrigger.current}
           plan={plan}
           bundle={bundle}
           onClose={() => setTaskId(null)}
@@ -801,8 +815,8 @@ function SubmissionChecklist({
     <section className="border-t border-border pt-6">
       <h2 className="text-xl font-bold">Submission checklist · separate from learning</h2>
       <p className="mt-2 text-sm leading-7 text-muted-foreground">
-        Task completion never confirms these items. Reported presence is not independent
-        verification or proof that all artifact conditions are met.
+        Finishing a preparation task does not confirm submission. Add your submission evidence
+        separately.
       </p>
       {requirements.length > 0 && (
         <div className="mt-3 text-sm" aria-label="Mandatory action review">
@@ -828,7 +842,7 @@ function SubmissionChecklist({
       )}
       {coverage.isFetching && (
         <p role="status" className="mt-3 text-xs text-muted-foreground">
-          Checking task representation against current submission evidence…
+          Checking which submission steps your plan covers…
         </p>
       )}
       {coverage.isError && (
@@ -846,15 +860,21 @@ function SubmissionChecklist({
             {coverage.data.report.unrepresentedRequirementIds.length} reviewed outstanding
             requirements without a linked task
           </span>
-          <span>
-            {coverage.data.unresolvedRequirementIds.length} source/applicability checks unresolved
-          </span>
+          <span>{coverage.data.unresolvedRequirementIds.length} checks need clarification</span>
           {coverage.data.planOutdated && <span>Plan context outdated · progress preserved</span>}
-          <p className="w-full">
-            Representation is not fulfillment. Unknown evidence is unresolved, not a confirmed
-            failure. Even zero unrepresented requirements does not establish full action coverage or
-            successful submission.
-          </p>
+          <details className="w-full leading-5">
+            <summary className="cursor-pointer text-primary">What these checks mean</summary>
+            <p className="mt-2">
+              A linked task does not establish that every action is covered or completed. Unknown
+              evidence still needs clarification; it is not a confirmed failure. Even zero
+              unrepresented requirements does not establish full action coverage or successful
+              submission.
+            </p>
+            <p className="mt-2">
+              Evidence you report is not independently verified and does not confirm that every
+              organizer condition is met.
+            </p>
+          </details>
         </div>
       )}
       {error && (

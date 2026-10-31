@@ -22,10 +22,13 @@ import {
 export function PreparationEntry({
   opportunityId,
   renderWorkspace,
+  embedded = false,
 }: {
   opportunityId: string;
   renderWorkspace: (planningOpportunityId: string) => ReactNode;
+  embedded?: boolean;
 }) {
+  const Heading = embedded ? "h2" : "h1";
   const auth = useAuth();
   const { t } = useLocale();
   const access = useQuery({
@@ -34,7 +37,7 @@ export function PreparationEntry({
     staleTime: 0,
     retry: false,
   });
-  const back = (
+  const back = !embedded && (
     <Link to="/" search={{ opportunity: opportunityId }} className="prep-back">
       <ArrowLeft className="size-4 rtl:rotate-180" aria-hidden />
       {t("Back to opportunity", "العودة للفرصة")}
@@ -55,11 +58,11 @@ export function PreparationEntry({
       <div className="space-y-5">
         {back}
         <section className="glass rounded-3xl p-7" role="alert">
-          <h1 className="text-2xl font-bold">
+          <Heading className="text-2xl font-bold">
             {access.error instanceof CatalogRequestError && access.error.status === 404
               ? t("Opportunity unavailable", "الفرصة غير متاحة")
               : t("Preparation could not be checked", "تعذّر فحص التحضير")}
-          </h1>
+          </Heading>
           <p className="mt-3 text-sm text-muted-foreground">
             {t(
               "Your saved plans and progress are unchanged. You can retry or return to the event.",
@@ -123,14 +126,15 @@ export function PreparationEntry({
             <Sparkles className="size-4" aria-hidden />
             {t("Preparation", "التحضير")}
           </p>
-          <h1 dir="auto">{item.title}</h1>
-          <p className="prep-organizer" dir="auto">
-            {item.organizer}
-          </p>
+          <Heading dir="auto">
+            {embedded ? t("Preparation options", "خيارات التحضير") : item.title}
+          </Heading>
+          {!embedded && (
+            <p className="prep-organizer" dir="auto">
+              {item.organizer}
+            </p>
+          )}
         </div>
-        <span className="prep-index-count" aria-hidden>
-          01
-        </span>
       </header>
       {item.state === "source_review_required" ? (
         <section className="glass relative overflow-hidden rounded-3xl border border-primary/20 p-6 sm:p-8">

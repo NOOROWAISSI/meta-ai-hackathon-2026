@@ -136,12 +136,15 @@ export function RealOpportunities() {
               )}
             </p>
           </div>
-          <span
-            className="prep-index-count"
-            aria-label={`${catalog.data?.length ?? 0} source-backed listings`}
-          >
-            {catalog.data?.length ?? "—"}
-          </span>
+          <div className="prep-header-metric">
+            <span
+              className="prep-index-count"
+              aria-label={`${catalog.data?.length ?? 0} source-backed listings`}
+            >
+              {catalog.data?.length ?? "—"}
+            </span>
+            <span>{t("Opportunities", "فرص متاحة")}</span>
+          </div>
         </header>
         {collection.data && (
           <p

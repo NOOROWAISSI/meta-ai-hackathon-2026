@@ -2,13 +2,30 @@ import { ExternalLink, Link2Off } from "lucide-react";
 import type { ReviewedResource } from "@/lib/contract/types";
 import { currentResource } from "@/lib/preparation/logic";
 
-export function TaskResources({ ids, catalog }: { ids: string[]; catalog: ReviewedResource[] }) {
+export function TaskResources({
+  ids,
+  catalog,
+  compact = false,
+}: {
+  ids: string[];
+  catalog: ReviewedResource[];
+  compact?: boolean;
+}) {
   if (!ids.length)
     return (
       <p className="prep-resource-empty">
         <Link2Off className="size-4" aria-hidden />
-        No reviewed learning resources are attached. Empty resource lists are valid.
+        No reviewed learning resources attached.
       </p>
+    );
+  if (compact)
+    return (
+      <details className="mt-4 text-sm">
+        <summary className="cursor-pointer text-primary">Learning resources ({ids.length})</summary>
+        <div className="mt-3">
+          <TaskResources ids={ids} catalog={catalog} />
+        </div>
+      </details>
     );
   return (
     <div className="space-y-3">
@@ -37,7 +54,10 @@ export function TaskResources({ ids, catalog }: { ids: string[]; catalog: Review
                 Fictional placeholder · not genuinely reviewed
               </p>
             )}
-            <p className="mt-2 text-xs text-muted-foreground">{resource.relevanceNote}</p>
+            <details className="mt-2 text-xs text-muted-foreground">
+              <summary className="cursor-pointer">Why this resource?</summary>
+              <p className="mt-2 leading-5">{resource.relevanceNote}</p>
+            </details>
             {currentResource(resource) ? (
               <>
                 <a

@@ -69,6 +69,19 @@ function show(
   );
   return { ...render(element(id)), workspace, element };
 }
+it("keeps the event title and back link in the parent details page when embedded", async () => {
+  vi.spyOn(realCatalogService, "preparationAccess").mockResolvedValue(review);
+  const query = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+  render(
+    <QueryClientProvider client={query}>
+      <h1>{base.title}</h1>
+      <PreparationEntry opportunityId={base.opportunityId} embedded renderWorkspace={() => null} />
+    </QueryClientProvider>,
+  );
+  await screen.findByRole("heading", { name: "Preparation options", level: 2 });
+  expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+  expect(screen.queryByRole("link", { name: "Back to opportunity" })).toBeNull();
+});
 it("allows an anonymous student to see source-review needs without opening a workspace", async () => {
   vi.spyOn(realCatalogService, "preparationAccess").mockResolvedValue(review);
   const view = show();
