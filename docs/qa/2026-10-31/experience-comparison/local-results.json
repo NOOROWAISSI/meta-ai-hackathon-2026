@@ -1,0 +1,25 @@
+{
+  "provider": "synthetic-local-only",
+  "externalModelCalls": 0,
+  "checks": [
+    "AI interest plus project descriptions stays unclassified until explicit task-specific confirmation",
+    "explicit independent report survives failed save/Retry and leads to extending existing work, without automatic generation",
+    "same AI interest gets a different first experiment after explicit not-yet report, without assuming zero general knowledge",
+    "Arabic/mobile preserves confirmed self-report; comparison creates no plan"
+  ],
+  "cases": {
+    "unknown": {
+      "label": "Your starting point is still unknown",
+      "nextAction": "Confirm whether you built similar work independently, followed a guide, or have not tried it. We will not assign you a level from an interest tag."
+    },
+    "independent": {
+      "label": "Build on your existing work",
+      "nextAction": "Take one project you built yourself and list what must change to meet this event's deliverable. Prototype only the new or uncertain part."
+    },
+    "notYet": {
+      "label": "Try one small part first",
+      "nextAction": "Break the published challenge into input, processing and output. Choose one unfamiliar part for a tiny experiment using tools you actually know."
+    }
+  },
+  "status": "pass"
+}
