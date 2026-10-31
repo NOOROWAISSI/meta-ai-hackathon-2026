@@ -86,6 +86,31 @@ export function DraftFeasibility({
               ))}
             </div>
           )}
+          {assessment.status === "overloaded" && (
+            <div className="mt-4 text-sm">
+              <h4 className="font-semibold">Before committing to this workload</h4>
+              <ol className="mt-2 list-decimal space-y-2 ps-5">
+                <li>
+                  Choose one demonstrable user flow as the minimum demo scope. Defer optional
+                  features and polish; keep every mandatory requirement and retained task visible.
+                </li>
+                <li>
+                  Review the critical path: prerequisites and unfamiliar skills, the core flow, then
+                  required artifacts and any organizer submission steps. Include learning, testing
+                  and confirmation time in fresh estimates.
+                </li>
+                <li>
+                  Update your goal or reported availability in Profile, then discard this draft and
+                  generate a new one for review. If required work still exceeds capacity, choose
+                  more preparation time or reconsider this opportunity.
+                </li>
+              </ol>
+              <p className="mt-2 text-muted-foreground">
+                These are scope decisions, not a replacement plan or a claim that a smaller demo
+                will fit. This draft's estimates remain unchanged.
+              </p>
+            </div>
+          )}
           {assessment.futureBuildStart && (
             <p className="mt-3 text-xs text-muted-foreground">
               Available time starts at the reviewed build start:{" "}

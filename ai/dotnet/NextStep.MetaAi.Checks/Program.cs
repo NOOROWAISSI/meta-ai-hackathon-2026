@@ -494,6 +494,22 @@ Test("provider candidate with omitted mandatory action still returns unchanged f
     Assert(coverage.UnrepresentedRequirementIds.SequenceEqual(new[] { "req-submit" }) && h.Count == 1);
     Assert(before == JsonSerializer.Serialize(candidate, ContractJson.CreateOptions()));
 });
+Test("quality instructions require full mandatory actions and honest infeasible fallback without changing output", async () =>
+{
+    using var h = new FakeHandler(async (_, request, ct) => {
+        using var body = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(ct));
+        var instructions = body.RootElement.GetProperty("messages")[0].GetProperty("content").GetString()!;
+        Assert(instructions.Contains("preparation AND delivery") && instructions.Contains("receipt or confirmation") &&
+            instructions.Contains("actual delivery/confirmation evidence must be recorded separately") &&
+            instructions.Contains("minimum demo scope") && instructions.Contains("critical path") &&
+            instructions.Contains("Do not claim that the fallback fits") && instructions.Contains("Account for learning unfamiliar skills"));
+        return Reply(TaskJson(hours: 9));
+    });
+    using var http = new HttpClient(h);
+    var result = await Client(http).GenerateCandidateAsync(Context() with { AvailableHoursPerWeek = 2, ReviewedSubmissionDeadline = DateTimeOffset.UtcNow.AddDays(14) });
+    Assert(result.Tasks.Single().EstimatedHours == 9 && h.Count == 1);
+});
+NextStep.MetaAi.Checks.QualityRegressionChecks.Register(Sync);
 NextStep.MetaAi.Checks.SubmissionCoverageChecks.Register(Sync);
 
 var passed = 0; var failed = 0;

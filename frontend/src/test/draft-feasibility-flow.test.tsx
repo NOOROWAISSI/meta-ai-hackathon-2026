@@ -5,6 +5,7 @@ import { AccountPreparation } from "@/components/account/AccountPlans";
 import { accountApi, type SubmissionCoverageView } from "@/lib/account/api";
 import fixture from "@/lib/contract/sample-payload.json";
 import frozen from "@/test/fixtures/frozen-ai-candidates.json";
+import liveQuality from "../../../ai/dotnet/NextStep.MetaAi.Checks/Fixtures/live-quality-1084027.json";
 import type {
   AssessmentContext,
   Opportunity,
@@ -29,7 +30,7 @@ let profile: StudentProfile;
 let submission: SubmissionState;
 let context: AssessmentContext;
 let savedPlan: Plan | null;
-const candidate = frozen.candidates["beginner-limited"] as PlanCandidateOutput;
+const candidate = liveQuality.candidates["beginner-limited"] as PlanCandidateOutput;
 const report = (candidateId: string | null): SubmissionCoverageView => ({
   context,
   planVersion: savedPlan?.version ?? null,
@@ -161,6 +162,16 @@ it("discloses the frozen 9h beginner workload against about 4h before explicit a
   }
   expect(preview).toHaveTextContent(/smaller optional scope|more preparation time/i);
   expect(preview).toHaveTextContent(/preview|provisional/i);
+  for (const text of [
+    "minimum demo scope",
+    "critical path",
+    "unfamiliar skills",
+    "keep every mandatory requirement and retained task visible",
+    "Update your goal or reported availability in Profile",
+    "reconsider this opportunity",
+    "not a replacement plan or a claim",
+  ])
+    expect(preview).toHaveTextContent(text);
   await waitFor(() => expect(screen.getByRole("button", { name: "Accept plan" })).toBeEnabled());
   expect(accept).not.toHaveBeenCalled();
   expect(candidate).toEqual(original);
@@ -255,6 +266,9 @@ for (const changed of ["context", "plan version"] as const) {
     );
     await waitFor(() => expect(preview).toHaveTextContent("Workload preview unavailable."));
     expect(within(preview).queryByText("Available hours")).toBeNull();
+    expect(
+      within(preview).queryByRole("heading", { name: "Before committing to this workload" }),
+    ).toBeNull();
     expect(screen.getByRole("button", { name: "Accept plan" })).toBeDisabled();
     expect(fetch).not.toHaveBeenCalled();
   });
@@ -287,6 +301,86 @@ for (const [id, hours, days, effort, status] of [
       expect(screen.getByRole("heading", { name: task.title })).toBeVisible();
     expect(screen.getByText(output.explanation)).toBeVisible();
     expect(output).toEqual(before);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+}
+
+for (const phase of ["draft", "done"] as const) {
+  it(`keeps delivery and confirmation review explicit for the exact AI-01 response in ${phase} state`, async () => {
+    const output = liveQuality.candidates["mandatory-missing"] as PlanCandidateOutput;
+    const before = structuredClone(output);
+    opportunity.requirements = [
+      {
+        id: "req-demo-video",
+        statement:
+          "Mandatory submission: record and submit a demonstration video of the working prototype; this item is currently missing.",
+        kind: "submission_mandatory",
+        lane: "submission",
+        isMandatory: true,
+        subject: "project",
+        applicability: { key: "all" },
+        evaluation: { key: "submission_criterion", criterion: "presence", parameters: {} },
+        claims: [],
+        sourceEvidenceIds: ["time-evidence"],
+        sourceStatus: "reviewed",
+      },
+    ];
+    submission.items = [
+      {
+        requirementId: "req-demo-video",
+        state: "missing",
+        criterionResults: { presence: "reported_not_met" },
+        evidenceLevel: "self_report",
+      },
+    ];
+    const originalEvidence = structuredClone(submission);
+    vi.mocked(accountApi.generate).mockResolvedValue({ candidateId: "draft-test", output });
+    vi.mocked(accountApi.submissionCoverage).mockImplementation(async (_id, id) => ({
+      ...report(id ?? null),
+      report: {
+        ...report(id ?? null).report,
+        reviewedOutstandingMandatoryRequirementIds: ["req-demo-video"],
+        candidateRequirementIds: phase === "draft" ? ["req-demo-video"] : [],
+        retainedRequirementIds: phase === "done" ? ["req-demo-video"] : [],
+        unrepresentedRequirementIds: [],
+      },
+    }));
+    const accept = vi.spyOn(accountApi, "accept");
+    const progress = vi.spyOn(accountApi, "progress");
+    if (phase === "done") {
+      const tasks: PreparationTask[] = output.tasks.map((t, i) => ({
+        ...t,
+        id: `original-${i}`,
+        status: "done",
+        remainingEstimatedHours: 0,
+        artifactUrls: [],
+      }));
+      savedPlan = { ...fixture.plan, context, tasks, taskOrder: tasks.map((t) => t.id) } as Plan;
+      vi.mocked(accountApi.plans).mockResolvedValue([savedPlan]);
+      render(
+        <QueryClientProvider client={query}>
+          <AccountPreparation opportunityId="E01" />
+        </QueryClientProvider>,
+      );
+    } else await showDraft();
+    const review = await screen.findByLabelText("Mandatory action review");
+    for (const text of [
+      "then send or upload the artifact when ready",
+      "Check the actual receipt or confirmation",
+      "A file ready to submit is still unsent",
+      "Unknown instructions or missing confirmation remain unresolved",
+      "it does not confirm portal submission or eligibility",
+    ])
+      expect(review).toHaveTextContent(text);
+    expect(screen.getByText(opportunity.requirements[0]!.statement)).toBeVisible();
+    await waitFor(() =>
+      expect(screen.getByText(/0 reviewed outstanding requirements/)).toBeVisible(),
+    );
+    expect(screen.getByRole("combobox", { name: "Your reported evidence" })).toHaveValue("missing");
+    expect(submission).toEqual(originalEvidence);
+    expect(output).toEqual(before);
+    expect(accept).not.toHaveBeenCalled();
+    expect(progress).not.toHaveBeenCalled();
     expect(fetch).not.toHaveBeenCalled();
   });
 }

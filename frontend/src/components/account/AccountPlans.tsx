@@ -804,6 +804,28 @@ function SubmissionChecklist({
         Task completion never confirms these items. Reported presence is not independent
         verification or proof that all artifact conditions are met.
       </p>
+      {requirements.length > 0 && (
+        <div className="mt-3 text-sm" aria-label="Mandatory action review">
+          <p>
+            A linked task does not prove that every action in a requirement is planned. Compare each
+            full requirement below with the draft, even when no actions are shown as uncovered.
+          </p>
+          <ol className="mt-2 list-decimal space-y-2 ps-5">
+            <li>Prepare and check the required artifact against the reviewed instructions.</li>
+            <li>
+              If the requirement calls for delivery, verify the organizer's channel and
+              instructions, then send or upload the artifact when ready. A file ready to submit is
+              still unsent.
+            </li>
+            <li>
+              Check the actual receipt or confirmation and keep that evidence separately. Reported
+              present means artifact presence; it does not confirm portal submission or eligibility.
+              Unknown instructions or missing confirmation remain unresolved, even after a task is
+              Done.
+            </li>
+          </ol>
+        </div>
+      )}
       {coverage.isFetching && (
         <p role="status" className="mt-3 text-xs text-muted-foreground">
           Checking task representation against current submission evidence…
@@ -821,8 +843,8 @@ function SubmissionChecklist({
         <div className="mt-4 flex flex-wrap gap-3 text-xs text-muted-foreground">
           <span>Source coverage: {coverage.data.report.sourceCoverage}</span>
           <span>
-            {coverage.data.report.unrepresentedRequirementIds.length} reviewed outstanding actions
-            without a task
+            {coverage.data.report.unrepresentedRequirementIds.length} reviewed outstanding
+            requirements without a linked task
           </span>
           <span>
             {coverage.data.unresolvedRequirementIds.length} source/applicability checks unresolved
@@ -830,7 +852,8 @@ function SubmissionChecklist({
           {coverage.data.planOutdated && <span>Plan context outdated · progress preserved</span>}
           <p className="w-full">
             Representation is not fulfillment. Unknown evidence is unresolved, not a confirmed
-            failure. Even zero uncovered actions does not establish successful submission.
+            failure. Even zero unrepresented requirements does not establish full action coverage or
+            successful submission.
           </p>
         </div>
       )}
