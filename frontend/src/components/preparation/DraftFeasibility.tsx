@@ -13,7 +13,7 @@ function hours(value: number | null) {
 const unknownMessages = {
   hours: "Your available weekly hours are unknown.",
   deadline: "A reviewed submission deadline is not available.",
-  build_start: "The preparation start is not confirmed by unambiguous reviewed timing.",
+  build_start: "The event's start time is not confirmed.",
   retained: "Some retained work has no usable remaining estimate.",
   new_work: "Some new work has no usable estimate.",
 };
@@ -48,9 +48,12 @@ export function DraftFeasibility({
   return (
     <aside
       aria-label="Time and workload preview"
-      className="mt-4 rounded-2xl border border-border p-4"
+      className="draft-workload mt-4 rounded-2xl border border-primary/25 bg-primary/5 p-4 sm:p-5"
     >
       <h3 className="font-semibold">Time and workload preview</h3>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Provisional estimate · review before accepting.
+      </p>
       {stale ? (
         <p role="status" className="mt-3 text-sm text-muted-foreground">
           Workload preview unavailable. Your plan or preparation details changed. Generate a fresh
@@ -62,7 +65,11 @@ export function DraftFeasibility({
             {metrics.map(([label, value]) => (
               <div key={label}>
                 <dt className="text-xs text-muted-foreground">{label}</dt>
-                <dd className="mt-1 font-semibold">{hours(value)}</dd>
+                <dd
+                  className={`mt-1 font-semibold ${label === "Total estimated workload" || label === "Available hours" ? "text-xl text-primary" : "text-base"}`}
+                >
+                  {hours(value)}
+                </dd>
               </div>
             ))}
           </dl>
@@ -81,9 +88,11 @@ export function DraftFeasibility({
           ) : (
             <div role="status" className="mt-4 text-sm">
               <p>Schedule fit is unknown.</p>
-              {assessment.uncertainties.map((reason) => (
-                <p key={reason}>{unknownMessages[reason]}</p>
-              ))}
+              <ul className="mt-2 list-disc space-y-1 ps-5 text-xs text-muted-foreground">
+                {assessment.uncertainties.map((reason) => (
+                  <li key={reason}>{unknownMessages[reason]}</li>
+                ))}
+              </ul>
             </div>
           )}
           {assessment.futureBuildStart && (
@@ -92,14 +101,17 @@ export function DraftFeasibility({
               {new Date(assessment.futureBuildStart).toLocaleString()}.
             </p>
           )}
-          <p className="mt-3 text-xs text-muted-foreground">
-            Provisional preview, with availability spread evenly across the reviewed preparation
-            window.
-            {assessment.assumesStartNow &&
-              " No reviewed build start is recorded, so this preview assumes preparation starts now."}{" "}
-            The saved plan's assessment is confirmed when you accept. Original estimates and
-            required work are kept.
-          </p>
+          <details className="mt-3 text-xs text-muted-foreground">
+            <summary className="cursor-pointer">How this estimate works</summary>
+            <p className="mt-2 leading-5">
+              Provisional preview, with availability spread evenly across the reviewed preparation
+              window.
+              {assessment.assumesStartNow &&
+                " No reviewed build start is recorded, so this preview assumes preparation starts now."}{" "}
+              The saved plan's assessment is confirmed when you accept. Original estimates and
+              required work are kept.
+            </p>
+          </details>
         </>
       )}
     </aside>

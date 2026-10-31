@@ -181,9 +181,11 @@ export function PublishedEventOverview({ event }: { event: Opportunity }) {
           </summary>
           <ul className="mt-3 list-disc space-y-2 ps-5 text-xs leading-6 text-muted-foreground">
             {[
-              ...event.sourceCoverage.participation.missingChecks,
-              ...event.sourceCoverage.submission.missingChecks,
-              ...event.sourceCoverage.prize.missingChecks,
+              ...new Set([
+                ...event.sourceCoverage.participation.missingChecks,
+                ...event.sourceCoverage.submission.missingChecks,
+                ...event.sourceCoverage.prize.missingChecks,
+              ]),
             ].map((note) => (
               <li key={note} dir="auto">
                 {note}

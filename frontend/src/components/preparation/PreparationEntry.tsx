@@ -128,9 +128,6 @@ export function PreparationEntry({
             {item.organizer}
           </p>
         </div>
-        <span className="prep-index-count" aria-hidden>
-          01
-        </span>
       </header>
       {item.state === "source_review_required" ? (
         <section className="glass relative overflow-hidden rounded-3xl border border-primary/20 p-6 sm:p-8">

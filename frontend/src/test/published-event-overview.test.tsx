@@ -8,6 +8,22 @@ vi.mock("@/components/LocaleProvider", () => ({
   useLocale: () => ({ language: "en", t: (en: string) => en }),
 }));
 afterEach(cleanup);
+it("shows repeated source uncertainty once without dropping distinct missing checks", () => {
+  const source = fixture.opportunity as unknown as Opportunity;
+  const repeated = "This snapshot does not include every organizer condition.";
+  const sourceCoverage = {
+    participation: { ...source.sourceCoverage.participation, missingChecks: [repeated] },
+    submission: {
+      ...source.sourceCoverage.submission,
+      state: "incomplete" as const,
+      missingChecks: [repeated, "Confirm the portal deliverables."],
+    },
+    prize: { ...source.sourceCoverage.prize, missingChecks: [repeated] },
+  };
+  render(<PublishedEventOverview event={{ ...source, sourceCoverage }} />);
+  expect(screen.getAllByText(repeated)).toHaveLength(1);
+  expect(screen.getByText("Confirm the portal deliverables.")).toBeInTheDocument();
+});
 const event: Opportunity = {
   ...(fixture.opportunity as unknown as Opportunity),
   benefits: ["Published workshop access"],

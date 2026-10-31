@@ -285,6 +285,7 @@ for (const [id, hours, days, effort, status] of [
     expect(within(preview).getByText("New tasks").parentElement).toHaveTextContent(effort);
     for (const task of output.tasks)
       expect(screen.getByRole("heading", { name: task.title })).toBeVisible();
+    fireEvent.click(screen.getByText("Why these preparation priorities?"));
     expect(screen.getByText(output.explanation)).toBeVisible();
     expect(output).toEqual(before);
     expect(fetch).not.toHaveBeenCalled();
