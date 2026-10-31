@@ -20,6 +20,7 @@ export const Route = createFileRoute("/plans")({
 
 function PlansRoute() {
   const { event } = Route.useSearch();
+  if (event) return <AccountPlans key={event} eventId={event} />;
   return (
     <AccountBoundary>
       <AccountPlans key={event ?? "index"} {...(event ? { eventId: event } : {})} />

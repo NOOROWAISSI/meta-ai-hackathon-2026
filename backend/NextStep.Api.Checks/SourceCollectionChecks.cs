@@ -9,6 +9,19 @@ using NextStep.Api;
 
 public static class SourceCollectionChecks
 {
+    public static async Task WithUnreviewedListing(Factory host, Func<ListingSummary, Task> check)
+    {
+        var id = "check-unreviewed-" + Guid.NewGuid().ToString("N");
+        var page = new Uri("https://source.example.invalid/" + id);
+        var source = new SourceRegistration(id, "Synthetic source", page.AbsoluteUri, "global_online", "official_website", "public_html", null, "Test-only source");
+        var listing = new ListingSummary(id, "hackathon", "Synthetic unreviewed hackathon", "Synthetic organizer", "online", page.AbsoluteUri, "Temporary check fixture", ["AI"], "global_online", null, "not_specified", "unknown", null, "needs_verification", null, "Synthetic fixture, removed after the check.");
+        await host.Services.GetRequiredService<DiscoveryFeed>().StorePage(source, page, new("checked", "Synthetic check page"), [listing], CancellationToken.None);
+        try { await check(listing); }
+        finally {
+            await using var db = new MySqlConnection(host.Services.GetRequiredService<IConfiguration>().GetConnectionString("NextStep")); await db.OpenAsync();
+            foreach (var table in new[] { "discovered_listings", "source_pages" }) { await using var cleanup = new MySqlCommand($"DELETE FROM {table} WHERE source_id=@id", db); cleanup.Parameters.AddWithValue("@id", id); await cleanup.ExecuteNonQueryAsync(); }
+        }
+    }
     private static void Check(bool condition) { if (!condition) throw new Exception("Source collection assertion failed"); }
     private static string Course(string url, string title = "Python programming course") => "<script type='application/ld+json'>" + JsonSerializer.Serialize(new Dictionary<string, object> {
         ["@type"] = "Course", ["name"] = title, ["description"] = "Learn Python programming through practical web development exercises.", ["url"] = url,

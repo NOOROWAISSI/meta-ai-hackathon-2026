@@ -9,7 +9,7 @@ public sealed class Catalog
     {
         var json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Data", "catalog.json"));
         _events = JsonSerializer.Deserialize<Opportunity[]>(json, Wire.Json) ?? [];
-        Input.Require(_events.Length == 5 && _events.Select(o => o.Id).Distinct().Count() == 5, "Five canonical event records are required.");
+        Input.Require(_events.All(o => Input.Id(o.Id)) && _events.Select(o => o.Id).Distinct().Count() == _events.Length, "Planning opportunity IDs must be unique and valid.");
         foreach (var opportunity in _events)
         {
             Input.Require(opportunity.Requirements.Select(r => r.Id).Distinct().Count() == opportunity.Requirements.Length);

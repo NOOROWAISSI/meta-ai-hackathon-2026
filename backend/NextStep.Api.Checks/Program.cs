@@ -47,7 +47,8 @@ async Task<(Plan Plan, string CandidateId)> Accepted(HttpClient client, StudentP
 
 Test("public catalog contains five canonical source fixtures and no synthetic legacy event IDs", async () => {
     var client = factory.CreateClient(); var events = (await client.GetFromJsonAsync<Opportunity[]>("/api/opportunities", Wire.Json))!;
-    Assert(events.Select(o => o.Id).SequenceEqual(new[] { "E01", "E02", "E03", "E04", "E05" }));
+    Assert(events.Where(o => o.SourceRevision.StartsWith("source-fixtures-v0.2", StringComparison.Ordinal)).Select(o => o.Id).SequenceEqual(new[] { "E01", "E02", "E03", "E04", "E05" }));
+    Assert(events.Count(o => o.Id == "meta-global-ai-2026") == 1);
     Assert(events.All(o => o.SourceCoverage.Participation.State == "incomplete" && o.Format == "online"));
     Assert(events.All(o => o.SourceEvidence.All(e => !string.IsNullOrWhiteSpace(e.Passage))));
     Assert((await client.GetAsync("/api/opportunities/aurora-ai")).StatusCode == HttpStatusCode.NotFound);
@@ -552,7 +553,6 @@ Test("listing projections retain ambiguous date text without inventing a trusted
     return Task.CompletedTask;
 });
 
-SourceCollectionChecks.Register(Test);
 Test("configured Google challenge uses same-origin callback, profile-only scopes and PKCE", async () => {
     await using var host = new Factory(google: true);
     var client = host.CreateClient(new() { AllowAutoRedirect = false, BaseAddress = new Uri("https://localhost:8082") });
@@ -607,6 +607,70 @@ Test("Google callback rejects unverified email and never automatically links a p
     Assert((await client.GetFromJsonAsync<JsonObject>("/api/auth/me"))!["user"] is null);
 });
 
+SourceCollectionChecks.Register(Test);
+Test("preparation navigation uses a planning record rather than an event ID prefix", () => {
+    var record = new Catalog().Get("E01") with { Id = "new-university-hackathon" };
+    var listing = new DiscoveryCatalog(new Catalog()).Listings().Single(item => item.Id == "E01") with { Id = record.Id };
+    var supported = PreparationAccess.For(listing, record);
+    Assert(supported.State == "workspace_available" && supported.PlanningOpportunityId == record.Id && supported.ReviewNeeds.Length == 0);
+    var missing = PreparationAccess.For(listing, null);
+    Assert(missing.State == "source_review_required" && missing.PlanningOpportunityId is null && missing.ReviewNeeds.Length == 3);
+    var course = PreparationAccess.For(listing with { Id = "E999", Kind = "course" }, record with { Id = "E999" });
+    Assert(course.State == "unsupported_kind" && course.PlanningOpportunityId is null);
+    return Task.CompletedTask;
+});
+Test("public preparation access distinguishes planning records, unreviewed discoveries and unsupported kinds", async () => {
+    await using var host = new Factory();
+    var client = host.CreateClient(); var calls = host.Model.Calls;
+    foreach (var record in new Catalog().All()) {
+        var access = (await client.GetFromJsonAsync<PreparationAccess>($"/api/opportunities/{record.Id}/preparation-access", Wire.Json))!;
+        Assert(access.State == "workspace_available" && access.PlanningOpportunityId == record.Id);
+    }
+    await SourceCollectionChecks.WithUnreviewedListing(host, async listing => {
+        var unreviewed = (await client.GetFromJsonAsync<PreparationAccess>($"/api/opportunities/{listing.Id}/preparation-access", Wire.Json))!;
+        Assert(unreviewed.State == "source_review_required" && unreviewed.PlanningOpportunityId is null);
+    });
+    var course = new DiscoveryCatalog(new Catalog()).Listings().First(item => item.Kind == "course");
+    var unsupported = (await client.GetFromJsonAsync<PreparationAccess>($"/api/opportunities/{course.Id}/preparation-access", Wire.Json))!;
+    Assert(unsupported.State == "unsupported_kind");
+    Assert((await client.GetAsync("/api/opportunities/not-a-real-listing/preparation-access")).StatusCode == HttpStatusCode.NotFound);
+    Assert((await client.GetAsync("/api/profile")).StatusCode == HttpStatusCode.Unauthorized && host.Model.Calls == calls);
+});
+Test("opening unreviewed preparation preserves confirmed plans, artifacts and Done progress", async () => {
+    await using var host = new Factory();
+    var data = await Ready(host); var (plan, _) = await Accepted(data.Client, data.Profile, data.Submission, data.Opportunity);
+    var progress = await data.Client.PatchAsJsonAsync("/api/plans/E01/tasks/" + plan.Tasks[0].Id, new TaskUpdate(plan.Version, "done", Guid.NewGuid().ToString("N"), ["https://example.invalid/student-artifact"]), Wire.Json);
+    progress.EnsureSuccessStatusCode();
+    var before = await data.Client.GetFromJsonAsync<Plan>("/api/plans/E01", Wire.Json); var calls = host.Model.Calls;
+    await SourceCollectionChecks.WithUnreviewedListing(host, async listing => {
+        (await data.Client.GetAsync($"/api/opportunities/{listing.Id}/preparation-access")).EnsureSuccessStatusCode();
+    });
+    var after = await data.Client.GetFromJsonAsync<Plan>("/api/plans/E01", Wire.Json);
+    Assert(JsonSerializer.Serialize(before, Wire.Json) == JsonSerializer.Serialize(after, Wire.Json) && host.Model.Calls == calls);
+    Assert((await data.Client.GetFromJsonAsync<SubmissionState>("/api/submissions/E01", Wire.Json))!.Version == data.Submission.Version);
+});
+Test("reviewed Meta data preserves source conflicts, incomplete coverage and advice versus mandatory submission", () => {
+    var meta = new Catalog().Get("meta-global-ai-2026");
+    Assert(meta.SourceCoverage.Participation.State == "incomplete" && meta.SourceCoverage.Submission.State == "incomplete" && meta.SourceCoverage.Prize.State == "incomplete");
+    var close = meta.TimelineEvents.Single(e => e.Kind == "registration_close");
+    Assert(close.SourceStatus == "conflicting" && close.Claims.Length == 2 && close.Claims.Select(c => c.TimeZone).ToHashSet().SetEquals(["ET", "EST"]));
+    Assert(Catalog.Instant(meta, "registration_close") is null && Catalog.Instant(meta, "submission_close") is null);
+    Assert(meta.Requirements.Single(r => r.Id.EndsWith("-p-age")).Evaluation["minimum"]!.GetValue<int>() == 18);
+    Assert(meta.Requirements.Where(r => r.Id.Contains("-judging-")).Count() == 4 && meta.Requirements.Where(r => r.Id.Contains("-judging-")).All(r => !r.IsMandatory && r.Kind == "preparation_advice"));
+    Assert(meta.Requirements.Where(r => r.Lane == "submission").All(r => !r.Statement.Contains("video", StringComparison.OrdinalIgnoreCase) && !r.Statement.Contains("repository", StringComparison.OrdinalIgnoreCase)));
+    Assert(new DiscoveryCatalog(new Catalog()).Listings().Count(item => item.Id == meta.Id) == 1);
+    return Task.CompletedTask;
+});
+Test("Meta selection self-report cannot bypass a published age blocker or satisfy submission evidence", async () => {
+    await using var host = new Factory(); var (client, original) = await Session(host);
+    var profile = original with { ReportedAge = Known(17), EntrantType = KnownText("individual"), Goals = [new("meta-goal", "Prepare my project")], ClarificationAnswers = [new("participation-selection:meta-global-ai-2026", "accepted", DateTimeOffset.UtcNow.ToString("O"))] };
+    var save = await client.PutAsJsonAsync("/api/profile", new ProfileUpdate(original.Version, profile), Wire.Json); save.EnsureSuccessStatusCode(); profile = (await save.Content.ReadFromJsonAsync<StudentProfile>(Wire.Json))!;
+    var opportunity = (await client.GetFromJsonAsync<Opportunity>("/api/opportunities/meta-global-ai-2026", Wire.Json))!;
+    var submission = (await client.GetFromJsonAsync<SubmissionState>("/api/submissions/meta-global-ai-2026", Wire.Json))!;
+    var analysis = (await (await client.PostAsJsonAsync("/api/opportunities/meta-global-ai-2026/analysis", Request(profile, submission, opportunity), Wire.Json)).Content.ReadFromJsonAsync<AnalysisResult>(Wire.Json))!;
+    Assert(analysis.ParticipationSummary == "does_not_meet_confirmed_requirement" && analysis.Matches.Where(m => opportunity.Requirements.Single(r => r.Id == m.RequirementId).Lane == "submission").All(m => m.Status == "unknown"));
+    Assert((await client.PostAsJsonAsync("/api/opportunities/meta-global-ai-2026/plan-candidates", Request(profile, submission, opportunity), Wire.Json)).StatusCode == HttpStatusCode.BadRequest && host.Model.Calls == 0);
+});
 var passed = 0;
 try {
     foreach (var test in cases) {

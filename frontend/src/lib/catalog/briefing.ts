@@ -6,7 +6,7 @@ import type { ListingSummary } from "./service";
 export type AccountProfileFacts = Pick<
   StudentProfile,
   "id" | "version" | "background" | "interests" | "skills" | "goals" | "availableHoursPerWeek"
->;
+> & { clarificationAnswers?: StudentProfile["clarificationAnswers"] };
 const profileSchema = z.object({
   id: z.string(),
   version: z.number().int(),
@@ -20,6 +20,15 @@ const profileSchema = z.object({
     }),
   ),
   goals: z.array(z.object({ id: z.string(), statement: z.string() })),
+  clarificationAnswers: z
+    .array(
+      z.object({
+        questionId: z.string(),
+        answer: z.string(),
+        answeredAt: z.string().refine(isContractInstant),
+      }),
+    )
+    .default([]),
   availableHoursPerWeek: z.discriminatedUnion("state", [
     z.object({
       state: z.literal("known"),

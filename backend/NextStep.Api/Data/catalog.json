@@ -1354,5 +1354,709 @@
       }
     ],
     "interestTags": []
+  },
+  {
+    "id": "meta-global-ai-2026",
+    "title": "Meta Global AI Developer Hackathon 2026",
+    "organizer": "Meta & Cerebral Valley",
+    "listingHost": "Cerebral Valley",
+    "canonicalEventUrl": "https://dev.meta.ai/events/global-hackathon",
+    "officialUrl": "https://dev.meta.ai/events/global-hackathon",
+    "rulesUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+    "format": "online",
+    "theme": "Build a practical AI project for a real-world problem or a technical frontier using Meta tools.",
+    "sourceRevision": "meta-public-source-review-2026-10-29-v1",
+    "lastReviewedAt": "2026-10-29T20:01:01.231Z",
+    "informationFreshness": "current",
+    "costStatus": "free",
+    "benefits": [
+      "Cash prize pool advertised at US$1,000,000; awards require winner verification.",
+      "Selected participants receive US$150 in Meta API credits for a ten-day window, subject to credit terms.",
+      "Live workshops and Discord office hours."
+    ],
+    "sourceEvidence": [
+      {
+        "id": "ev-meta-selection",
+        "sourceUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+        "sourceSection": "Application and acceptance",
+        "passage": "be accepted",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-age",
+        "sourceUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+        "sourceSection": "Eligibility / minimum age",
+        "passage": "18",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-majority",
+        "sourceUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+        "sourceSection": "Eligibility",
+        "passage": "age of majority",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-team",
+        "sourceUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+        "sourceSection": "Indie Developer track / maximum team size",
+        "passage": "four (4)",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-portal",
+        "sourceUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+        "sourceSection": "Event overview / project submission",
+        "passage": "Cerebral Valley’s portal",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-track",
+        "sourceUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+        "sourceSection": "Participant tracks",
+        "passage": "track only",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-original",
+        "sourceUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+        "sourceSection": "Hackathon Submission / originality and ownership",
+        "passage": "original",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-licence",
+        "sourceUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+        "sourceSection": "Hackathon Submission",
+        "passage": "open source licenses",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-judging-impact",
+        "sourceUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+        "sourceSection": "Hackathon Judging Criteria / impact",
+        "passage": "Impact (30%)",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-judging-tooling",
+        "sourceUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+        "sourceSection": "Hackathon Judging Criteria / Meta tooling",
+        "passage": "Tooling (25%)",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-judging-engineering",
+        "sourceUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+        "sourceSection": "Hackathon Judging Criteria / engineering",
+        "passage": "Execution (20%)",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-judging-demo",
+        "sourceUrl": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver",
+        "sourceSection": "Hackathon Judging Criteria / demo",
+        "passage": "Demo (25%)",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-dates",
+        "sourceUrl": "https://dev.meta.ai/events/global-hackathon",
+        "sourceSection": "Key Dates",
+        "passage": "Key Dates",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-rules",
+        "sourceUrl": "https://dev.meta.ai/events/global-hackathon",
+        "sourceSection": "Official rules acceptance",
+        "passage": "must be accepted",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-tools",
+        "sourceUrl": "https://dev.meta.ai/events/global-hackathon",
+        "sourceSection": "About the hackathon",
+        "passage": "Muse Spark series",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-benefits",
+        "sourceUrl": "https://dev.meta.ai/events/global-hackathon",
+        "sourceSection": "About / workshops",
+        "passage": "live workshops",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-policy",
+        "sourceUrl": "https://dev.meta.ai/events/global-hackathon",
+        "sourceSection": "Participation exclusions / applicable laws",
+        "passage": "Void where prohibited by law.",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      },
+      {
+        "id": "ev-meta-affiliation",
+        "sourceUrl": "https://dev.meta.ai/events/global-hackathon",
+        "sourceSection": "Participation exclusions / affiliations",
+        "passage": "Employees, contractors, and interns",
+        "status": "reviewed",
+        "checkedAt": "2026-10-29T20:01:01.231Z"
+      }
+    ],
+    "sourceCoverage": {
+      "participation": {
+        "state": "incomplete",
+        "reviewedRequirementIds": [
+          "meta-global-ai-2026-p-selection",
+          "meta-global-ai-2026-p-age",
+          "meta-global-ai-2026-p-majority",
+          "meta-global-ai-2026-p-team",
+          "meta-global-ai-2026-p-policy",
+          "meta-global-ai-2026-p-rules"
+        ],
+        "missingChecks": [
+          "Full sanctions/affiliation policy interpretation and team-member conditions need confirmation.",
+          "Event track and rules acknowledgement are not inferred from acceptance."
+        ],
+        "reviewedAt": "2026-10-29T20:01:01.231Z"
+      },
+      "submission": {
+        "state": "incomplete",
+        "reviewedRequirementIds": [
+          "meta-global-ai-2026-s-portal",
+          "meta-global-ai-2026-s-rights",
+          "meta-global-ai-2026-s-track"
+        ],
+        "missingChecks": [
+          "Required portal fields, artifact formats and final deliverable specifications have not been confirmed.",
+          "A judging preference for a demo video is not treated as a mandatory video specification."
+        ],
+        "reviewedAt": "2026-10-29T20:01:01.231Z"
+      },
+      "prize": {
+        "state": "incomplete",
+        "reviewedRequirementIds": [],
+        "missingChecks": [
+          "Winner verification, award allocation and payout conditions are separate from entry acceptance."
+        ],
+        "reviewedAt": "2026-10-29T20:01:01.231Z"
+      }
+    },
+    "requirements": [
+      {
+        "id": "meta-global-ai-2026-p-selection",
+        "statement": "An accepted application is required.",
+        "subject": "individual",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "unresolved",
+          "reason": "Student-reported selection is shown separately; organizer acceptance is not independently verified."
+        },
+        "claims": [
+          {
+            "value": "Organizer selection required",
+            "evidenceIds": [
+              "ev-meta-selection"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-selection"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "meta-global-ai-2026-p-age",
+        "statement": "Be at least 18 years old.",
+        "subject": "individual",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "minimum_age",
+          "minimum": 18
+        },
+        "claims": [
+          {
+            "value": "Minimum 18",
+            "evidenceIds": [
+              "ev-meta-age"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-age"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "meta-global-ai-2026-p-majority",
+        "statement": "Meet the age of majority where you reside.",
+        "subject": "individual",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "majority",
+          "jurisdiction": "residence"
+        },
+        "claims": [
+          {
+            "value": "Local majority required",
+            "evidenceIds": [
+              "ev-meta-majority"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-majority"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "meta-global-ai-2026-p-team",
+        "statement": "Indie entries may be solo or teams up to four; startup-team rules need separate confirmation.",
+        "subject": "team",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "unresolved",
+          "reason": "The indie/startup track is not represented by the school/college division field; do not apply a universal team cap."
+        },
+        "claims": [
+          {
+            "value": "Indie: one to four; startup: confirm",
+            "evidenceIds": [
+              "ev-meta-team"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-team"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "meta-global-ai-2026-p-policy",
+        "statement": "Confirm published residence, sanctions and affiliation exclusions with the organizers.",
+        "subject": "individual",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "geographic_policy",
+          "policyId": "meta-2026-official-policy-review"
+        },
+        "claims": [
+          {
+            "value": "Legal and affiliation restrictions",
+            "evidenceIds": [
+              "ev-meta-policy",
+              "ev-meta-affiliation"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-policy",
+          "ev-meta-affiliation"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "meta-global-ai-2026-p-rules",
+        "statement": "Accept the official rules and waiver.",
+        "subject": "individual",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "unresolved",
+          "reason": "Acceptance of the event is not evidence of separately confirmed rules acknowledgement."
+        },
+        "claims": [
+          {
+            "value": "Rules acknowledgement required",
+            "evidenceIds": [
+              "ev-meta-rules"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-rules"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true
+      },
+      {
+        "id": "meta-global-ai-2026-s-portal",
+        "statement": "Submit the project through the official event portal.",
+        "subject": "project",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "submission_criterion",
+          "criterion": "presence",
+          "parameters": {
+            "portal": "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/hackathon/submit"
+          }
+        },
+        "claims": [
+          {
+            "value": "Official event portal",
+            "evidenceIds": [
+              "ev-meta-portal"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-portal"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "submission_mandatory",
+        "lane": "submission",
+        "isMandatory": true
+      },
+      {
+        "id": "meta-global-ai-2026-s-rights",
+        "statement": "Use original work and comply with ownership and applicable open-source licensing conditions.",
+        "subject": "project",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "submission_criterion",
+          "criterion": "license",
+          "parameters": {}
+        },
+        "claims": [
+          {
+            "value": "Original work and applicable licences",
+            "evidenceIds": [
+              "ev-meta-original",
+              "ev-meta-licence"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-original",
+          "ev-meta-licence"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "submission_mandatory",
+        "lane": "submission",
+        "isMandatory": true
+      },
+      {
+        "id": "meta-global-ai-2026-s-track",
+        "statement": "Enter the project in one track only.",
+        "subject": "project",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "submission_criterion",
+          "criterion": "content",
+          "parameters": {
+            "scope": "single_event_track"
+          }
+        },
+        "claims": [
+          {
+            "value": "One event track",
+            "evidenceIds": [
+              "ev-meta-track"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-track"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "submission_mandatory",
+        "lane": "submission",
+        "isMandatory": true
+      },
+      {
+        "id": "meta-global-ai-2026-judging-impact",
+        "statement": "Show who benefits and why the project matters.",
+        "subject": "project",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "unresolved",
+          "reason": "A published judging dimension is preparation advice, not an automated student skill score or mandatory file format."
+        },
+        "claims": [
+          {
+            "value": "Impact: 30%",
+            "evidenceIds": [
+              "ev-meta-judging-impact"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-judging-impact"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "preparation_advice",
+        "lane": "preparation",
+        "isMandatory": false
+      },
+      {
+        "id": "meta-global-ai-2026-judging-tooling",
+        "statement": "Explain the creative use of Meta AI tools.",
+        "subject": "project",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "unresolved",
+          "reason": "A published judging dimension is preparation advice, not an automated student skill score or mandatory file format."
+        },
+        "claims": [
+          {
+            "value": "Meta tooling: 25%",
+            "evidenceIds": [
+              "ev-meta-judging-tooling"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-judging-tooling"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "preparation_advice",
+        "lane": "preparation",
+        "isMandatory": false
+      },
+      {
+        "id": "meta-global-ai-2026-judging-engineering",
+        "statement": "Demonstrate sound, thoughtfully refined engineering.",
+        "subject": "project",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "unresolved",
+          "reason": "A published judging dimension is preparation advice, not an automated student skill score or mandatory file format."
+        },
+        "claims": [
+          {
+            "value": "Engineering: 20%",
+            "evidenceIds": [
+              "ev-meta-judging-engineering"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-judging-engineering"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "preparation_advice",
+        "lane": "preparation",
+        "isMandatory": false
+      },
+      {
+        "id": "meta-global-ai-2026-judging-demo",
+        "statement": "Prepare a working demonstration and explain the demo video.",
+        "subject": "project",
+        "applicability": {
+          "key": "all"
+        },
+        "evaluation": {
+          "key": "unresolved",
+          "reason": "A published judging dimension is preparation advice, not an automated student skill score or mandatory file format."
+        },
+        "claims": [
+          {
+            "value": "Demo: 25%",
+            "evidenceIds": [
+              "ev-meta-judging-demo"
+            ]
+          }
+        ],
+        "sourceEvidenceIds": [
+          "ev-meta-judging-demo"
+        ],
+        "sourceStatus": "reviewed",
+        "kind": "preparation_advice",
+        "lane": "preparation",
+        "isMandatory": false
+      }
+    ],
+    "timelineEvents": [
+      {
+        "id": "meta-global-ai-2026-time-applications-open",
+        "kind": "registration_open",
+        "sourceStatus": "reviewed",
+        "claims": [
+          {
+            "id": "meta-global-ai-2026-claim-applications-open",
+            "publishedText": "13 October 2026, 09:00 ET — applications open.",
+            "dateTime": null,
+            "timeZone": "ET",
+            "evidenceIds": [
+              "ev-meta-dates"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "meta-global-ai-2026-time-applications-close",
+        "kind": "registration_close",
+        "sourceStatus": "conflicting",
+        "claims": [
+          {
+            "id": "meta-global-ai-2026-claim-close-main",
+            "publishedText": "Main event page: 25 October 2026, 23:59 ET.",
+            "dateTime": null,
+            "timeZone": "ET",
+            "evidenceIds": [
+              "ev-meta-dates"
+            ]
+          },
+          {
+            "id": "meta-global-ai-2026-claim-close-rules",
+            "publishedText": "Official rules: 25 October 2026, 23:59 EST.",
+            "dateTime": null,
+            "timeZone": "EST",
+            "evidenceIds": [
+              "ev-meta-selection"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "meta-global-ai-2026-time-begins",
+        "kind": "build_start",
+        "sourceStatus": "reviewed",
+        "claims": [
+          {
+            "id": "meta-global-ai-2026-claim-begins",
+            "publishedText": "26 October 2026 — kickoff; time not specified.",
+            "dateTime": null,
+            "evidenceIds": [
+              "ev-meta-dates"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "meta-global-ai-2026-time-submission",
+        "kind": "submission_close",
+        "sourceStatus": "reviewed",
+        "claims": [
+          {
+            "id": "meta-global-ai-2026-claim-submission",
+            "publishedText": "4 November 2026, 21:00 ET — project submission.",
+            "dateTime": null,
+            "timeZone": "ET",
+            "evidenceIds": [
+              "ev-meta-dates"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "meta-global-ai-2026-time-judging-start",
+        "kind": "judging_start",
+        "sourceStatus": "reviewed",
+        "claims": [
+          {
+            "id": "meta-global-ai-2026-claim-judging-start",
+            "publishedText": "4 November 2026 — judging begins; time not specified.",
+            "dateTime": null,
+            "evidenceIds": [
+              "ev-meta-dates"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "meta-global-ai-2026-time-judging-end",
+        "kind": "judging_end",
+        "sourceStatus": "reviewed",
+        "claims": [
+          {
+            "id": "meta-global-ai-2026-claim-judging-end",
+            "publishedText": "8 November 2026 — judging ends; time not specified.",
+            "dateTime": null,
+            "evidenceIds": [
+              "ev-meta-dates"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "meta-global-ai-2026-time-results",
+        "kind": "results",
+        "sourceStatus": "reviewed",
+        "claims": [
+          {
+            "id": "meta-global-ai-2026-claim-results",
+            "publishedText": "9 November 2026 — finals and winners; time not specified.",
+            "dateTime": null,
+            "evidenceIds": [
+              "ev-meta-dates"
+            ]
+          }
+        ]
+      }
+    ],
+    "interestTags": [
+      {
+        "id": "meta-ai",
+        "label": "AI",
+        "evidenceIds": [
+          "ev-meta-tools"
+        ]
+      },
+      {
+        "id": "meta-project",
+        "label": "Programming",
+        "evidenceIds": [
+          "ev-meta-tools"
+        ]
+      }
+    ]
   }
 ]

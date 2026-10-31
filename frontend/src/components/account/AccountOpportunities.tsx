@@ -303,7 +303,7 @@ export function AccountSaved() {
                     <Link to="/" search={{ opportunity: item.id }} className="detail-primary mt-4">
                       {t("View details", "عرض التفاصيل")}
                     </Link>
-                    {/^E\d+$/.test(item.id) && (
+                    {item.kind === "hackathon" && (
                       <Link
                         to="/plans"
                         search={{ event: item.id }}
