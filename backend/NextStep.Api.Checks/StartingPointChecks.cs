@@ -62,6 +62,7 @@ internal static class StartingPointChecks
                 Check((await client.PutAsJsonAsync(endpoint,update with {Answer="expert-approved"},Wire.Json)).StatusCode==HttpStatusCode.BadRequest);
                 Check(BriefingStartingPoints.PlanningNote(record,saved)!.Contains("do not automatically repeat introductory"));
                 var currentPlan=(await client.GetFromJsonAsync<Plan>("/api/plans/"+listing.Id,Wire.Json))!;
+                host.Model.Prefix="Extend";
                 var refreshed=await client.PostAsJsonAsync("/api/opportunities/"+listing.Id+"/plan-candidates",new AnalysisRequest(record.SourceRevision,saved,submission,currentPlan),Wire.Json);refreshed.EnsureSuccessStatusCode();
                 Check(host.Model.LastContext!.SelfReport.AcceptedExperience.Any(item=>item.Contains("built similar work independently")));
                 Check(await client.GetStringAsync("/api/plans/"+listing.Id)==beforePlan);
