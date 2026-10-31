@@ -1,4 +1,4 @@
-# Personal explanations and event-scoped profile facts
+# Personal explanations and conditional profile facts
 
 ## Application endpoint
 
@@ -6,7 +6,7 @@
 
 This implements the existing display-only `BriefingContext` frontend boundary. Its source revision serializes the selected listing plus the canonical planning-source revision. It is not a replacement for the shared v0.2 `AssessmentContext` or an eligibility assessment. The service reads the current account/profile and selected event from the server, rejects mismatched contexts before generation, and checks them again before accepting a late response.
 
-Output contains the same four explanation sections, the echoed context, application-attached original source links, and an explicit generated timestamp. A new app-side `IPersonalBriefingModel` adapter uses the existing server `MetaAiOptions` and approved Chat Completions endpoint; the shared `ai/dotnet` plan client and DTOs are unchanged. The adapter sends a structured JSON schema with bounded response size/time, disables redirects, and does not expose provider errors or credentials. Invalid shape, model-supplied URLs and common unsupported eligibility/guarantee claims are rejected. This is a basic output guard, not a guarantee of semantic model accuracy; the UI labels AI output and links the sources.
+Output contains the same four explanation sections, the echoed context, application-attached original source links, and an explicit generated timestamp. A new app-side `IPersonalBriefingModel` adapter uses the existing server `MetaAiOptions` and approved Chat Completions endpoint; the shared `ai/dotnet` plan client and DTOs are unchanged. The adapter sends a structured JSON schema with bounded response size/time, disables redirects, and does not expose provider errors or credentials. Exactly one choice with `finish_reason: stop` is required, matching the existing plan client's completion boundary; missing, filtered or truncated completion markers are rejected even if the content parses. Unexpected schema properties, invalid shape, model-supplied URLs and common unsupported eligibility/guarantee claims are rejected. This is a basic output guard, not a guarantee of semantic model accuracy; the UI labels AI output and links the sources.
 
 Only a bounded subset of confirmed self-reported study field, interests, skills, goals, background, project descriptions, constraints and availability is sent. Deterministic participation-check results provide context without sending raw age, residence, display name, photos, passwords or email. All strings are untrusted data. No generated explanation becomes a profile fact, submission item, task or accepted plan.
 
@@ -35,7 +35,19 @@ Restart the API afterward. Both plan generation and explanations use that server
 
 ## Verification
 
-- Backend: 72/72 real-MySQL checks with synthetic provider/HTTP handlers, including owner/source isolation, cache reuse, late responses, invalid output, missing-key zero-network behavior, profile persistence and jurisdiction mismatch.
-- Frontend: 152/152 tests, TypeScript, canonical fixture validation and production build.
+- Backend: 79/79 real-MySQL checks with synthetic provider/HTTP handlers, including owner/source isolation, cache reuse, late responses, invalid output, missing-key zero-network behavior, profile persistence and jurisdiction mismatch. An authenticated API roundtrip now uses the production briefing adapter with in-memory HTTP in both English and Arabic; it checks server-selected sources, privacy, and unchanged profile/plans. Added refusal, truncation, extra fields, byte limit, HTTP/network error, timeout and caller-cancellation cases.
+- Frontend: 154/154 tests, TypeScript, canonical fixture validation and production build.
+- Shared AI: 177/177 offline checks and seven evaluation CLI listing/selection/error cases; none uses a live provider. The Windows provenance fixture is run with a process-local Git ceiling so an unrelated home-directory repository cannot affect its non-repository test.
 - Disposable-account browser: actual form age/majority Save -> MySQL -> reload; selected-event explanation through the backend -> original source links; no implicit plan creation; reviewed resources and separate registration timing; 390px layout. Explanation output was synthetic. Temporary test accounts were deleted.
 - Live provider quality, actual organizer participation and the final merged-branch test remain separate.
+
+## Live compatibility gate still required for PR #27
+
+This branch is based on the merged #26 baseline (`noor` at `723fb8f`). Keep #27 unmerged until a configured environment completes this gate; offline transport tests do not satisfy it.
+
+1. Use a disposable, synthetic signed-in account and a reviewed selected event. Confirm private server configuration without printing it. Do not use real student identity/profile data for quality evaluation.
+2. Deliberately request one English and one Arabic personal explanation through the actual frontend/API. Record the tested commit, model name, UTC run time, HTTP outcome, source/profile context and whether the response was generated or cached; exclude keys, cookies and account identifiers from reports.
+3. Manually compare every explanation section with the selected event and confirmed synthetic facts. Unknown/conflicting dates and participation conditions must remain unresolved; relevance must not imply eligibility. Check grounding, language, invented links/benefits/skills, preparation usefulness and original-source links. A structurally valid answer is not a quality pass.
+4. With explicit authorization for the billable run, rerun the existing synthetic quality scenarios using the evaluation harness's `--live` option. Inspect all mandatory preparation AND delivery actions, critical path and capacity decisions manually. Frozen replay is only regression evidence, not proof the new prompt improves live output.
+5. In the authenticated application, generate a candidate, review and explicitly accept it, start and finish a task, reload, and verify MySQL persistence. Exercise stale-context/version-conflict rejection and ensure task completion never changes submission evidence or eligibility. Preserve existing valid progress.
+6. Remove only the disposable test account, attach a redacted result with any limitations, obtain review, then repeat the relevant smoke on the eventual GitHub merge SHA. This gate does not authorize a merge into `main`.
