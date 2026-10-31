@@ -13,7 +13,7 @@ using NextStep.MetaAi;
 // The production adapter is exercised, but every HTTP response is in memory. No live provider calls.
 internal static class PersonalBriefingTransportChecks
 {
-    private static readonly BriefingText Output = new("Published event summary.", "Related to your reported interests; participation conditions need a separate check.", ["Read the reviewed requirements."], ["Confirm unpublished details with the organizer."]);
+    private static readonly BriefingText Output = new("event.details", "profile.none", ["priority.sources"], ["question.source"]);
     private static void Check(bool value) { if (!value) throw new Exception("Briefing transport assertion failed"); }
     private static string Envelope(string finish = "stop", string? content = null) => JsonSerializer.Serialize(new { choices = new[] { new { finish_reason = finish, message = new { content = content ?? JsonSerializer.Serialize(Output, Wire.Json) } } } }, Wire.Json);
     private static MetaPersonalBriefingModel Adapter(HttpClient http, int timeout = 90) => new(http, Options.Create(new MetaAiOptions { ApiKey = "synthetic-transport-key-only", OverallTimeoutSeconds = timeout }));
@@ -46,54 +46,67 @@ internal static class PersonalBriefingTransportChecks
                     var response = await client.PostAsJsonAsync("/api/listings/" + listing.Id + "/briefing", new BriefingRequest(context), Wire.Json);
                     response.EnsureSuccessStatusCode();
                     var result = (await response.Content.ReadFromJsonAsync<PersonalBriefing>(Wire.Json))!;
-                    Check(result.Context == context && result.Overview == Output.Overview && result.Sources.Length > 0);
+                    Check(result.Context == context && result.Overview == (language == "en" ? "Review the published opportunity details and original sources." : "راجع تفاصيل الفرصة المنشورة والمصادر الأصلية.") && result.Sources.Length > 0);
                     using var request = JsonDocument.Parse(handler.Body!);
                     Check(request.RootElement.GetProperty("response_format").GetProperty("json_schema").GetProperty("name").GetString() == "opportunity_briefing");
                     var data = JsonNode.Parse(request.RootElement.GetProperty("messages")[1].GetProperty("content").GetString()!)!;
-                    Check(data["language"]!.GetValue<string>() == language && data["facts"]!["opportunity"]!["id"]!.GetValue<string>() == listing.Id);
+                    Check(data["language"]!.GetValue<string>() == language && data["facts"]!["choices"]!["opportunity"]!["event.details"] is not null);
                     Check(!handler.Body!.Contains(email) && !handler.Body.Contains("Private account name") && !handler.Body.Contains("synthetic-transport-key-only"));
                 }
                 Check(handler.Calls == 2 && await client.GetStringAsync("/api/profile") == before && (await client.GetFromJsonAsync<Plan[]>("/api/plans", Wire.Json))!.Length == 0);
             } finally { await host.Services.GetRequiredService<IStateStore>().Delete(profile.Id["profile-".Length..], CancellationToken.None); }
         });
         test("briefing rejects truncated filtered or missing completion markers even with parseable JSON", async () => {
-            foreach (var body in new[] { Envelope("length"), Envelope("content_filter"), "{\"choices\":[{\"message\":{\"content\":\"{}\"}}]}" }) {
+            var multiple = JsonNode.Parse(Envelope())!.AsObject();
+            multiple["choices"]!.AsArray().Add(multiple["choices"]![0]!.DeepClone());
+            foreach (var body in new[] { Envelope("length"), Envelope("content_filter"), "{\"choices\":[{\"message\":{\"content\":\"{}\"}}]}", "{\"choices\":[]}", multiple.ToJsonString() })
+            {
                 using var handler = new Handler((_, _) => Task.FromResult(Reply(body))); using var http = new HttpClient(handler);
-                await Fault("invalid_model_output", () => Adapter(http).Explain(new(), "en", CancellationToken.None));
+                await Fault("invalid_model_output", () => Adapter(http).Explain(Facts(), "en", CancellationToken.None));
             }
         });
         test("briefing rejects unexpected schema fields and malformed provider content", async () => {
             var extra = JsonSerializer.SerializeToNode(Output, Wire.Json)!.AsObject(); extra["eligibility"] = true;
             foreach (var content in new[] { extra.ToJsonString(), "not-json", "null", "[]" }) {
                 using var handler = new Handler((_, _) => Task.FromResult(Reply(Envelope(content: content)))); using var http = new HttpClient(handler);
-                await Fault("invalid_model_output", () => Adapter(http).Explain(new(), "en", CancellationToken.None));
+                await Fault("invalid_model_output", () => Adapter(http).Explain(Facts(), "en", CancellationToken.None));
             }
         });
         test("briefing provider refusal is a recoverable failure without leaking its text", async () => {
             const string body = "{\"choices\":[{\"finish_reason\":\"stop\",\"message\":{\"refusal\":\"private-provider-diagnostic\",\"content\":null}}]}";
             using var handler = new Handler((_, _) => Task.FromResult(Reply(body))); using var http = new HttpClient(handler);
-            await Fault("provider_unavailable", () => Adapter(http).Explain(new(), "en", CancellationToken.None));
+            await Fault("provider_unavailable", () => Adapter(http).Explain(Facts(), "en", CancellationToken.None));
         });
         test("briefing enforces the HTTP response byte limit", async () => {
             using var handler = new Handler((_, _) => Task.FromResult(Reply(new string('x', 65537)))); using var http = new HttpClient(handler);
-            await Fault("invalid_model_output", () => Adapter(http).Explain(new(), "en", CancellationToken.None));
+            await Fault("invalid_model_output", () => Adapter(http).Explain(Facts(), "en", CancellationToken.None));
         });
         test("briefing HTTP failures and network diagnostics stay server private", async () => {
             foreach (var status in new[] { HttpStatusCode.Unauthorized, HttpStatusCode.TooManyRequests, HttpStatusCode.ServiceUnavailable }) {
                 using var handler = new Handler((_, _) => Task.FromResult(new HttpResponseMessage(status) { Content = new StringContent("private-provider-diagnostic") })); using var http = new HttpClient(handler);
-                await Fault("provider_unavailable", () => Adapter(http).Explain(new(), "en", CancellationToken.None));
+                await Fault("provider_unavailable", () => Adapter(http).Explain(Facts(), "en", CancellationToken.None));
             }
             using var network = new Handler((_, _) => throw new HttpRequestException("private-provider-diagnostic")); using var client = new HttpClient(network);
-            await Fault("provider_unavailable", () => Adapter(client).Explain(new(), "en", CancellationToken.None));
+            await Fault("provider_unavailable", () => Adapter(client).Explain(Facts(), "en", CancellationToken.None));
         });
         test("briefing timeout remains recoverable and caller cancellation remains cancellation", async () => {
             using var handler = new Handler(async (_, ct) => { await Task.Delay(Timeout.Infinite, ct); return Reply(Envelope()); }); using var http = new HttpClient(handler);
-            await Fault("timeout", () => Adapter(http, 1).Explain(new(), "en", CancellationToken.None));
+            await Fault("timeout", () => Adapter(http, 1).Explain(Facts(), "en", CancellationToken.None));
             using var cancelled = new CancellationTokenSource(); cancelled.Cancel();
-            try { await Adapter(http).Explain(new(), "en", cancelled.Token); throw new Exception("Cancellation ignored"); }
+            try { await Adapter(http).Explain(Facts(), "en", cancelled.Token); throw new Exception("Cancellation ignored"); }
             catch (OperationCanceledException) { Check(cancelled.IsCancellationRequested); }
         });
     }
+    private static JsonObject Facts() => new()
+    {
+        ["choices"] = JsonSerializer.SerializeToNode(new
+        {
+            opportunity = new Dictionary<string, string> { { "event.details", "Details" } },
+            profile = new Dictionary<string, string> { { "profile.none", "Profile" } },
+            priorities = new Dictionary<string, string> { { "priority.sources", "Sources" } },
+            questions = new Dictionary<string, string> { { "question.source", "Question" } }
+        }, Wire.Json)
+    };
     private static HttpResponseMessage Reply(string body) => new(HttpStatusCode.OK) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
     private sealed class Handler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send) : HttpMessageHandler
     {
