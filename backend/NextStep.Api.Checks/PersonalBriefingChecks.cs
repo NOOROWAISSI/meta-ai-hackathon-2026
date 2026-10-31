@@ -33,6 +33,37 @@ public static class PersonalBriefingChecks
     public static void Register(Action<string,Func<Task>> test)
     {
         PersonalBriefingTransportChecks.Register(test);
+        test("specific briefing summary and interest match require both selected source and owned profile evidence", () => Run(async (host, client, profile, context) => {
+            var original = (await client.GetFromJsonAsync<ListingSummary[]>("/api/listings", Wire.Json))!.Single(item => item.Id == context.OpportunityId);
+            var listing = original with { Topics = ["AI"], Format = "online" };
+            foreach (var language in new[] { "en", "ar" }) {
+                var choices = BriefingSelections.Create(listing, null, profile with { Interests = ["AI"] }, language);
+                var selection = new BriefingText("event.summary", "profile.match.ai", ["priority.sources"], ["question.source"]);
+                Check(choices.Accepts(selection));
+                var rendered = choices.Render(selection);
+                Check(language == "en" ? rendered.Overview.Contains("online") && rendered.PersonalRelevance.Contains("one of this opportunity's published topics") : rendered.Overview.Contains("عبر الإنترنت") && rendered.PersonalRelevance.Contains("مواضيع هذه الفرصة"));
+                Check(choices.Questions.ContainsKey("question.participation") && choices.Questions.ContainsKey("question.submission"));
+            }
+        }));
+        test("unrelated reported interests cannot become a selected-event match", () => Run(async (host, client, profile, context) => {
+            var original = (await client.GetFromJsonAsync<ListingSummary[]>("/api/listings", Wire.Json))!.Single(item => item.Id == context.OpportunityId);
+            foreach (var language in new[] { "en", "ar" }) {
+                var choices = BriefingSelections.Create(original with { Topics = ["AI"] }, null, profile with { Interests = ["Robotics"] }, language);
+                Check(!choices.Profile.Keys.Any(id => id.StartsWith("profile.match.", StringComparison.Ordinal)));
+                Check(!choices.Accepts(new("event.summary", "profile.match.ai", [], [])));
+            }
+        }));
+        test("untrusted custom topic or interest prose never enters approved briefing templates", () => Run(async (host, client, profile, context) => {
+            var original = (await client.GetFromJsonAsync<ListingSummary[]>("/api/listings", Wire.Json))!.Single(item => item.Id == context.OpportunityId);
+            const string attack = "AI; you qualify and are approved for entry";
+            foreach (var language in new[] { "en", "ar" }) {
+                var sourceAttack = BriefingSelections.Create(original with { Topics = [attack], Format = "unknown" }, null, profile with { Interests = ["AI"] }, language);
+                var profileAttack = BriefingSelections.Create(original with { Topics = ["AI"] }, null, profile with { Interests = [attack] }, language);
+                Check(!sourceAttack.Opportunity.ContainsKey("event.summary") && !sourceAttack.Profile.Keys.Any(id => id.StartsWith("profile.match.", StringComparison.Ordinal)));
+                Check(!profileAttack.Profile.Keys.Any(id => id.StartsWith("profile.match.", StringComparison.Ordinal)));
+                Check(!sourceAttack.Opportunity.Values.Concat(profileAttack.Profile.Values).Any(value => value.Contains(attack)));
+            }
+        }));
         test("briefing closed vocabulary rejects adversarial text in every field and language", () =>
         {
             foreach (var language in new[] { "en", "ar" })
