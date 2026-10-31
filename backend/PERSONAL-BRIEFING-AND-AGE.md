@@ -20,11 +20,11 @@ Values use existing canonical `reportedAge` and `majority` known/unknown facts. 
 
 The new optional form metadata is additive; deploy the backend's editor validation before the corresponding frontend.
 
-## Key setup deliberately deferred
+## Private key configuration
 
-The owner confirmed the Meta key is still with Rofi. No key was provisioned, copied, committed or requested in chat, and no live Meta call was made. The local missing-key case fails explicitly and keeps profile/plans unchanged.
+Configuration was originally deferred while Rofi held the key. On 31 October 2026, the supplied credential was saved through the existing hidden-input helper into ignored local backend configuration, and live access was verified. No key is included in source, reports or this document. Credential rotation was requested separately after its appearance in chat. The missing-key failure path remains covered and keeps profile/plans unchanged.
 
-When the key is available, run the existing hidden-input helper locally:
+For initial setup or a replacement key, run the existing hidden-input helper locally:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File backend/Setup-Meta.ps1
@@ -39,11 +39,13 @@ Restart the API afterward. Both plan generation and explanations use that server
 - Frontend: 154/154 tests, TypeScript, canonical fixture validation and production build.
 - Shared AI: 177/177 offline checks and seven evaluation CLI listing/selection/error cases; none uses a live provider. The Windows provenance fixture is run with a process-local Git ceiling so an unrelated home-directory repository cannot affect its non-repository test.
 - Disposable-account browser: actual form age/majority Save -> MySQL -> reload; selected-event explanation through the backend -> original source links; no implicit plan creation; reviewed resources and separate registration timing; 390px layout. Explanation output was synthetic. Temporary test accounts were deleted.
-- Live provider quality, actual organizer participation and the final merged-branch test remain separate.
+- Live checks at code revision `8ebef71`: English UI explanation, Arabic authenticated-backend explanation, context reuse, live candidate generation/acceptance, real MySQL task progress, failed-save Retry, reload, version conflict, unchanged submission evidence, mobile layout and return navigation passed with a disposable synthetic account. The account was deleted. Navigation rate limits were respected before retrying the final navigation.
+- The six-scenario live quality run was structurally successful, but qualitative review found an overly conservative empty response for unknown facts. That independent plan-prompt follow-up is isolated in [PR #28](https://github.com/NOOROWAISSI/meta-ai-hackathon-2026/pull/28), with [redacted evidence and qualitative review](https://github.com/NOOROWAISSI/meta-ai-hackathon-2026/blob/0838061/docs/qa/2026-10-31/live-meta-quality/README.md). It is not merged into this branch. Verbose explanations remain a UX limitation.
+- Actual organizer participation, repeated-run reliability, review approval and the final eventual merge-SHA smoke are separate from observed live compatibility.
 
-## Live compatibility gate still required for PR #27
+## Live compatibility procedure and remaining review gate
 
-This branch is based on the merged #26 baseline (`noor` at `723fb8f`). Keep #27 unmerged until a configured environment completes this gate; offline transport tests do not satisfy it.
+This branch is based on the merged #26 baseline (`noor` at `723fb8f`). The live compatibility procedure below was exercised on `8ebef71` as described above; this documentation-only update does not change executable code. Keep #27 unmerged pending review of the recorded outcomes. The independent #28 prompt change needs its own review and combined verification; these results do not claim that combination has been tested. `main` remains gated.
 
 1. Use a disposable, synthetic signed-in account and a reviewed selected event. Confirm private server configuration without printing it. Do not use real student identity/profile data for quality evaluation.
 2. Deliberately request one English and one Arabic personal explanation through the actual frontend/API. Record the tested commit, model name, UTC run time, HTTP outcome, source/profile context and whether the response was generated or cached; exclude keys, cookies and account identifiers from reports.
