@@ -23,6 +23,8 @@ import type { ProfileService } from "@/lib/profile/service";
 import { Field, SelectField, TagEditor, TextField } from "./ProfileFields";
 import { ExperienceHelper } from "./ExperienceHelper";
 import { BackgroundFields } from "./BackgroundFields";
+import { EventAgeFields } from "./EventAgeFields";
+import type { AgeConditions } from "@/lib/profile/age-conditions";
 import { SectionHeading, ChoiceRail, WeeklyRhythm } from "./ProfileCompositions";
 
 export const SECTIONS = [
@@ -72,6 +74,7 @@ export function ProfileSections({
   service,
   suggestionFailure,
   eventTitle,
+  ageRequirements,
   onPendingChange,
 }: {
   active: number;
@@ -81,6 +84,7 @@ export function ProfileSections({
   service: ProfileService;
   suggestionFailure: boolean;
   eventTitle?: string;
+  ageRequirements?: AgeConditions | undefined;
   onPendingChange: (key: string, value: string, section: number) => void;
 }) {
   const [removed, setRemoved] = useState<ProfileProject | null>(null);
@@ -103,6 +107,12 @@ export function ProfileSections({
           update={update}
           errors={errors}
           {...(eventTitle ? { eventTitle } : {})}
+        />
+        <EventAgeFields
+          conditions={ageRequirements}
+          draft={draft}
+          update={update}
+          errors={errors}
         />
       </section>
 

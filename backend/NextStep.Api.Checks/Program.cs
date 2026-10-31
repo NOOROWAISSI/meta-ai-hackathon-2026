@@ -683,6 +683,7 @@ Test("stale-profile progress preserves accepted context and never adopts new cap
     Assert(saved.Tasks[0].Status == "in_progress" && saved.Tasks[0].EstimatedHours == plan.Tasks[0].EstimatedHours && saved.TaskOrder.SequenceEqual(plan.TaskOrder));
     Assert((await data.Client.GetFromJsonAsync<SubmissionState>("/api/submissions/E01", Wire.Json))!.Version == data.Submission.Version);
 });
+PersonalBriefingChecks.Register(Test);
 var passed = 0;
 try {
     foreach (var test in cases) {

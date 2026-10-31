@@ -18,6 +18,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { realCatalogService } from "@/lib/catalog/service";
 import { PreferenceActions } from "@/components/account/AccountOpportunities";
 import { SourceFreshness } from "./SourceFreshness";
+import { MetaSnapshot } from "./MetaSnapshot";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useVisitState } from "@/components/VisitMemory";
 import { AccountFitConstellation } from "./AccountFitConstellation";
@@ -69,7 +70,10 @@ export function RealOpportunityDetails({
   const publishedSubmission = planningRecord.data?.timelineEvents.find(
     (milestone) => milestone.kind === "submission_close" && milestone.claims.length,
   );
-  const context = item && savedProfile ? briefingContext(item, savedProfile, language) : null;
+  const context =
+    item && savedProfile
+      ? briefingContext(item, savedProfile, language, planningRecord.data?.sourceRevision ?? null)
+      : null;
   const contextKey = context ? JSON.stringify(context) : null;
   const analysis = useQuery({
     queryKey: ["real-opportunity-briefing", auth?.user?.id, contextKey],
@@ -476,11 +480,12 @@ export function RealOpportunityDetails({
             <section
               className="border-y border-primary/15 py-6"
               aria-labelledby="meta-briefing-title"
+              dir={language === "ar" ? "rtl" : "ltr"}
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 id="meta-briefing-title" className="flex items-center gap-2 text-lg font-bold">
                   <Sparkles className="size-5 text-primary" aria-hidden />
-                  {t("Meta personal explanation", "تفسير Meta الشخصي")}
+                  {t("Meta snapshot", "ملخّص Meta")}
                 </h2>
                 <span className="text-xs text-muted-foreground">
                   {analysisService.available
@@ -491,8 +496,8 @@ export function RealOpportunityDetails({
               {!analysisService.available ? (
                 <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
                   {t(
-                    "The live explanation is not connected yet. It will explain the opportunity, relate it to your confirmed interests and experience, and separate preparation suggestions from unknown conditions. The facts above remain available without AI.",
-                    "التفسير الحي لسه مش موصول. رح يلخّص الفرصة، يربطها باهتماماتك وخبرتك المؤكدة، ويفصل نصائح التحضير عن الشروط المجهولة. المعلومات فوق متاحة بدون AI.",
+                    "Personal snapshots are not connected yet. Public event details remain available above.",
+                    "الملخّص الشخصي لسه مش موصول. تفاصيل الفرصة العامة متاحة فوق.",
                   )}
                 </p>
               ) : (
@@ -511,10 +516,11 @@ export function RealOpportunityDetails({
                     )}
                     {analysis.isFetching
                       ? t("Preparing explanation…", "جارٍ تجهيز التفسير…")
-                      : t("Explain this opportunity for me", "اشرحلي الفرصة بالنسبة إلي")}
+                      : t("Compare my starting point", "قارن نقطة بدايتي")}
                   </button>
                   {analysis.isError && (
                     <p role="alert" className="prep-error mt-4">
+                      {analysis.error.message}{" "}
                       {t(
                         "The explanation failed. Your profile and original opportunity details are unchanged. Retry when ready.",
                         "تعذّر التفسير. ملفك والتفاصيل الأصلية ما تغيّروا؛ جرّب مجددًا.",
@@ -524,40 +530,16 @@ export function RealOpportunityDetails({
                   {requestedContext && requestedContext !== contextKey && (
                     <p role="status" className="mt-3 text-sm text-muted-foreground">
                       {t(
-                        "The context changed. Request a new explanation.",
-                        "المعلومات تغيّرت؛ اطلب تفسيرًا محدّثًا.",
+                        "Your profile changed. Compare again to use the confirmed starting point.",
+                        "البروفايل تغيّر؛ حدّث المقارنة عشان تستخدم نقطة البداية المؤكدة.",
                       )}
                     </p>
                   )}
-                  {analysis.data && (
-                    <div className="mt-5 grid gap-6 md:grid-cols-2">
-                      <div>
-                        <h3 className="font-semibold">
-                          {t("What it is and why it relates to you", "شو هي وشو علاقتها فيك")}
-                        </h3>
-                        <p className="mt-2 text-sm leading-7">{analysis.data.overview}</p>
-                        <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                          {analysis.data.personalRelevance}
-                        </p>
-                      </div>
-                      <div>
-                        <h3 className="font-semibold">{t("What to prepare", "شو تحضّر")}</h3>
-                        <ul className="mt-2 list-disc space-y-2 ps-5 text-sm leading-7">
-                          {analysis.data.preparationPriorities.map((text, index) => (
-                            <li key={index}>{text}</li>
-                          ))}
-                        </ul>
-                        <h3 className="mt-4 font-semibold">
-                          {t("Still unknown", "شو لسه مش واضح")}
-                        </h3>
-                        <ul className="mt-2 list-disc space-y-2 ps-5 text-sm leading-7 text-muted-foreground">
-                          {analysis.data.questionsToClarify.map((text, index) => (
-                            <li key={index}>{text}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  )}
+                  <MetaSnapshot
+                    briefing={analysis.data}
+
+                    loading={analysis.isFetching}
+                  />
                 </>
               )}
             </section>

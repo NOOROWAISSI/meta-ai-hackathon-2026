@@ -23,6 +23,8 @@ builder.Services.AddControllers().AddJsonOptions(options => {
 builder.Services.AddSingleton<Catalog>();
 builder.Services.AddSingleton<DiscoveryCatalog>();
 builder.Services.AddSingleton<ResourceCatalog>();
+builder.Services.AddHttpClient<IPersonalBriefingModel, MetaPersonalBriefingModel>(client => client.Timeout = TimeSpan.FromSeconds(95)).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false, PooledConnectionLifetime = TimeSpan.FromMinutes(5) });
+builder.Services.AddSingleton<PersonalBriefingService>();
 builder.Services.AddSingleton<SourceCollector>();
 builder.Services.AddSingleton<DiscoveryFeed>();
 builder.Services.AddSingleton<IOfficialPageReader, OfficialPageReader>();
