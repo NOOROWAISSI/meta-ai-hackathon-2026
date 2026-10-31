@@ -12,7 +12,7 @@ public sealed class FakePersonalBriefingModel : IPersonalBriefingModel
     public int Calls;
     public TaskCompletionSource? Entered;
     public TaskCompletionSource? Resume;
-    public BriefingText Output = new("A source-grounded event summary.", "Your stated interests relate to the published theme; this does not confirm participation conditions.", ["Review the source and prepare a small demonstration."], ["Clarify any unpublished conditions with the organizer."]);
+    public BriefingText Output = new("event.details", "profile.none", ["priority.sources"], ["question.source"]);
     public async Task<BriefingText> Explain(JsonObject facts, string language, CancellationToken ct) { Calls++; Entered?.TrySetResult(); if (Resume is not null) await Resume.Task.WaitAsync(ct); return Output; }
 }
 public static class PersonalBriefingChecks
@@ -33,6 +33,115 @@ public static class PersonalBriefingChecks
     public static void Register(Action<string,Func<Task>> test)
     {
         PersonalBriefingTransportChecks.Register(test);
+        test("briefing closed vocabulary rejects adversarial text in every field and language", () =>
+        {
+            foreach (var language in new[] { "en", "ar" })
+            {
+                var v = BriefingSafety.Vocabulary(language);
+                var safe = new BriefingText(v.Overview[0], v.Relevance[0], [v.Priorities[0]], [v.Questions[0]]);
+                Check(BriefingSafety.Accepts(safe, language));
+                foreach (var attack in new[] { "You qualify to participate and are approved for entry.", "You meet all requirements.", "The organizer has accepted your application.", "Nothing prevents your entry.", "Your participation is confirmed.", "تم قبول مشاركتك في المسابقة.", "تستوفي جميع شروط المشاركة.", "يمكنك المشاركة دون أي شروط إضافية." })
+                {
+                    Check(!BriefingSafety.Accepts(safe with { Overview = attack }, language));
+                    Check(!BriefingSafety.Accepts(safe with { PersonalRelevance = attack }, language));
+                    Check(!BriefingSafety.Accepts(safe with { PreparationPriorities = [attack] }, language));
+                    Check(!BriefingSafety.Accepts(safe with { QuestionsToClarify = [attack] }, language));
+                }
+                Check(!BriefingSafety.Accepts(safe with { PreparationPriorities = [v.Priorities[0], "You qualify to participate and are approved for entry."] }, language));
+                Check(!BriefingSafety.Accepts(safe with { Overview = v.Overview[0] + " You qualify." }, language));
+                Check(!BriefingSafety.Accepts(safe with { PreparationPriorities = null! }, language));
+                Check(!BriefingSafety.Accepts(safe with { QuestionsToClarify = Enumerable.Repeat(v.Questions[0], 9).ToArray() }, language));
+                Check(!BriefingSafety.Accepts(safe, language == "en" ? "ar" : "en"));
+            }
+            return Task.CompletedTask;
+        });
+        test("briefing API rejects the exact unsupported verdict without changing saved work", () => Run(async (host, client, profile, context) =>
+        {
+            var before = await client.GetStringAsync("/api/profile");
+            host.Briefing.Output = host.Briefing.Output with { Overview = "You qualify to participate and are approved for entry." };
+            var result = await client.PostAsJsonAsync("/api/listings/" + context.OpportunityId + "/briefing", new BriefingRequest(context), Wire.Json);
+            Check(result.StatusCode == HttpStatusCode.ServiceUnavailable);
+            Check((await result.Content.ReadFromJsonAsync<ApiError>(Wire.Json))!.Code == "invalid_model_output");
+            Check(await client.GetStringAsync("/api/profile") == before && (await client.GetFromJsonAsync<Plan[]>("/api/plans", Wire.Json))!.Length == 0);
+        }));
+        test("briefing API accepts neutral Arabic vocabulary and rejects a verdict in each field", () => Run(async (host, client, profile, context) =>
+        {
+            context = context with { Language = "ar" };
+            var safe = new BriefingText("event.details", "profile.none", ["priority.sources"], ["question.source"]);
+            const string attack = "تم قبول مشاركتك في المسابقة.";
+            foreach (var output in new[] { safe with { Overview = attack }, safe with { PersonalRelevance = attack }, safe with { PreparationPriorities = [attack] }, safe with { QuestionsToClarify = [attack] } })
+            {
+                host.Briefing.Output = output;
+                var rejected = await client.PostAsJsonAsync("/api/listings/" + context.OpportunityId + "/briefing", new BriefingRequest(context), Wire.Json);
+                Check(rejected.StatusCode == HttpStatusCode.ServiceUnavailable && (await rejected.Content.ReadFromJsonAsync<ApiError>(Wire.Json))!.Code == "invalid_model_output");
+            }
+            host.Briefing.Output = safe;
+            var accepted = await client.PostAsJsonAsync("/api/listings/" + context.OpportunityId + "/briefing", new BriefingRequest(context), Wire.Json);
+            Check(accepted.IsSuccessStatusCode && (await accepted.Content.ReadFromJsonAsync<PersonalBriefing>(Wire.Json))!.Overview == "راجع تفاصيل الفرصة المنشورة والمصادر الأصلية.");
+        }));
+        test("structured selection rejects unsupported and cross-field IDs in all fields", () => Run(async (host, client, profile, context) =>
+        {
+            var listing = (await client.GetFromJsonAsync<ListingSummary[]>("/api/listings", Wire.Json))!.Single(item => item.Id == context.OpportunityId);
+            var record = host.Services.GetRequiredService<Catalog>().Get(context.OpportunityId);
+            foreach (var language in new[] { "en", "ar" })
+            {
+                var choices = BriefingSelections.Create(listing, record, profile, language);
+                var safe = new BriefingText("event.details", "profile.none", ["priority.sources"], ["question.source"]);
+                Check(choices.Accepts(safe));
+                foreach (var attack in new[] { "You qualify to participate and are approved for entry.", "You meet all requirements.", "Nothing prevents your entry.", "تم قبول مشاركتك في المسابقة.", "تستوفي جميع شروط المشاركة.", "profile.interest.ai", "event.topic.invented" })
+                {
+                    Check(!choices.Accepts(safe with { Overview = attack }));
+                    Check(!choices.Accepts(safe with { PersonalRelevance = attack }));
+                    Check(!choices.Accepts(safe with { PreparationPriorities = [attack] }));
+                    Check(!choices.Accepts(safe with { QuestionsToClarify = [attack] }));
+                }
+                Check(!choices.Accepts(safe with { PreparationPriorities = ["priority.sources", "invented"] }));
+            }
+        }));
+        test("briefing renders owned profile interest and rejects an unsupported interest", () => Run(async (host, client, profile, context) =>
+        {
+            var url = "/api/listings/" + context.OpportunityId + "/briefing";
+            host.Briefing.Output = new("event.details", "profile.interest.ai", ["priority.sources"], ["question.source"]);
+            var rejected = await client.PostAsJsonAsync(url, new BriefingRequest(context), Wire.Json);
+            Check(rejected.StatusCode == HttpStatusCode.ServiceUnavailable);
+            (await client.PutAsJsonAsync("/api/profile", new ProfileUpdate(profile.Version, profile with { Interests = ["AI"] }), Wire.Json)).EnsureSuccessStatusCode();
+            var current = (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!;
+            context = context with { ProfileVersion = current.Version };
+            foreach (var language in new[] { "en", "ar" })
+            {
+                var response = await client.PostAsJsonAsync(url, new BriefingRequest(context with { Language = language }), Wire.Json);
+                response.EnsureSuccessStatusCode();
+                var value = (await response.Content.ReadFromJsonAsync<PersonalBriefing>(Wire.Json))!;
+                Check(language == "en" ? value.PersonalRelevance.Contains("interest in AI") : value.PersonalRelevance.Contains("الذكاء الاصطناعي"));
+            }
+        }));
+        test("missing source evidence keeps participation and submission questions available", () => Run(async (host, client, profile, context) =>
+        {
+            var listing = (await client.GetFromJsonAsync<ListingSummary[]>("/api/listings", Wire.Json))!.Single(item => item.Id == context.OpportunityId);
+            foreach (var language in new[] { "en", "ar" })
+            {
+                var choices = BriefingSelections.Create(listing, null, profile, language);
+                Check(choices.Questions.ContainsKey("question.participation") && choices.Questions.ContainsKey("question.submission"));
+                Check(!choices.Profile.ContainsKey("profile.interest.ai"));
+                Check(!choices.Accepts(new("event.details", "profile.interest.ai", ["priority.sources"], ["question.source"])));
+            }
+        }));
+        test("briefing cache is isolated between signed-in accounts", () => Run(async (host, client, profile, context) =>
+        {
+            var url = "/api/listings/" + context.OpportunityId + "/briefing";
+            (await client.PostAsJsonAsync(url, new BriefingRequest(context), Wire.Json)).EnsureSuccessStatusCode();
+            using var other = host.CreateClient(); other.DefaultRequestHeaders.Add("X-NextStep-Request", "1");
+            (await other.PostAsJsonAsync("/api/auth/register", new RegisterRequest("other-" + Guid.NewGuid().ToString("N") + "@example.invalid", "Synthetic-Other-Account-2026!", "Other account"), Wire.Json)).EnsureSuccessStatusCode();
+            var second = (await other.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!;
+            try
+            {
+                Check((await other.PostAsJsonAsync(url, new BriefingRequest(context), Wire.Json)).StatusCode == HttpStatusCode.Conflict);
+                var own = context with { ProfileId = second.Id, ProfileVersion = second.Version };
+                (await other.PostAsJsonAsync(url, new BriefingRequest(own), Wire.Json)).EnsureSuccessStatusCode();
+                Check(host.Briefing.Calls == 2);
+            }
+            finally { await host.Services.GetRequiredService<IStateStore>().Delete(second.Id["profile-".Length..], CancellationToken.None); }
+        }));
         test("reviewed event timing exposes registration separately and retains source conflicts",()=>{
             var catalog=new Catalog();var discovery=new DiscoveryCatalog(catalog);
             var cosmo=catalog.Get("E05");Check(Catalog.Instant(cosmo,"registration_close")==DateTimeOffset.Parse("2027-01-18T16:00:00-06:00"));
@@ -86,15 +195,15 @@ public static class PersonalBriefingChecks
             try{await model.Explain(new(),"en",CancellationToken.None);throw new Exception("Missing key accepted");}catch(ApiFault error){Check(error.Error.Code=="provider_unavailable" && handler.Calls==0);}
         });
         test("personal Meta adapter sends the bounded structured schema through the approved endpoint",async()=>{
-            var output=new BriefingText("A grounded HTTP API project overview.","Related to the reported goal.",[],["Clarify unpublished timing."]);
+            var output = new BriefingText("event.details", "profile.none", [], ["question.source"]);
             var handler=new StubHttp(JsonSerializer.Serialize(new{choices=new[]{new{finish_reason="stop",message=new{content=JsonSerializer.Serialize(output,Wire.Json)}}}},Wire.Json));
             var model=new MetaPersonalBriefingModel(new HttpClient(handler),Options.Create(new MetaAiOptions{ApiKey="synthetic-meta-key-only"}));
-            var result=await model.Explain(new(){["example"]="Synthetic context"},"ar",CancellationToken.None);
-            Check(result.Overview==output.Overview && handler.Calls==1 && handler.RequestBody!.Contains("opportunity_briefing") && handler.RequestBody.Contains("json_schema") && handler.RequestBody.Contains("language"));
+            var result = await model.Explain(Facts(), "ar", CancellationToken.None);
+            Check(result.Overview == output.Overview && handler.Calls == 1 && handler.RequestBody!.Contains("opportunity_briefing") && handler.RequestBody.Contains("json_schema") && handler.RequestBody.Contains("language") && handler.RequestBody.Contains("\"enum\"") && handler.RequestBody.Contains("\"strict\":true") && handler.RequestBody.Contains("\"additionalProperties\":false"));
         });
         test("malformed personal Meta output is a recoverable error rather than a fabricated explanation",async()=>{
             var handler=new StubHttp("{\"choices\":[]}");var model=new MetaPersonalBriefingModel(new HttpClient(handler),Options.Create(new MetaAiOptions{ApiKey="synthetic-meta-key-only"}));
-            try{await model.Explain(new(),"en",CancellationToken.None);throw new Exception("Malformed output accepted");}catch(ApiFault error){Check(error.Error.Code=="invalid_model_output");}
+            try { await model.Explain(Facts(), "en", CancellationToken.None); throw new Exception("Malformed output accepted"); } catch (ApiFault error) { Check(error.Error.Code == "invalid_model_output"); }
         });
         test("age and legal-majority editor facts persist separately and do not infer jurisdiction",()=>Run(async(host,client,profile,context)=>{
             var at=DateTimeOffset.UtcNow.ToString("O");
@@ -110,6 +219,16 @@ public static class PersonalBriefingChecks
             foreach(var rule in record.Requirements.Where(rule=>rule.Evaluation["key"]?.GetValue<string>()=="majority"))Check(comparison.Matches.Single(match=>match.RequirementId==rule.Id).Status=="unknown");
         }));
     }
+    private static JsonObject Facts() => new()
+    {
+        ["choices"] = JsonSerializer.SerializeToNode(new
+        {
+            opportunity = new Dictionary<string, string> { { "event.details", "Details" } },
+            profile = new Dictionary<string, string> { { "profile.none", "Profile" } },
+            priorities = new Dictionary<string, string> { { "priority.sources", "Sources" } },
+            questions = new Dictionary<string, string> { { "question.source", "Question" } }
+        }, Wire.Json)
+    };
     private sealed class DeniedHttp:HttpMessageHandler {public int Calls;protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken ct){Calls++;throw new Exception("No network allowed");}}
     private sealed class StubHttp(string body):HttpMessageHandler {
         public int Calls;public string? RequestBody;
