@@ -1,0 +1,64 @@
+﻿{
+    "testedAt":  "2026-10-31T17:54:47.352Z",
+    "model":  "muse-spark-1.3",
+    "provider":  "live",
+    "syntheticStudent":  true,
+    "checks":  [
+                   "actual frontend -\u003e ASP.NET -\u003e live Meta English explanation displays original source links",
+                   "live Arabic explanation, cache reuse and no implicit profile/plan mutation",
+                   "live EN/AR select concrete published-topic and owned-interest match rather than generic fallback",
+                   "Arabic UI displays server-rendered selected text with RTL, mobile layout and no internal IDs",
+                   "profile change invalidates cached old-context explanation with 409; no plan created"
+               ],
+    "english":  {
+                    "overview":  "Participation is listed as online. This opportunity\u0027s published topics include AI. Check the original sources for current participation and submission conditions.",
+                    "personalRelevance":  "You reported an interest in AI, which is one of this opportunity\u0027s published topics. This is an interest match, not confirmation of eligibility or experience.",
+                    "preparationPriorities":  [
+                                                  "Review the published requirements and original sources.",
+                                                  "Identify skills and resources you may need for preparation."
+                                              ],
+                    "questionsToClarify":  [
+                                               "Which details still need confirmation with the organizer?",
+                                               "Which participation conditions remain unconfirmed?",
+                                               "Which submission instructions remain unclear?"
+                                           ],
+                    "sources":  [
+                                    {
+                                        "label":  "Meta \u0026 Cerebral Valley",
+                                        "url":  "https://dev.meta.ai/events/global-hackathon"
+                                    },
+                                    {
+                                        "label":  "Application and acceptance",
+                                        "url":  "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver"
+                                    }
+                                ],
+                    "generatedAt":  "2026-10-31T17:54:56.1095169+00:00"
+                },
+    "arabic":  {
+                   "overview":  "المشاركة منشورة على أنها عبر الإنترنت. تشمل مواضيع هذه الفرصة المنشورة الذكاء الاصطناعي. راجع المصادر الأصلية لشروط المشاركة والتسليم الحالية.",
+                   "personalRelevance":  "ذكرت اهتمامك بموضوع الذكاء الاصطناعي، وهو من مواضيع هذه الفرصة المنشورة. هذا ارتباط بالاهتمام، وليس تأكيداً للأهلية أو الخبرة.",
+                   "preparationPriorities":  [
+                                                 "راجع المتطلبات المنشورة والمصادر الأصلية.",
+                                                 "حدد المهارات والموارد التي قد تحتاجها للتحضير."
+                                             ],
+                   "questionsToClarify":  [
+                                              "ما المعلومات التي لا تزال تحتاج إلى تأكيد من المنظم؟",
+                                              "ما شروط المشاركة غير المؤكدة؟",
+                                              "ما تعليمات التقديم التي لا تزال غير واضحة؟"
+                                          ],
+                   "sources":  [
+                                   {
+                                       "label":  "Meta \u0026 Cerebral Valley",
+                                       "url":  "https://dev.meta.ai/events/global-hackathon"
+                                   },
+                                   {
+                                       "label":  "Application and acceptance",
+                                       "url":  "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver"
+                                   }
+                               ],
+                   "generatedAt":  "2026-10-31T17:54:59.0754255+00:00"
+               },
+    "testedCommit":  "5ff26b3369f33816cd4b61bee56f3eae9ed87530",
+    "integrationCommit":  "965f4c08b26575937986284c1c88a18201a99172",
+    "status":  "observed-technical-and-bounded-grounding-pass"
+}
