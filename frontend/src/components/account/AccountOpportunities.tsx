@@ -194,7 +194,10 @@ export function AccountSaved() {
               )}
             </p>
           </div>
-          <span className="prep-index-count">{saved.length}</span>
+          <div className="prep-header-metric">
+            <strong>{saved.length}</strong>
+            <span>{t("Saved opportunities", "فرص محفوظة")}</span>
+          </div>
         </header>
         {preferences.isPending || catalog.isPending ? (
           <p role="status" className="prep-loading">

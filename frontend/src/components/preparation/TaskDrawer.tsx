@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { CheckCircle2, FileCheck2, LoaderCircle, Save } from "lucide-react";
 import {
   Sheet,
@@ -52,6 +52,7 @@ export function TaskDrawer({
   onSaved,
   failNextSave,
   onFailureUsed,
+  returnFocusTo,
 }: {
   task: PreparationTask;
   plan: Plan;
@@ -60,7 +61,12 @@ export function TaskDrawer({
   onSaved: () => void;
   failNextSave: boolean;
   onFailureUsed: () => void;
+  returnFocusTo?: HTMLElement | null;
 }) {
+  const opener = useRef<HTMLElement | null>(
+    returnFocusTo ??
+      (typeof document !== "undefined" ? (document.activeElement as HTMLElement) : null),
+  );
   const [status, setStatus] = useState<TaskStatus>(task.status);
   const [artifacts, setArtifacts] = useState(task.artifactUrls.join("\n"));
   const [busy, setBusy] = useState(false);
@@ -131,6 +137,12 @@ export function TaskDrawer({
       <SheetContent
         className="prep-drawer overflow-y-auto"
         aria-describedby="task-drawer-description"
+        onCloseAutoFocus={(event) => {
+          if (opener.current?.isConnected) {
+            event.preventDefault();
+            opener.current.focus();
+          }
+        }}
       >
         <SheetHeader>
           <p className="prep-eyebrow">Your task · self-reported progress</p>
@@ -141,9 +153,15 @@ export function TaskDrawer({
         </SheetHeader>
         <div className="mt-6 space-y-6">
           <div className="flex flex-wrap gap-2">
-            <span className={`prep-priority priority-${task.priority}`}>{task.priority}</span>
+            <span className={`prep-priority priority-${task.priority}`}>
+              Suggested priority: {task.priority}
+            </span>
             <span className="prep-status">{STATUS_LABELS[task.status]} · confirmed</span>
           </div>
+          <p className="text-xs leading-5 text-muted-foreground">
+            Task priorities guide your preparation. Check the linked source for organizer
+            requirements.
+          </p>
           <section className="prep-task-target">
             <p className="prep-small-label">
               {target.kind === "goal" ? "Accepted personal goal" : "Linked requirement"}
