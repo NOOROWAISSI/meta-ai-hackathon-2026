@@ -12,5 +12,8 @@
     <!-- Exercise the evaluation-only report code without a production dependency. -->
     <Compile Include="../NextStep.MetaAi.Eval/EvaluationProvenance.cs" Link="EvaluationProvenance.cs" />
     <Compile Include="../NextStep.MetaAi.Eval/EvaluationReport.cs" Link="EvaluationReport.cs" />
+    <Compile Include="../NextStep.MetaAi.Eval/EvaluationOptions.cs" Link="EvaluationOptions.cs" />
+    <Compile Include="../NextStep.MetaAi.Eval/EvaluationQuality.cs" Link="EvaluationQuality.cs" />
+    <EmbeddedResource Include="Fixtures/live-quality-1084027.json" />
   </ItemGroup>
 </Project>

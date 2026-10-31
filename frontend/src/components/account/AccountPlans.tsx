@@ -818,6 +818,28 @@ function SubmissionChecklist({
         Finishing a preparation task does not confirm submission. Add your submission evidence
         separately.
       </p>
+      {requirements.length > 0 && (
+        <div className="mt-3 text-sm" aria-label="Mandatory action review">
+          <p>
+            A linked task does not prove that every action in a requirement is planned. Compare each
+            full requirement below with the draft, even when no actions are shown as uncovered.
+          </p>
+          <ol className="mt-2 list-decimal space-y-2 ps-5">
+            <li>Prepare and check the required artifact against the reviewed instructions.</li>
+            <li>
+              If the requirement calls for delivery, verify the organizer's channel and
+              instructions, then send or upload the artifact when ready. A file ready to submit is
+              still unsent.
+            </li>
+            <li>
+              Check the actual receipt or confirmation and keep that evidence separately. Reported
+              present means artifact presence; it does not confirm portal submission or eligibility.
+              Unknown instructions or missing confirmation remain unresolved, even after a task is
+              Done.
+            </li>
+          </ol>
+        </div>
+      )}
       {coverage.isFetching && (
         <p role="status" className="mt-3 text-xs text-muted-foreground">
           Checking which submission steps your plan covers…
@@ -835,17 +857,18 @@ function SubmissionChecklist({
         <div className="mt-4 flex flex-wrap gap-3 text-xs text-muted-foreground">
           <span>Source coverage: {coverage.data.report.sourceCoverage}</span>
           <span>
-            {coverage.data.report.unrepresentedRequirementIds.length} reviewed outstanding actions
-            without a task
+            {coverage.data.report.unrepresentedRequirementIds.length} reviewed outstanding
+            requirements without a linked task
           </span>
           <span>{coverage.data.unresolvedRequirementIds.length} checks need clarification</span>
           {coverage.data.planOutdated && <span>Plan context outdated · progress preserved</span>}
           <details className="w-full leading-5">
             <summary className="cursor-pointer text-primary">What these checks mean</summary>
             <p className="mt-2">
-              A task can cover a submission step without completing it. Unknown evidence still needs
-              clarification; it is not a confirmed failure. Even zero missing steps does not confirm
-              successful submission.
+              A linked task does not establish that every action is covered or completed. Unknown
+              evidence still needs clarification; it is not a confirmed failure. Even zero
+              unrepresented requirements does not establish full action coverage or successful
+              submission.
             </p>
             <p className="mt-2">
               Evidence you report is not independently verified and does not confirm that every
