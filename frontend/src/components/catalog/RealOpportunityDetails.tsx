@@ -18,6 +18,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { realCatalogService } from "@/lib/catalog/service";
 import { PreferenceActions } from "@/components/account/AccountOpportunities";
 import { SourceFreshness } from "./SourceFreshness";
+import { MetaSnapshot } from "./MetaSnapshot";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useVisitState } from "@/components/VisitMemory";
 import { AccountFitConstellation } from "./AccountFitConstellation";
@@ -479,11 +480,12 @@ export function RealOpportunityDetails({
             <section
               className="border-y border-primary/15 py-6"
               aria-labelledby="meta-briefing-title"
+              dir={language === "ar" ? "rtl" : "ltr"}
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 id="meta-briefing-title" className="flex items-center gap-2 text-lg font-bold">
                   <Sparkles className="size-5 text-primary" aria-hidden />
-                  {t("Meta personal explanation", "تفسير Meta الشخصي")}
+                  {t("Meta snapshot", "ملخّص Meta")}
                 </h2>
                 <span className="text-xs text-muted-foreground">
                   {analysisService.available
@@ -494,8 +496,8 @@ export function RealOpportunityDetails({
               {!analysisService.available ? (
                 <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
                   {t(
-                    "The live explanation is not connected yet. It will explain the opportunity, relate it to your confirmed interests and experience, and separate preparation suggestions from unknown conditions. The facts above remain available without AI.",
-                    "التفسير الحي لسه مش موصول. رح يلخّص الفرصة، يربطها باهتماماتك وخبرتك المؤكدة، ويفصل نصائح التحضير عن الشروط المجهولة. المعلومات فوق متاحة بدون AI.",
+                    "Personal snapshots are not connected yet. Public event details remain available above.",
+                    "الملخّص الشخصي لسه مش موصول. تفاصيل الفرصة العامة متاحة فوق.",
                   )}
                 </p>
               ) : (
@@ -533,71 +535,11 @@ export function RealOpportunityDetails({
                       )}
                     </p>
                   )}
-                  {analysis.data && (
-                    <div className="mt-5 grid gap-6 md:grid-cols-2">
-                      <div>
-                        <h3 className="font-semibold">
-                          {t("What it is and why it relates to you", "شو هي وشو علاقتها فيك")}
-                        </h3>
-                        <p className="mt-2 text-sm leading-7">{analysis.data.overview}</p>
-                        <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                          {analysis.data.personalRelevance}
-                        </p>
-                      </div>
-                      <div>
-                        <h3 className="font-semibold">{t("What to prepare", "شو تحضّر")}</h3>
-                        <ul className="mt-2 list-disc space-y-2 ps-5 text-sm leading-7">
-                          {analysis.data.preparationPriorities.map((text, index) => (
-                            <li key={index}>{text}</li>
-                          ))}
-                        </ul>
-                        <h3 className="mt-4 font-semibold">
-                          {t("Still unknown", "شو لسه مش واضح")}
-                        </h3>
-                        <ul className="mt-2 list-disc space-y-2 ps-5 text-sm leading-7 text-muted-foreground">
-                          {analysis.data.questionsToClarify.map((text, index) => (
-                            <li key={index}>{text}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  )}
-                  {!!analysis.data?.sources?.length && (
-                    <div className="mt-4 border-t border-border pt-4 text-xs">
-                      <p className="font-semibold">
-                        {t(
-                          "Original sources used for this explanation",
-                          "المصادر الأصلية لهذا التفسير",
-                        )}
-                      </p>
-                      {analysis.data.generatedAt && (
-                        <p className="mt-2 text-muted-foreground">
-                          {t("Generated", "تم إنشاء التفسير")}:{" "}
-                          {new Date(analysis.data.generatedAt).toLocaleString()}
-                        </p>
-                      )}
-                      <ul className="mt-2 space-y-2">
-                        {analysis.data.sources.map((source) => (
-                          <li key={source.url}>
-                            <a
-                              href={source.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary underline"
-                            >
-                              {source.label}
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                      <p className="mt-2 text-muted-foreground">
-                        {t(
-                          "AI explanation; verify important conditions in the original source. Relevance does not confirm eligibility.",
-                          "تفسير بالذكاء الاصطناعي؛ راجع الشروط المهمة بالمصدر الأصلي. الملاءمة لا تعني تأكيد أهلية المشاركة.",
-                        )}
-                      </p>
-                    </div>
-                  )}
+                  <MetaSnapshot
+                    briefing={analysis.data}
+                    interests={interests}
+                    loading={analysis.isFetching}
+                  />
                 </>
               )}
             </section>
