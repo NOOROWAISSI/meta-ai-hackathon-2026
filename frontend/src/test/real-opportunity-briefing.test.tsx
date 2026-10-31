@@ -184,3 +184,26 @@ it("does not display a late explanation or start a new model request after profi
   expect(explain).toHaveBeenCalledTimes(1);
   expect(await screen.findByText("The context changed. Request a new explanation.")).toBeVisible();
 });
+it("shows a recoverable backend configuration error without inventing AI output", async () => {
+  state.signedIn = true;
+  const explain = vi
+    .fn()
+    .mockRejectedValue(new Error("The Meta key is not configured on this server."));
+  show(
+    <RealOpportunityDetails
+      opportunityId={listing.id}
+      analysisService={{ available: true, explain }}
+    />,
+  );
+  await screen.findByRole("tab", { name: "Requirements & My Fit" });
+  fireEvent.mouseDown(screen.getByRole("tab", { name: "Requirements & My Fit" }), {
+    button: 0,
+    ctrlKey: false,
+  });
+  const button = await screen.findByRole("button", { name: "Explain this opportunity for me" });
+  await waitFor(() => expect(button).toBeEnabled());
+  fireEvent.click(button);
+  expect(await screen.findByText(/The Meta key is not configured on this server/)).toBeVisible();
+  expect(explain).toHaveBeenCalledTimes(1);
+  expect(button).toBeEnabled();
+});

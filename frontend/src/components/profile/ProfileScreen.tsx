@@ -41,6 +41,7 @@ import { profileService, type ProfileService } from "@/lib/profile/service";
 import { ProfileSections, SECTIONS } from "./ProfileSections";
 import { ProfileIdentity } from "./ProfileIdentity";
 import { ProfileVisualSummary } from "./ProfileVisualSummary";
+import type { AgeConditions } from "@/lib/profile/age-conditions";
 
 const ICONS = [GraduationCap, Compass, BookOpen, Clock3];
 
@@ -49,11 +50,13 @@ export function ProfileScreen({
   service = profileService,
   returnToPlans = false,
   contextEvent,
+  ageRequirements,
 }: {
   eventId?: string;
   service?: ProfileService;
   returnToPlans?: boolean;
   contextEvent?: { id: string; title: string };
+  ageRequirements?: AgeConditions | undefined;
 }) {
   const navigate = useNavigate();
   const event = contextEvent;
@@ -413,6 +416,7 @@ export function ProfileScreen({
                   <div id="profile-editor" className="scroll-mt-24">
                     <fieldset disabled={status === "saving"} className="min-w-0">
                       <ProfileSections
+                        ageRequirements={ageRequirements}
                         active={active}
                         draft={draft}
                         update={update}
