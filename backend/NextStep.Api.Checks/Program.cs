@@ -671,6 +671,18 @@ Test("Meta selection self-report cannot bypass a published age blocker or satisf
     Assert(analysis.ParticipationSummary == "does_not_meet_confirmed_requirement" && analysis.Matches.Where(m => opportunity.Requirements.Single(r => r.Id == m.RequirementId).Lane == "submission").All(m => m.Status == "unknown"));
     Assert((await client.PostAsJsonAsync("/api/opportunities/meta-global-ai-2026/plan-candidates", Request(profile, submission, opportunity), Wire.Json)).StatusCode == HttpStatusCode.BadRequest && host.Model.Calls == 0);
 });
+CapacityAndNetworkChecks.Register(Test);
+Test("stale-profile progress preserves accepted context and never adopts new capacity silently", async () => {
+    await using var host = new Factory();
+    var data = await Ready(host); var (plan, _) = await Accepted(data.Client, data.Profile, data.Submission, data.Opportunity);
+    var change = await data.Client.PutAsJsonAsync("/api/profile", new ProfileUpdate(data.Profile.Version, data.Profile with { AvailableHoursPerWeek = Known(168) }), Wire.Json); change.EnsureSuccessStatusCode();
+    var update = new TaskUpdate(plan.Version, "in_progress", Guid.NewGuid().ToString("N"));
+    var response = await data.Client.PatchAsJsonAsync("/api/plans/E01/tasks/" + plan.Tasks[0].Id, update, Wire.Json); response.EnsureSuccessStatusCode();
+    var saved = (await response.Content.ReadFromJsonAsync<Plan>(Wire.Json))!;
+    Assert(saved.Context == plan.Context && saved.Budget.HoursPerWeek == plan.Budget.HoursPerWeek && saved.Budget.AvailableHours is null && saved.Feasibility == "untimed");
+    Assert(saved.Tasks[0].Status == "in_progress" && saved.Tasks[0].EstimatedHours == plan.Tasks[0].EstimatedHours && saved.TaskOrder.SequenceEqual(plan.TaskOrder));
+    Assert((await data.Client.GetFromJsonAsync<SubmissionState>("/api/submissions/E01", Wire.Json))!.Version == data.Submission.Version);
+});
 var passed = 0;
 try {
     foreach (var test in cases) {

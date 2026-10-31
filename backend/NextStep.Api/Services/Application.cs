@@ -100,7 +100,7 @@ public sealed class Application(IStateStore store, Catalog catalog, IMetaModelCl
     }
     public Task<Plan> Progress(string owner, string id, string taskId, TaskUpdate request, CancellationToken ct)
     {
-        catalog.Get(id); Input.Require(request is not null && Input.Id(request.OperationId) && request.Status is "not_started" or "in_progress" or "done");
+        var opportunity = catalog.Get(id); Input.Require(request is not null && Input.Id(request.OperationId) && request.Status is "not_started" or "in_progress" or "done");
         Input.Require(request.ArtifactUrls is null || request.ArtifactUrls.Length <= 8 && request.ArtifactUrls.All(u => u.Length <= 2000 && Input.Url(u)), "Artifact URLs must be valid HTTP(S) links.");
         var fingerprint = MySqlStateStore.Hash("progress:" + id + ":" + taskId + JsonSerializer.Serialize(request, Wire.Json));
         return store.Change(owner, state => {
@@ -109,16 +109,16 @@ public sealed class Application(IStateStore store, Catalog catalog, IMetaModelCl
             if (plan.Version != request.ExpectedVersion) throw new ApiFault("version_conflict", "Progress changed in another request. Reload before applying your unsaved change.");
             if (!plan.Tasks.Any(t => t.Id == taskId)) throw new ApiFault("not_found", "This task does not belong to the selected plan.");
             var tasks = plan.Tasks.Select(t => t.Id != taskId ? t : t with { Status = request.Status, RemainingEstimatedHours = request.Status == "done" ? 0 : t.RemainingEstimatedHours > 0 ? t.RemainingEstimatedHours : t.EstimatedHours, ArtifactUrls = request.ArtifactUrls ?? t.ArtifactUrls }).ToArray();
-            var assessment = PreparationBudget.Evaluate(plan.Budget.HoursPerWeek, plan.Budget.DeadlineInstant is { } date ? DateTimeOffset.Parse(date) : null, DateTimeOffset.UtcNow, new([], "Confirmed progress"), tasks.Select(t => new RetainedWork(t.Id, t.Status, t.RemainingEstimatedHours)).ToArray());
+            var contextIsCurrent = plan.Context == Matching.Context(opportunity, state.Profile, Submission(state, opportunity));
+            var assessment = PreparationCapacity.Evaluate(opportunity, plan.Budget.HoursPerWeek, tasks, DateTimeOffset.UtcNow, contextIsCurrent);
             var updated = plan with { Version = checked(plan.Version + 1), Tasks = tasks, Budget = ToBudget(assessment), Feasibility = assessment.Feasibility };
             state.Plans[id] = updated; Remember(state, request.OperationId, fingerprint, id); return updated;
         }, ct);
     }
     private static (PlanBudget Budget, string Feasibility) Budget(Opportunity o, StudentProfile p, PreparationTask[] tasks)
     {
-        var now = DateTimeOffset.UtcNow; var start = Catalog.Instant(o, "build_start"); var effective = start is { } begins && begins > now ? begins : now;
-        var budget = PreparationBudget.Evaluate(Input.Fact<double>(p.AvailableHoursPerWeek), Catalog.Instant(o, "submission_close"), effective, new([], "Accepted preparation"), tasks.Select(t => new RetainedWork(t.Id, t.Status, t.RemainingEstimatedHours)).ToArray());
-        return (ToBudget(budget with { EvaluatedAt = now }), budget.Feasibility);
+        var budget = PreparationCapacity.Evaluate(o, Input.Fact<double>(p.AvailableHoursPerWeek), tasks, DateTimeOffset.UtcNow);
+        return (ToBudget(budget), budget.Feasibility);
     }
     private static PlanBudget ToBudget(BudgetAssessment b) => new(b.EvaluatedAt.ToString("O"), b.HoursPerWeek, b.DeadlineInstant?.ToString("O"), b.AvailableHours, b.RemainingEffortHours, b.Assumption);
     private static bool Replay(UserState state, string operation, string fingerprint, string opportunity)
