@@ -1,9 +1,13 @@
 # NextStep — Final QA & Frontend Improvement Brief
 
 **Date:** 31 October 2026
+
 **Outcome:** 🟠 **CONDITIONAL GO** for the *tested local demo journey*
+
 **Tested commit:** `10840279ca22fbd30fb79e8f72172041b32ae9f8` (PR #21)
+
 **Audience:** Rofi & Noor
+
 **Scope:** Final browser E2E, functional risk, and screenshot-based frontend polish. **No code was changed.**
 
 > **Bottom line:** NextStep can demonstrate a complete journey from discovering an event to generating a preparation draft, accepting a plan, updating tasks, and retaining progress in MySQL. There is one reproducible accessibility bug, some important limitations to explain honestly, and a short list of visual improvements. This is *not* a full production release certification.
