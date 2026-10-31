@@ -69,6 +69,10 @@ public sealed class MetaModelClient : IMetaModelClient
             "Do not invent or certify eligibility, deadlines, achievements, organizer rules or URLs. Do not include dates or eligibility verdicts in prose; the application displays those facts. " +
             "Do not repeat existing started/completed work. The application preserves records; you do not assign IDs or progress. " +
             "Weekly availability is context, not a one-week task limit. Do not shrink estimates or omit mandatory work to claim a fit. " +
+            "Unknown availability, deadline, skills or participation conditions alone do not establish that no useful work remains and do not prohibit untimed guidance. " +
+            "For an accepted exploration goal with missing organizer facts, propose a small goal-directed information-gathering or clarification task without inventing criteria, sources, eligibility or a schedule. " +
+            "Zero tasks require a specific reason why no useful work remains for the supplied goals and reviewed requirements; missing facts alone are not that reason. " +
+            "Do not label feasibility unknown merely because total effort exceeds weekly hours; the application owns the schedule assessment. " +
             "When the full goal is unrealistic for reported constraints, describe in explanation a minimum demo scope, a dependency-ordered critical path, optional work to defer, and a concrete next decision if it still cannot fit. " +
             "Prefer one demonstrable user flow over extra features. Account for learning unfamiliar skills; missing skills are unknown, not proof of competence. " +
             "Keep mandatory and retained work explicit, even if they alone exceed capacity. Do not claim that the fallback fits; ask for a scope/availability decision and re-estimation. " +
