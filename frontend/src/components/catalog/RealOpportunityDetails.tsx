@@ -564,8 +564,9 @@ export function RealOpportunityDetails({
           </TabsContent>
           <TabsContent value="preparation" className="space-y-6">
             <PreparationEntry
+              embedded
               opportunityId={item.id}
-              renderWorkspace={(id) => <AccountPreparation opportunityId={id} />}
+              renderWorkspace={(id) => <AccountPreparation opportunityId={id} embedded />}
             />
           </TabsContent>
         </Tabs>

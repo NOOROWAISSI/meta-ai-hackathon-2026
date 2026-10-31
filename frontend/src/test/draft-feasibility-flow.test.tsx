@@ -144,6 +144,17 @@ async function showDraft() {
   await screen.findByRole("heading", { name: "Review your preparation draft." });
   return screen.getByRole("complementary", { name: "Time and workload preview" });
 }
+it("avoids a duplicate event title and page heading in the embedded workspace", async () => {
+  render(
+    <QueryClientProvider client={query}>
+      <h1>Parent event title</h1>
+      <AccountPreparation opportunityId="E01" embedded />
+    </QueryClientProvider>,
+  );
+  await screen.findByRole("heading", { name: "Your next steps", level: 2 });
+  expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+  expect(screen.queryByRole("link", { name: "Back to opportunity" })).toBeNull();
+});
 
 it("discloses the frozen 9h beginner workload against about 4h before explicit acceptance", async () => {
   const original = structuredClone(candidate);

@@ -216,7 +216,14 @@ function AccountPlanIndex() {
     </div>
   );
 }
-export function AccountPreparation({ opportunityId }: { opportunityId: string }) {
+export function AccountPreparation({
+  opportunityId,
+  embedded = false,
+}: {
+  opportunityId: string;
+  embedded?: boolean;
+}) {
+  const Heading = embedded ? "h2" : "h1";
   const auth = useAuth();
   const query = useQueryClient();
   const key = ["account", auth?.user?.id, "preparation", opportunityId];
@@ -285,7 +292,7 @@ export function AccountPreparation({ opportunityId }: { opportunityId: string })
     void query.invalidateQueries({ queryKey: ["account", auth?.user?.id] });
     void data.refetch();
   };
-  const back = (
+  const back = !embedded && (
     <Link to="/" search={{ opportunity: opportunityId }} className="prep-back">
       <ArrowLeft className="size-4 rtl:rotate-180" aria-hidden />
       Back to opportunity
@@ -441,8 +448,8 @@ export function AccountPreparation({ opportunityId }: { opportunityId: string })
             <Sparkles className="size-4" aria-hidden />
             Preparation & progress
           </p>
-          <h1>{bundle.opportunity.title}</h1>
-          <p className="prep-organizer">{bundle.opportunity.organizer}</p>
+          <Heading>{embedded ? "Your next steps" : bundle.opportunity.title}</Heading>
+          {!embedded && <p className="prep-organizer">{bundle.opportunity.organizer}</p>}
         </div>
         <div className="prep-header-metric">
           <strong>{plan ? done + " / " + tasks.length : "Setup"}</strong>
