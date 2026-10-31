@@ -1,0 +1,189 @@
+{
+  "checkedAtUtc": "2026-10-31T02:23:10.313356Z",
+  "endpoint": "127.0.0.1:33307",
+  "database": "nextstep",
+  "matchedDemoAccounts": 1,
+  "results": [
+    {
+      "revision": 9,
+      "updatedAt": "2026-10-31T02:20:43.757548",
+      "savedMeta": true,
+      "plans": [
+        {
+          "opportunity": "meta-global-ai-2026",
+          "plan": {
+            "id": "86a28d4da18348dca4a9ee7a1a4486d4",
+            "goals": [
+              {
+                "id": "seed-goal-0",
+                "statement": "Prepare a small hackathon prototype and a clear project walkthrough."
+              },
+              {
+                "id": "seed-goal-1",
+                "statement": "Review the selected organizer's published submission checklist before committing."
+              }
+            ],
+            "tasks": [
+              {
+                "id": "9ffbbfded0d1416c90d9a6652ab7dae7",
+                "title": "Scope and build small AI prototype using Python, React, and APIs",
+                "status": "not_started",
+                "target": {
+                  "kind": "goal",
+                  "goalId": "seed-goal-0"
+                },
+                "priority": "should",
+                "deliverable": "Working small prototype plus brief scope note linking reported stack to chosen real-world problem or technical idea",
+                "resourceIds": [
+                  "resource-microsoft-ai-concepts",
+                  "resource-google-ml-crash-course"
+                ],
+                "artifactUrls": [],
+                "estimatedHours": 12,
+                "completionCriteria": "Prototype runs for demo; scope note lists problem idea, main user flow, Python/React/API components used, and AI approach considered",
+                "remainingEstimatedHours": 12
+              },
+              {
+                "id": "7857bb6162b24d14b092eb681becc273",
+                "title": "Draft clear project walkthrough for prototype",
+                "status": "not_started",
+                "target": {
+                  "kind": "goal",
+                  "goalId": "seed-goal-0"
+                },
+                "priority": "could",
+                "deliverable": "Short walkthrough document or script with demo steps and architecture overview",
+                "resourceIds": [],
+                "artifactUrls": [],
+                "estimatedHours": 3,
+                "completionCriteria": "Walkthrough covers what was built, how Python/React/APIs connect, AI behavior observed, and how to run the demo without prior context",
+                "remainingEstimatedHours": 3
+              },
+              {
+                "id": "23a5e99ec6fd447fa0a625c81e3a6e5b",
+                "title": "Review published submission checklist from organizer materials",
+                "status": "not_started",
+                "target": {
+                  "kind": "goal",
+                  "goalId": "seed-goal-1"
+                },
+                "priority": "should",
+                "deliverable": "Checklist summary noting submission items, track rule, and portal location as stated in organizer materials",
+                "resourceIds": [],
+                "artifactUrls": [],
+                "estimatedHours": 2,
+                "completionCriteria": "Summary references only organizer-published checklist items; open questions listed before further commitment",
+                "remainingEstimatedHours": 2
+              },
+              {
+                "id": "f1028f3ecb854978a62ca2fd6c876f82",
+                "title": "Prepare portal submission package",
+                "status": "done",
+                "target": {
+                  "kind": "requirement",
+                  "requirementId": "meta-global-ai-2026-s-portal"
+                },
+                "priority": "must",
+                "deliverable": "Draft submission package prepared for entry through the official event portal",
+                "resourceIds": [],
+                "artifactUrls": [],
+                "estimatedHours": 2,
+                "completionCriteria": "Package contains project details and links or files ready for portal entry; entry made only through official portal",
+                "remainingEstimatedHours": 0
+              },
+              {
+                "id": "69df1656a063450c8fb7d9413a6fe97b",
+                "title": "Document original work and license compliance",
+                "status": "not_started",
+                "target": {
+                  "kind": "requirement",
+                  "requirementId": "meta-global-ai-2026-s-rights"
+                },
+                "priority": "must",
+                "deliverable": "Originality and licensing note listing own code and any third-party code, data, or models with licenses",
+                "resourceIds": [],
+                "artifactUrls": [],
+                "estimatedHours": 2.5,
+                "completionCriteria": "All components marked as original or attributed with applicable license conditions noted; no unverified ownership claims",
+                "remainingEstimatedHours": 2.5
+              },
+              {
+                "id": "af81ec6ddf9c4b44a40d9ef9210ac719",
+                "title": "Select one track and align prototype",
+                "status": "not_started",
+                "target": {
+                  "kind": "requirement",
+                  "requirementId": "meta-global-ai-2026-s-track"
+                },
+                "priority": "must",
+                "deliverable": "Single-track selection note aligned to prototype scope",
+                "resourceIds": [],
+                "artifactUrls": [],
+                "estimatedHours": 1.5,
+                "completionCriteria": "One track recorded as selection; prototype description kept consistent with single-track entry",
+                "remainingEstimatedHours": 1.5
+              }
+            ],
+            "budget": {
+              "assumption": "untimed",
+              "evaluatedAt": "2026-10-31T02:20:43.6636740+00:00",
+              "hoursPerWeek": 5,
+              "availableHours": null,
+              "deadlineInstant": null,
+              "remainingEffortHours": 21
+            },
+            "context": {
+              "opportunityId": "meta-global-ai-2026",
+              "profileVersion": 1,
+              "sourceRevision": "meta-public-source-review-2026-10-29-v1",
+              "submissionVersion": 2
+            },
+            "version": 5,
+            "warnings": [
+              "Tasks build on reported Python, React, and APIs experience to prepare a small prototype and walkthrough, review the organizer checklist, and address mandatory portal, original-work, and single-track requirements. AI background materials are attached only to prototype scoping where terminology and practical ML introduction are relevant; other tasks use no listed resource. Time information is incomplete so no schedule is promised.",
+              "Progress is self-reported and does not change eligibility or submission facts.",
+              "Submission timing is unconfirmed; this is untimed guidance.",
+              "Submission source coverage remains incomplete; task coverage does not establish submission completeness."
+            ],
+            "taskOrder": [
+              "9ffbbfded0d1416c90d9a6652ab7dae7",
+              "7857bb6162b24d14b092eb681becc273",
+              "23a5e99ec6fd447fa0a625c81e3a6e5b",
+              "f1028f3ecb854978a62ca2fd6c876f82",
+              "69df1656a063450c8fb7d9413a6fe97b",
+              "af81ec6ddf9c4b44a40d9ef9210ac719"
+            ],
+            "feasibility": "untimed"
+          }
+        }
+      ],
+      "candidates": [],
+      "submission": {
+        "items": [
+          {
+            "state": "unknown",
+            "evidenceLevel": "self_report",
+            "requirementId": "meta-global-ai-2026-s-rights",
+            "criterionResults": {}
+          },
+          {
+            "state": "unknown",
+            "evidenceLevel": "self_report",
+            "requirementId": "meta-global-ai-2026-s-track",
+            "criterionResults": {}
+          },
+          {
+            "state": "missing",
+            "evidenceLevel": "self_report",
+            "requirementId": "meta-global-ai-2026-s-portal",
+            "criterionResults": {
+              "presence": "reported_not_met"
+            }
+          }
+        ],
+        "version": 2,
+        "opportunityId": "meta-global-ai-2026"
+      }
+    }
+  ]
+}
