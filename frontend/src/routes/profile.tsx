@@ -3,6 +3,8 @@ import { ProfileScreen } from "@/components/profile/ProfileScreen";
 import { AccountBoundary } from "@/components/account/AccountBoundary";
 import { useQuery } from "@tanstack/react-query";
 import { realCatalogService } from "@/lib/catalog/service";
+import { accountApi } from "@/lib/account/api";
+import { ageConditions } from "@/lib/profile/age-conditions";
 
 export const Route = createFileRoute("/profile")({
   validateSearch: (search: Record<string, unknown>): { event?: string; returnTo?: "plans" } => ({
@@ -30,9 +32,16 @@ function ProfileRoute() {
     staleTime: 300000,
   });
   const selected = catalog.data?.find((item) => item.id === event);
+  const record = useQuery({
+    queryKey: ["canonical-opportunity", event],
+    queryFn: () => accountApi.opportunity(event!),
+    enabled: !!event && selected?.kind === "hackathon",
+    retry: false,
+  });
   return (
     <AccountBoundary>
       <ProfileScreen
+        ageRequirements={ageConditions(record.data)}
         {...(event ? { eventId: event } : {})}
         {...(selected ? { contextEvent: selected } : {})}
         returnToPlans={returnTo === "plans"}

@@ -69,7 +69,10 @@ export function RealOpportunityDetails({
   const publishedSubmission = planningRecord.data?.timelineEvents.find(
     (milestone) => milestone.kind === "submission_close" && milestone.claims.length,
   );
-  const context = item && savedProfile ? briefingContext(item, savedProfile, language) : null;
+  const context =
+    item && savedProfile
+      ? briefingContext(item, savedProfile, language, planningRecord.data?.sourceRevision ?? null)
+      : null;
   const contextKey = context ? JSON.stringify(context) : null;
   const analysis = useQuery({
     queryKey: ["real-opportunity-briefing", auth?.user?.id, contextKey],
@@ -515,6 +518,7 @@ export function RealOpportunityDetails({
                   </button>
                   {analysis.isError && (
                     <p role="alert" className="prep-error mt-4">
+                      {analysis.error.message}{" "}
                       {t(
                         "The explanation failed. Your profile and original opportunity details are unchanged. Retry when ready.",
                         "تعذّر التفسير. ملفك والتفاصيل الأصلية ما تغيّروا؛ جرّب مجددًا.",
@@ -556,6 +560,42 @@ export function RealOpportunityDetails({
                           ))}
                         </ul>
                       </div>
+                    </div>
+                  )}
+                  {!!analysis.data?.sources?.length && (
+                    <div className="mt-4 border-t border-border pt-4 text-xs">
+                      <p className="font-semibold">
+                        {t(
+                          "Original sources used for this explanation",
+                          "المصادر الأصلية لهذا التفسير",
+                        )}
+                      </p>
+                      {analysis.data.generatedAt && (
+                        <p className="mt-2 text-muted-foreground">
+                          {t("Generated", "تم إنشاء التفسير")}:{" "}
+                          {new Date(analysis.data.generatedAt).toLocaleString()}
+                        </p>
+                      )}
+                      <ul className="mt-2 space-y-2">
+                        {analysis.data.sources.map((source) => (
+                          <li key={source.url}>
+                            <a
+                              href={source.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary underline"
+                            >
+                              {source.label}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="mt-2 text-muted-foreground">
+                        {t(
+                          "AI explanation; verify important conditions in the original source. Relevance does not confirm eligibility.",
+                          "تفسير بالذكاء الاصطناعي؛ راجع الشروط المهمة بالمصدر الأصلي. الملاءمة لا تعني تأكيد أهلية المشاركة.",
+                        )}
+                      </p>
                     </div>
                   )}
                 </>

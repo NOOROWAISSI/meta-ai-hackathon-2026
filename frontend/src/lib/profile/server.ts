@@ -14,6 +14,10 @@ export function fromAccountProfile(value: ProfileEnvelope): UserProfile {
     ...editor,
     displayName: editor.displayName ?? value.displayName,
     version: p.version,
+    reportedAge: p.reportedAge.state === "known" ? p.reportedAge.value : null,
+    majorityReached:
+      p.majority.reached.state === "known" ? (p.majority.reached.value ? "yes" : "no") : "unknown",
+    majorityJurisdiction: p.majority.jurisdiction ?? "",
     interests: p.interests,
     skills: p.skills.filter((s) => s.state === "reported_has").map((s) => s.label),
     weeklyHours: p.availableHoursPerWeek.state === "known" ? p.availableHoursPerWeek.value : null,
@@ -69,13 +73,31 @@ export function projectAccountProfile(
   previous?: UserProfile,
 ): StudentProfile {
   const projected = toStudentProfile(editor);
+  const reportedAt = new Date().toISOString();
   return {
     ...original,
     ...projected,
     id: original.id,
     version: original.version,
-    reportedAge: original.reportedAge,
-    majority: original.majority,
+    reportedAge:
+      editor.reportedAge === undefined || (previous && editor.reportedAge === previous.reportedAge)
+        ? original.reportedAge
+        : projected.reportedAge.state === "known"
+          ? { ...projected.reportedAge, reportedAt }
+          : projected.reportedAge,
+    majority:
+      editor.majorityReached === undefined ||
+      (previous &&
+        editor.majorityReached === previous.majorityReached &&
+        editor.majorityJurisdiction === previous.majorityJurisdiction)
+        ? original.majority
+        : {
+            ...projected.majority,
+            reached:
+              projected.majority.reached.state === "known"
+                ? { ...projected.majority.reached, reportedAt }
+                : projected.majority.reached,
+          },
     residence: { ...original.residence, country: projected.residence.country },
     team: { ...original.team, size: projected.team.size },
     ...(previous && editor.educationStatus === previous.educationStatus
