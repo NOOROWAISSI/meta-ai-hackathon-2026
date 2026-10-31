@@ -1,9 +1,9 @@
 # NextStep — Final QA & Frontend Improvement Brief
 
-**Date:** 31 October 2026  
-**Outcome:** 🟠 **CONDITIONAL GO** for the *tested local demo journey*  
-**Tested commit:** `10840279ca22fbd30fb79e8f72172041b32ae9f8` (PR #21)  
-**Audience:** Rofi & Noor  
+**Date:** 31 October 2026
+**Outcome:** 🟠 **CONDITIONAL GO** for the *tested local demo journey*
+**Tested commit:** `10840279ca22fbd30fb79e8f72172041b32ae9f8` (PR #21)
+**Audience:** Rofi & Noor
 **Scope:** Final browser E2E, functional risk, and screenshot-based frontend polish. **No code was changed.**
 
 > **Bottom line:** NextStep can demonstrate a complete journey from discovering an event to generating a preparation draft, accepting a plan, updating tasks, and retaining progress in MySQL. There is one reproducible accessibility bug, some important limitations to explain honestly, and a short list of visual improvements. This is *not* a full production release certification.
@@ -46,8 +46,8 @@
 
 ### QA-01 · P2 accessibility · Task-dialog focus is not restored
 
-**Owner:** Noor  
-**Where:** Accepted plan → **View task** dialog  
+**Owner:** Noor
+**Where:** Accepted plan → **View task** dialog
 **Reproduction:**
 
 1. Open `http://127.0.0.1:8080/plans?event=meta-global-ai-2026` in the test environment.
@@ -55,8 +55,8 @@
 3. Close the dialog with **Escape**.
 4. Inspect keyboard focus or press **Tab** to continue navigating.
 
-**Expected:** Focus returns to the exact **View task** button that opened the dialog.  
-**Observed:** Focus falls to the page **BODY**. Users navigating by keyboard can lose their place.  
+**Expected:** Focus returns to the exact **View task** button that opened the dialog.
+**Observed:** Focus falls to the page **BODY**. Users navigating by keyboard can lose their place.
 **Evidence:** [Focus snapshot](evidence/15-focus-after-escape.json); reproduced with keyboard and after mobile-width testing.
 
 **Acceptance criteria:**
