@@ -32,6 +32,7 @@ public static class PersonalBriefingChecks
     }
     public static void Register(Action<string,Func<Task>> test)
     {
+        PersonalBriefingTransportChecks.Register(test);
         test("reviewed event timing exposes registration separately and retains source conflicts",()=>{
             var catalog=new Catalog();var discovery=new DiscoveryCatalog(catalog);
             var cosmo=catalog.Get("E05");Check(Catalog.Instant(cosmo,"registration_close")==DateTimeOffset.Parse("2027-01-18T16:00:00-06:00"));
@@ -86,7 +87,7 @@ public static class PersonalBriefingChecks
         });
         test("personal Meta adapter sends the bounded structured schema through the approved endpoint",async()=>{
             var output=new BriefingText("A grounded HTTP API project overview.","Related to the reported goal.",[],["Clarify unpublished timing."]);
-            var handler=new StubHttp(JsonSerializer.Serialize(new{choices=new[]{new{message=new{content=JsonSerializer.Serialize(output,Wire.Json)}}}},Wire.Json));
+            var handler=new StubHttp(JsonSerializer.Serialize(new{choices=new[]{new{finish_reason="stop",message=new{content=JsonSerializer.Serialize(output,Wire.Json)}}}},Wire.Json));
             var model=new MetaPersonalBriefingModel(new HttpClient(handler),Options.Create(new MetaAiOptions{ApiKey="synthetic-meta-key-only"}));
             var result=await model.Explain(new(){["example"]="Synthetic context"},"ar",CancellationToken.None);
             Check(result.Overview==output.Overview && handler.Calls==1 && handler.RequestBody!.Contains("opportunity_briefing") && handler.RequestBody.Contains("json_schema") && handler.RequestBody.Contains("language"));

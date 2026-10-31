@@ -44,9 +44,11 @@ public sealed class MetaPersonalBriefingModel(HttpClient http, IOptions<MetaAiOp
             await using var stream = await response.Content.ReadAsStreamAsync(timeout.Token); using var body = new MemoryStream(); var buffer = new byte[4096]; int read;
             while ((read = await stream.ReadAsync(buffer, timeout.Token)) > 0) { if (body.Length + read > 65536) throw new ApiFault("invalid_model_output", "The explanation was too large. No result was accepted."); body.Write(buffer, 0, read); }
             using var envelope = JsonDocument.Parse(body.ToArray());
-            var message = envelope.RootElement.GetProperty("choices")[0].GetProperty("message");
+            var choices = envelope.RootElement.GetProperty("choices");
+            if (choices.GetArrayLength() != 1 || choices[0].GetProperty("finish_reason").GetString() != "stop") throw new JsonException();
+            var message = choices[0].GetProperty("message");
             if (message.TryGetProperty("refusal", out var refusal) && refusal.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(refusal.GetString())) throw new ApiFault("provider_unavailable", "Meta did not provide an explanation for this request.");
-            return JsonSerializer.Deserialize<BriefingText>(message.GetProperty("content").GetString()!, Wire.Json) ?? throw new JsonException();
+            return JsonSerializer.Deserialize<BriefingText>(message.GetProperty("content").GetString()!, new JsonSerializerOptions(Wire.Json) { UnmappedMemberHandling = System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow }) ?? throw new JsonException();
         } catch (OperationCanceledException) when (!ct.IsCancellationRequested) { throw new ApiFault("timeout", "The explanation timed out. Retry when ready.", true); }
           catch (HttpRequestException) { throw new ApiFault("provider_unavailable", "The Meta service could not be reached. Retry later.", true); }
           catch (Exception error) when (error is JsonException or KeyNotFoundException or InvalidOperationException or IndexOutOfRangeException or ArgumentNullException) { throw new ApiFault("invalid_model_output", "Meta returned an invalid explanation. Your saved information is unchanged.", true); }
