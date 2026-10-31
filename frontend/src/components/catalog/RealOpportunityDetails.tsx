@@ -17,6 +17,7 @@ import { useLocale } from "@/components/LocaleProvider";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { realCatalogService } from "@/lib/catalog/service";
 import { PreferenceActions } from "@/components/account/AccountOpportunities";
+import { SourceFreshness } from "./SourceFreshness";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useVisitState } from "@/components/VisitMemory";
 import { AccountFitConstellation } from "./AccountFitConstellation";
@@ -504,6 +505,17 @@ export function RealOpportunityDetails({
         </Tabs>
         <section className="flex flex-wrap items-center justify-between gap-5 rounded-3xl border border-border bg-card/40 p-5 sm:p-6">
           <div className="max-w-2xl">
+            <SourceFreshness item={item} />
+            {item.sourcePageUrl && item.sourcePageUrl !== item.officialUrl && (
+              <a
+                href={item.sourcePageUrl}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="mt-2 inline-flex min-h-11 items-center text-xs text-primary underline underline-offset-4"
+              >
+                {t("Page containing the published information", "الصفحة التي نُشرت فيها المعلومات")}
+              </a>
+            )}
             <h2 className="font-semibold">
               {t("Want the organizer’s full details?", "بدك التفاصيل الكاملة من الجهة؟")}
             </h2>

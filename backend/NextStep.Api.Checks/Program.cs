@@ -231,8 +231,9 @@ Test("Google stays explicitly unavailable without credentials; the real catalog 
     if (!config["googleEnabled"]!.GetValue<bool>()) Assert((await client.GetAsync("/api/auth/google")).StatusCode == HttpStatusCode.ServiceUnavailable);
     Assert(AuthEndpoints.SafeReturn("https://untrusted.invalid") == "/" && AuthEndpoints.SafeReturn("//untrusted.invalid") == "/");
     var listings = (await client.GetFromJsonAsync<ListingSummary[]>("/api/listings", Wire.Json))!;
-    Assert(listings.Count(item => item.Kind == "course") == 7 && listings.All(item => item.OfficialUrl.StartsWith("https://")));
-    Assert(listings.Where(item => item.Kind == "course").All(item => item.RegistrationDeadline is null));
+    var baseline = new DiscoveryCatalog(new Catalog()).Listings().Where(item => item.Kind == "course").ToArray();
+    Assert(baseline.Length == 7 && baseline.All(item => listings.Any(current => current.Id == item.Id)) && listings.All(item => item.OfficialUrl.StartsWith("https://")));
+    Assert(baseline.All(item => item.RegistrationDeadline is null));
     var sources = (await client.GetFromJsonAsync<SourceRegistration[]>("/api/sources", Wire.Json))!;
     Assert(sources.Single(s => s.Id == "prime-academy-user").Url == "https://www.instagram.com/primeacademy12/");
     Assert(sources.Single(s => s.Id == "knowledge-academy-user").Url == "https://www.instagram.com/eknowledge.learn/");
@@ -551,6 +552,7 @@ Test("listing projections retain ambiguous date text without inventing a trusted
     return Task.CompletedTask;
 });
 
+SourceCollectionChecks.Register(Test);
 Test("configured Google challenge uses same-origin callback, profile-only scopes and PKCE", async () => {
     await using var host = new Factory(google: true);
     var client = host.CreateClient(new() { AllowAutoRedirect = false, BaseAddress = new Uri("https://localhost:8082") });

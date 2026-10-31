@@ -20,6 +20,7 @@ import { useVisitState } from "@/components/VisitMemory";
 import { realCatalogService, type ListingSummary } from "@/lib/catalog/service";
 import { useLocale } from "@/components/LocaleProvider";
 import { formatContractInstant } from "@/lib/contract/time";
+import { SourceFreshness } from "./SourceFreshness";
 import { isCatalogTranslationEnabled, translateCatalog } from "@/lib/catalog/translation";
 import {
   PreferenceActions,
@@ -44,6 +45,14 @@ export function RealOpportunities() {
     queryKey: ["real-listings"],
     queryFn: realCatalogService.listings,
     staleTime: 300000,
+    refetchInterval: 300000,
+    retry: false,
+  });
+  const collection = useQuery({
+    queryKey: ["source-collection-status"],
+    queryFn: realCatalogService.collectionStatus,
+    staleTime: 300000,
+    refetchInterval: 300000,
     retry: false,
   });
   const sources = useQuery({
@@ -134,6 +143,29 @@ export function RealOpportunities() {
             {catalog.data?.length ?? "—"}
           </span>
         </header>
+        {collection.data && (
+          <p
+            className="flex flex-wrap items-center gap-2 px-1 text-xs leading-6 text-muted-foreground"
+            role="status"
+          >
+            <span
+              className={`size-2 rounded-full ${collection.data.enabled ? "bg-primary" : "bg-muted-foreground"}`}
+              aria-hidden
+            />
+            {collection.data.enabled
+              ? t(
+                  `Official sources checked every ${collection.data.intervalHours} hours while the server is running.`,
+                  `فحص المصادر الرسمية كل ${collection.data.intervalHours} ساعة أثناء تشغيل السيرفر.`,
+                )
+              : t("Scheduled source checks are paused.", "الفحص الدوري للمصادر متوقف.")}
+            {collection.data.lastAttemptAt
+              ? t(
+                  `Last attempt: ${new Date(collection.data.lastAttemptAt).toLocaleString(language)}`,
+                  `آخر محاولة: ${new Date(collection.data.lastAttemptAt).toLocaleString(language)}`,
+                )
+              : t("First check pending.", "بانتظار أول فحص.")}
+          </p>
+        )}
         {language === "ar" && (
           <div className="prep-demo-notice" role="status">
             {!isCatalogTranslationEnabled()
@@ -158,8 +190,8 @@ export function RealOpportunities() {
         )}
         <p className="prep-demo-notice">
           {t(
-            "Real source snapshots · registration, access, and personal participation conditions must be checked separately. New sources are reviewed before their announcements appear here.",
-            "معلومات من مصادر حقيقية؛ التسجيل وإمكانية الوصول وشروط المشاركة تُراجع بشكل منفصل. نراجع المصادر الجديدة قبل عرض إعلاناتها.",
+            "Real source snapshots · registration, access, and personal participation conditions must be checked separately. Automatically extracted listings may appear before human review and are labelled as needing verification.",
+            "معلومات من مصادر حقيقية؛ التسجيل وإمكانية الوصول وشروط المشاركة تُراجع بشكل منفصل. قد تظهر الإعلانات المستخرجة آليًا قبل المراجعة البشرية، وتُوسم بأنها بحاجة للتحقق.",
           )}
         </p>
         <div className="glass rounded-3xl p-5">
@@ -319,6 +351,7 @@ export function RealOpportunities() {
                         </span>
                       </div>
                       <div className="flex flex-1 flex-col gap-4 p-5 pt-8">
+                        <SourceFreshness item={item} />
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <span className="prep-priority">
                             {t(
@@ -339,7 +372,7 @@ export function RealOpportunities() {
                                 ? t("In person", "وجاهي")
                                 : item.format === "hybrid"
                                   ? t("Hybrid", "مدمج")
-                                  : item.format}
+                                  : t("Format not specified", "طريقة المشاركة غير محددة")}
                           </span>
                         </div>
                         <div>
@@ -486,6 +519,30 @@ export function RealOpportunities() {
                   </a>
                 </div>
                 <p className="mt-1 text-xs leading-6 text-muted-foreground">{source.note}</p>
+                {collection.data?.sources
+                  ?.filter((check) => check.sourceId === source.id)
+                  .map((check) => (
+                    <p
+                      key={check.sourceId}
+                      className="mt-2 text-xs leading-6 text-muted-foreground"
+                    >
+                      {check.outcome === "checked"
+                        ? t("Page retrieved", "تم جلب الصفحة")
+                        : check.outcome === "manual_review_required"
+                          ? t(
+                              "Requires a public source or platform integration",
+                              "بحاجة لمصدر عام أو ربط مع المنصة",
+                            )
+                          : t(
+                              "Source could not be checked; previous information retained",
+                              "تعذّر فحص المصدر؛ احتفظنا بالمعلومات السابقة",
+                            )}
+                      {" · "}
+                      <time dateTime={check.lastAttemptAt}>
+                        {new Date(check.lastAttemptAt).toLocaleString(language)}
+                      </time>
+                    </p>
+                  ))}
                 {source.verificationUrl && (
                   <a
                     href={source.verificationUrl}

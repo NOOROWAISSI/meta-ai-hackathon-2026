@@ -1,50 +1,80 @@
 using System.Net;
-using System.Text;
 using System.Text.RegularExpressions;
 using MySqlConnector;
 
 namespace NextStep.Api;
 
-/// <summary>Bounded, allowlisted public-page intake. It discovers candidate links,
-/// never publishes organizer rules or bypasses social-platform authentication.</summary>
-public sealed class SourceCollector(DiscoveryCatalog catalog, MySqlStateStore store)
+/// <summary>Bounded official-source discovery, shared by the scheduler and explicit CLI runs.</summary>
+public sealed class SourceCollector(DiscoveryCatalog catalog, MySqlStateStore store, IOfficialPageReader pages, DiscoveryFeed feed, IConfiguration configuration, ILogger<SourceCollector> logger)
 {
     private static readonly Regex Links = new("<a\\b[^>]*href\\s*=\\s*[\"'](?<url>[^\"']+)[\"'][^>]*>(?<text>.*?)</a>", RegexOptions.IgnoreCase | RegexOptions.Singleline, TimeSpan.FromSeconds(1));
     private static readonly Regex Tags = new("<[^>]+>", RegexOptions.Singleline, TimeSpan.FromSeconds(1));
-    private static readonly Regex Interesting = new("course|training|workshop|hackathon|competition|event|دورة|تدريب|ورشة|مسابقة", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-    public async Task Collect(CancellationToken ct)
+    private static readonly Regex Interesting = new("course|training|workshop|hackathon|competition|event|دورة|تدريب|ورشة|مسابقة|هاكاثون", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+    public Task Collect(CancellationToken ct) => CollectDue(true, ct);
+    public Task CollectDue(bool force, CancellationToken ct) => CollectSources(catalog.Sources(), force, ct);
+    internal async Task CollectSources(SourceRegistration[] sources, bool force, CancellationToken ct)
     {
-        using var handler = new HttpClientHandler { AllowAutoRedirect = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate };
-        using var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(12) };
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("NextStep-SourceReview/0.1");
-        foreach (var source in catalog.Sources()) {
-            var links = new List<(string Url, string Title)>(); var state = "manual_review_required"; string? hash = null;
-            if (source.Collection == "public_html") try {
-                var address = new Uri(source.Url);
-                using var response = await client.GetAsync(address, HttpCompletionOption.ResponseHeadersRead, ct);
-                state = "http_" + (int)response.StatusCode;
-                if (response.IsSuccessStatusCode && response.Content.Headers.ContentType?.MediaType is "text/html" or "application/xhtml+xml") {
-                    await using var body = await response.Content.ReadAsStreamAsync(ct); using var buffer = new MemoryStream();
-                    var chunk = new byte[8192]; int read;
-                    while ((read = await body.ReadAsync(chunk, ct)) > 0) { if (buffer.Length + read > 524288) throw new InvalidDataException("Page exceeds review limit"); buffer.Write(chunk, 0, read); }
-                    var text = Encoding.UTF8.GetString(buffer.ToArray()); hash = MySqlStateStore.Hash(text);
-                    foreach (Match match in Links.Matches(text)) {
-                        var label = WebUtility.HtmlDecode(Tags.Replace(match.Groups["text"].Value, " ")).Trim();
-                        if (label.Length < 4 || !Interesting.IsMatch(label + " " + match.Groups["url"].Value) || !Uri.TryCreate(address, WebUtility.HtmlDecode(match.Groups["url"].Value), out var target) || target.Scheme != "https" || !string.Equals(target.Host, address.Host, StringComparison.OrdinalIgnoreCase) || !string.IsNullOrEmpty(target.UserInfo)) continue;
-                        var canonical = new UriBuilder(target) { Fragment = "", Query = "" }.Uri.AbsoluteUri;
-                        if (canonical.Length > 2000 || links.Any(link => link.Url == canonical)) continue;
-                        links.Add((canonical, label.Length <= 300 ? label : label[..300])); if (links.Count == 100) break;
-                    }
-                    state = "captured_for_review";
+        await using var gate = await store.Open(ct);
+        await using var acquire = new MySqlCommand("SELECT GET_LOCK('nextstep:source-collection:v1',0)", gate);
+        if (Convert.ToInt32(await acquire.ExecuteScalarAsync(ct)) != 1) return;
+        try {
+            foreach (var source in sources) {
+                ct.ThrowIfCancellationRequested();
+                if (!force && !await IsDue(source.Id, ct)) continue;
+                if (source.Collection != "public_html") { await Save(source.Id, [], "manual_review_required", null, ct); continue; }
+                var root = new Uri(source.Url); var result = await pages.Read(root, ct);
+                List<(string Url, string Title)> links = result.Html is null ? [] : CandidateLinks(result.Html, root);
+                await Save(source.Id, links, result.State, result.Html is null ? null : MySqlStateStore.Hash(result.Html), ct);
+                await Capture(source, root, result, ct);
+                var known = await KnownPages(source.Id, ct);
+                var maximum = Math.Clamp(configuration.GetValue("SourceCollection:MaxPagesPerSource", 4), 1, 10);
+                var existing = known.Where(url => url != root.AbsoluteUri).ToArray();
+                foreach (var url in existing.Take((maximum - 1) / 2).Concat(links.Select(link => link.Url).Where(url => !known.Contains(url))).Concat(existing.Skip((maximum - 1) / 2)).Distinct(StringComparer.Ordinal).Where(url => url != root.AbsoluteUri).Take(maximum - 1)) {
+                    await Task.Delay(500, ct);
+                    var page = new Uri(url);
+                    if (StructuredOpportunityReader.CanonicalUrl(url, root) is null) continue;
+                    await Capture(source, page, await pages.Read(page, ct), ct);
                 }
-            } catch (OperationCanceledException) when (!ct.IsCancellationRequested) { state = "timeout"; }
-              catch (HttpRequestException) { state = "source_unavailable"; }
-              catch (InvalidDataException) { state = "page_too_large"; }
-              catch (RegexMatchTimeoutException) { state = "parse_limit"; }
-            await Save(source.Id, links, state, hash, ct);
-            Console.WriteLine($"{source.Id}: {state}; {links.Count} candidate links, none automatically published");
-            await Task.Delay(300, ct);
+                logger.LogInformation("Source {Source}: {State}; {Count} candidate links", source.Id, result.State, links.Count);
+            }
+        } finally {
+            await using var release = new MySqlCommand("SELECT RELEASE_LOCK('nextstep:source-collection:v1')", gate);
+            await release.ExecuteScalarAsync(CancellationToken.None);
         }
+    }
+    private async Task Capture(SourceRegistration source, Uri page, SourcePage result, CancellationToken ct)
+    {
+        ListingSummary[] listings = [];
+        if (result.Html is not null) try { listings = StructuredOpportunityReader.Read(result.Html, page, source).Concat(GoogleCourseCatalogReader.Read(result.Html, page, source)).DistinctBy(item => item.OfficialUrl).ToArray(); }
+            catch (RegexMatchTimeoutException) { result = new("parse_limit", null); }
+        await feed.StorePage(source, page, result, listings, ct);
+    }
+    public static List<(string Url, string Title)> CandidateLinks(string html, Uri address)
+    {
+        var links = new List<(string Url, string Title)>();
+        try {
+            foreach (Match match in Links.Matches(html)) {
+                var label = WebUtility.HtmlDecode(Tags.Replace(match.Groups["text"].Value, " ")).Trim();
+                var url = StructuredOpportunityReader.CanonicalUrl(match.Groups["url"].Value, address);
+                if (url is null || label.Length < 4 || !Interesting.IsMatch(label + " " + url) || links.Any(link => link.Url == url)) continue;
+                links.Add((url, label.Length <= 300 ? label : label[..300])); if (links.Count == 100) break;
+            }
+        } catch (RegexMatchTimeoutException) { }
+        return links;
+    }
+    private async Task<bool> IsDue(string source, CancellationToken ct)
+    {
+        await using var db = await store.Open(ct);
+        await using var query = new MySqlCommand("SELECT checked_at,result FROM source_runs WHERE source_id=@id", db); query.Parameters.AddWithValue("@id", source);
+        await using var row = await query.ExecuteReaderAsync(ct); if (!await row.ReadAsync(ct)) return true;
+        var hours = row.GetString(1) is "checked" or "manual_review_required" ? Math.Clamp(configuration.GetValue("SourceCollection:IntervalHours", 12), 1, 168) : 1;
+        return DateTime.UtcNow - row.GetDateTime(0) >= TimeSpan.FromHours(hours);
+    }
+    private async Task<string[]> KnownPages(string source, CancellationToken ct)
+    {
+        await using var db = await store.Open(ct);
+        await using var query = new MySqlCommand("SELECT url FROM source_pages WHERE source_id=@id ORDER BY attempted_at,url_hash LIMIT 20", db); query.Parameters.AddWithValue("@id", source);
+        var urls = new List<string>(); await using var rows = await query.ExecuteReaderAsync(ct); while (await rows.ReadAsync(ct)) urls.Add(rows.GetString(0)); return urls.ToArray();
     }
     internal async Task Save(string id, List<(string Url, string Title)> links, string state, string? hash, CancellationToken ct)
     {
@@ -52,7 +82,7 @@ public sealed class SourceCollector(DiscoveryCatalog catalog, MySqlStateStore st
         await using var run = new MySqlCommand("INSERT INTO source_runs(source_id,checked_at,result,candidate_count,content_hash) VALUES(@id,@now,@state,@count,@hash) ON DUPLICATE KEY UPDATE checked_at=@now,result=@state,candidate_count=@count,content_hash=@hash", db, tx);
         run.Parameters.AddWithValue("@id", id); run.Parameters.AddWithValue("@now", now); run.Parameters.AddWithValue("@state", state); run.Parameters.AddWithValue("@count", links.Count); run.Parameters.AddWithValue("@hash", (object?)hash ?? DBNull.Value); await run.ExecuteNonQueryAsync(ct);
         foreach (var link in links) {
-            await using var insert = new MySqlCommand("INSERT INTO intake_candidates(id,source_id,url,title_hint,first_seen_at,last_seen_at) VALUES(@id,@source,@url,@title,@now,@now) ON DUPLICATE KEY UPDATE last_seen_at=@now", db, tx);
+            await using var insert = new MySqlCommand("INSERT INTO intake_candidates(id,source_id,url,title_hint,first_seen_at,last_seen_at) VALUES(@id,@source,@url,@title,@now,@now) ON DUPLICATE KEY UPDATE last_seen_at=@now,title_hint=@title", db, tx);
             insert.Parameters.AddWithValue("@id", MySqlStateStore.Hash(link.Url)); insert.Parameters.AddWithValue("@source", id); insert.Parameters.AddWithValue("@url", link.Url); insert.Parameters.AddWithValue("@title", link.Title); insert.Parameters.AddWithValue("@now", now); await insert.ExecuteNonQueryAsync(ct);
         }
         await tx.CommitAsync(ct);
