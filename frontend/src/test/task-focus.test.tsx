@@ -46,7 +46,7 @@ for (const dismissal of ["Escape", "Close"] as const) {
     const dialog = await screen.findByRole("dialog");
     await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
     if (dismissal === "Escape") fireEvent.keyDown(document.activeElement!, { key: "Escape" });
-      else fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    else fireEvent.click(screen.getByRole("button", { name: "Close" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     await waitFor(() => expect(opener).toHaveFocus());
     expect(screen.getByRole("button", { name: "Previous task" })).not.toHaveFocus();
