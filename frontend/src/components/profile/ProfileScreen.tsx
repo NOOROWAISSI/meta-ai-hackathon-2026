@@ -42,6 +42,7 @@ import { ProfileSections, SECTIONS } from "./ProfileSections";
 import { ProfileIdentity } from "./ProfileIdentity";
 import { ProfileVisualSummary } from "./ProfileVisualSummary";
 import type { AgeConditions } from "@/lib/profile/age-conditions";
+import { ProfileEvidenceWorkspace } from "./ProfileEvidenceWorkspace";
 
 const ICONS = [GraduationCap, Compass, BookOpen, Clock3];
 
@@ -51,12 +52,14 @@ export function ProfileScreen({
   returnToPlans = false,
   contextEvent,
   ageRequirements,
+  evidenceEnabled = false,
 }: {
   eventId?: string;
   service?: ProfileService;
   returnToPlans?: boolean;
   contextEvent?: { id: string; title: string };
   ageRequirements?: AgeConditions | undefined;
+  evidenceEnabled?: boolean;
 }) {
   const navigate = useNavigate();
   const event = contextEvent;
@@ -318,6 +321,19 @@ export function ProfileScreen({
             </p>
           </div>
         </header>
+
+        {evidenceEnabled && (
+          <ProfileEvidenceWorkspace
+            disabled={loadState !== "ready" || dirty || status === "saving"}
+            onChanged={() => {
+              if (dirtyRef.current)
+                setMessage(
+                  "Your saved sources changed while you were editing. Your form draft is preserved; review the saved profile before submitting it.",
+                );
+              else setLoadAttempt((attempt) => attempt + 1);
+            }}
+          />
+        )}
 
         {loadState === "ready" && (
           <ProfileIdentity

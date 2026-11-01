@@ -25,6 +25,10 @@ builder.Services.AddSingleton<DiscoveryCatalog>();
 builder.Services.AddSingleton<ResourceCatalog>();
 builder.Services.AddHttpClient<IPersonalBriefingModel, MetaPersonalBriefingModel>(client => client.Timeout = TimeSpan.FromSeconds(95)).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false, PooledConnectionLifetime = TimeSpan.FromMinutes(5) });
 builder.Services.AddSingleton<PersonalBriefingService>();
+builder.Services.AddSingleton<EvidenceRepository>();
+builder.Services.AddTransient<ProfileEvidenceService>();
+builder.Services.AddHttpClient<IEvidenceIntelligence, MetaEvidenceIntelligence>(client => client.Timeout = TimeSpan.FromSeconds(95)).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
+builder.Services.AddHttpClient<PublicGitHubSources>(client => client.Timeout = TimeSpan.FromSeconds(20)).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
 builder.Services.AddSingleton<SourceCollector>();
 builder.Services.AddSingleton<DiscoveryFeed>();
 builder.Services.AddSingleton<IOfficialPageReader, OfficialPageReader>();
@@ -78,7 +82,7 @@ app.Use(async (http, next) => {
 app.UseRateLimiter();
 app.UseAuthentication();
 app.MapControllers();
-if (args.Contains("--migrate")) { await app.Services.GetRequiredService<MySqlStateStore>().Migrate(CancellationToken.None); Console.WriteLine("MySQL migrations applied through version 5."); return; }
+if (args.Contains("--migrate")) { await app.Services.GetRequiredService<MySqlStateStore>().Migrate(CancellationToken.None); Console.WriteLine("MySQL migrations applied through version 6."); return; }
 if (args.Contains("--seed-students")) {
     var result = await app.Services.GetRequiredService<DemoStudentSeed>().Run(DemoStudentSeed.Students, CancellationToken.None);
     Console.WriteLine($"Demo students: {result.Created} created, {result.Skipped} already present and unchanged. See backend/DEMO-STUDENTS.md for test sign-in details.");

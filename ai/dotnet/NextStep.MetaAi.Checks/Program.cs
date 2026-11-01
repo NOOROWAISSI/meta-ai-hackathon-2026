@@ -468,9 +468,17 @@ Sync("evaluation provenance survives unavailable Git and source paths", () => {
         p.SourceFingerprint.StartsWith("sha256:") && p.SourceFingerprint.Length == 71);
 });
 Sync("evaluation provenance survives nonrepository Git failure", () => {
-    var p = Provenance(root: Path.GetTempPath());
-    Assert(p.GitCommitSha is null && p.RelevantSourceHasUncommittedChanges is null && p.SourceMatchesWorkingTree == false &&
-        p.SourceFingerprint == Provenance().SourceFingerprint);
+    // TEMP may sit inside a real parent repository. A private invalid marker
+    // guarantees Git fails locally instead of discovering that unrelated parent.
+    var fixture = Path.Combine(Path.GetTempPath(), "nextstep-nonrepo-" + Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(fixture);
+    var marker = Path.Combine(fixture, ".git");
+    try {
+        File.WriteAllText(marker, "gitdir: " + Path.Combine(fixture, "missing-git-directory"));
+        var p = Provenance(root: fixture);
+        Assert(p.GitCommitSha is null && p.RelevantSourceHasUncommittedChanges is null && p.SourceMatchesWorkingTree == false &&
+            p.SourceFingerprint == Provenance().SourceFingerprint);
+    } finally { File.Delete(marker); Directory.Delete(fixture); }
 });
 Sync("evaluation prompt identity changes independently of scenarios", () => {
     var sources = Sources(); sources["ai/dotnet/NextStep.MetaAi/MetaModelClient.cs"] = Encoding.UTF8.GetBytes("changed prompt");

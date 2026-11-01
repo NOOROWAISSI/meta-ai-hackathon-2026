@@ -684,6 +684,7 @@ Test("stale-profile progress preserves accepted context and never adopts new cap
     Assert((await data.Client.GetFromJsonAsync<SubmissionState>("/api/submissions/E01", Wire.Json))!.Version == data.Submission.Version);
 });
 PersonalBriefingChecks.Register(Test);
+ProfileEvidenceChecks.Register(Test);
 var passed = 0;
 try {
     foreach (var test in cases) {
