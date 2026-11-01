@@ -19,6 +19,7 @@ import { realCatalogService } from "@/lib/catalog/service";
 import { PreferenceActions } from "@/components/account/AccountOpportunities";
 import { SourceFreshness } from "./SourceFreshness";
 import { MetaSnapshot } from "./MetaSnapshot";
+import { EvidenceOpportunityInsight } from "./EvidenceOpportunityInsight";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useVisitState } from "@/components/VisitMemory";
 import { AccountFitConstellation } from "./AccountFitConstellation";
@@ -82,7 +83,11 @@ export function RealOpportunityDetails({
         await analysisService.explain({ context: context!, listing: item! }, signal),
         context!,
       ),
-    enabled: analysisService.available && !!context && requestedContext === contextKey,
+    enabled:
+      analysisService !== metaBriefingService &&
+      analysisService.available &&
+      !!context &&
+      requestedContext === contextKey,
     retry: false,
     staleTime: Infinity,
   });
@@ -477,72 +482,82 @@ export function RealOpportunityDetails({
               kind={item.kind}
               {...(savedProfile ? { profile: savedProfile } : {})}
             />
-            <section
-              className="border-y border-primary/15 py-6"
-              aria-labelledby="meta-briefing-title"
-              dir={language === "ar" ? "rtl" : "ltr"}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 id="meta-briefing-title" className="flex items-center gap-2 text-lg font-bold">
-                  <Sparkles className="size-5 text-primary" aria-hidden />
-                  {t("Meta snapshot", "ملخّص Meta")}
-                </h2>
-                <span className="text-xs text-muted-foreground">
-                  {analysisService.available
-                    ? t("AI explanation · check against sources", "تفسير AI · راجعه مع المصادر")
-                    : t("Awaiting backend integration", "بانتظار ربط خدمة التحليل")}
-                </span>
-              </div>
-              {!analysisService.available ? (
-                <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
-                  {t(
-                    "Personal snapshots are not connected yet. Public event details remain available above.",
-                    "الملخّص الشخصي لسه مش موصول. تفاصيل الفرصة العامة متاحة فوق.",
-                  )}
-                </p>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    className="detail-secondary mt-4"
-                    disabled={!context || analysis.isFetching}
-                    onClick={() => {
-                      setRequestedContext(contextKey);
-                      if (requestedContext === contextKey) void analysis.refetch();
-                    }}
+            {analysisService === metaBriefingService ? (
+              <EvidenceOpportunityInsight
+                key={auth?.user?.id ?? "guest"}
+                opportunityId={opportunityId}
+              />
+            ) : (
+              <section
+                className="border-y border-primary/15 py-6"
+                aria-labelledby="meta-briefing-title"
+                dir={language === "ar" ? "rtl" : "ltr"}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h2
+                    id="meta-briefing-title"
+                    className="flex items-center gap-2 text-lg font-bold"
                   >
-                    {analysis.isFetching && (
-                      <LoaderCircle className="size-4 animate-spin" aria-hidden />
+                    <Sparkles className="size-5 text-primary" aria-hidden />
+                    {t("Meta snapshot", "ملخّص Meta")}
+                  </h2>
+                  <span className="text-xs text-muted-foreground">
+                    {analysisService.available
+                      ? t("AI explanation · check against sources", "تفسير AI · راجعه مع المصادر")
+                      : t("Awaiting backend integration", "بانتظار ربط خدمة التحليل")}
+                  </span>
+                </div>
+                {!analysisService.available ? (
+                  <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
+                    {t(
+                      "Personal snapshots are not connected yet. Public event details remain available above.",
+                      "الملخّص الشخصي لسه مش موصول. تفاصيل الفرصة العامة متاحة فوق.",
                     )}
-                    {analysis.isFetching
-                      ? t("Preparing explanation…", "جارٍ تجهيز التفسير…")
-                      : t("Compare my starting point", "قارن نقطة بدايتي")}
-                  </button>
-                  {analysis.isError && (
-                    <p role="alert" className="prep-error mt-4">
-                      {analysis.error.message}{" "}
-                      {t(
-                        "The explanation failed. Your profile and original opportunity details are unchanged. Retry when ready.",
-                        "تعذّر التفسير. ملفك والتفاصيل الأصلية ما تغيّروا؛ جرّب مجددًا.",
+                  </p>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="detail-secondary mt-4"
+                      disabled={!context || analysis.isFetching}
+                      onClick={() => {
+                        setRequestedContext(contextKey);
+                        if (requestedContext === contextKey) void analysis.refetch();
+                      }}
+                    >
+                      {analysis.isFetching && (
+                        <LoaderCircle className="size-4 animate-spin" aria-hidden />
                       )}
-                    </p>
-                  )}
-                  {requestedContext && requestedContext !== contextKey && (
-                    <p role="status" className="mt-3 text-sm text-muted-foreground">
-                      {t(
-                        "Your profile changed. Compare again to use the confirmed starting point.",
-                        "البروفايل تغيّر؛ حدّث المقارنة عشان تستخدم نقطة البداية المؤكدة.",
-                      )}
-                    </p>
-                  )}
-                  <MetaSnapshot
-                    briefing={analysis.data}
+                      {analysis.isFetching
+                        ? t("Preparing explanation…", "جارٍ تجهيز التفسير…")
+                        : t("Compare my starting point", "قارن نقطة بدايتي")}
+                    </button>
+                    {analysis.isError && (
+                      <p role="alert" className="prep-error mt-4">
+                        {analysis.error.message}{" "}
+                        {t(
+                          "The explanation failed. Your profile and original opportunity details are unchanged. Retry when ready.",
+                          "تعذّر التفسير. ملفك والتفاصيل الأصلية ما تغيّروا؛ جرّب مجددًا.",
+                        )}
+                      </p>
+                    )}
+                    {requestedContext && requestedContext !== contextKey && (
+                      <p role="status" className="mt-3 text-sm text-muted-foreground">
+                        {t(
+                          "Your profile changed. Compare again to use the confirmed starting point.",
+                          "البروفايل تغيّر؛ حدّث المقارنة عشان تستخدم نقطة البداية المؤكدة.",
+                        )}
+                      </p>
+                    )}
+                    <MetaSnapshot
+                      briefing={analysis.data}
 
-                    loading={analysis.isFetching}
-                  />
-                </>
-              )}
-            </section>
+                      loading={analysis.isFetching}
+                    />
+                  </>
+                )}
+              </section>
+            )}
           </TabsContent>
           <TabsContent value="preparation" className="space-y-6">
             <PreparationEntry

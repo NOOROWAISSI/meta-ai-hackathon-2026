@@ -41,6 +41,7 @@ function ProfileRoute() {
   return (
     <AccountBoundary>
       <ProfileScreen
+        evidenceEnabled
         ageRequirements={ageConditions(record.data)}
         {...(event ? { eventId: event } : {})}
         {...(selected ? { contextEvent: selected } : {})}
