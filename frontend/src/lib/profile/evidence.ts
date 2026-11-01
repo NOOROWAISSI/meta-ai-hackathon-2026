@@ -57,6 +57,7 @@ export interface InsightSection {
   evidenceIds: string[];
 }
 export interface InsightView {
+  analysisVersion?: number;
   profileVersion: number;
   sourcesVersion: number;
   sourceRevision: string;
@@ -64,6 +65,14 @@ export interface InsightView {
   generatedAt?: string;
   outdated?: boolean;
   analysis: {
+    recommendation?: {
+      decision:
+        "recommended" | "prepare_first" | "already_covered" | "not_aligned" | "needs_clarification";
+      reason: string;
+      benefit: string;
+      nextStep: string;
+      evidenceIds: string[];
+    };
     summary: string;
     connections: InsightSection[];
     gaps: InsightSection[];
@@ -73,6 +82,27 @@ export interface InsightView {
 }
 const base = "/profile/evidence";
 export const evidenceService = {
+  answer: async (
+    id: string,
+    view: EvidenceView,
+    language: string,
+    question: string,
+    answer: string,
+  ) => {
+    const result = await apiJson<EvidenceView>(
+      "/listings/" + encodeURIComponent(id) + "/comparison-answer",
+      "POST",
+      {
+        profileVersion: view.profileVersion,
+        sourcesVersion: view.workspace.version,
+        language,
+        question,
+        answer,
+      },
+    );
+    accountDataChanged();
+    return result;
+  },
   savedComparison: (id: string, language: string, signal?: AbortSignal) =>
     apiJson<InsightView | null>(
       "/listings/" +
