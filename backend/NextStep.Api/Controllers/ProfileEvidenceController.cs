@@ -47,4 +47,6 @@ public sealed class ProfileEvidenceController(ProfileEvidenceService service, Pu
     public async Task<IActionResult> SavedComparison(string id, [FromQuery] string language, CancellationToken ct) => new JsonResult(await service.SavedComparison(await Owner(ct), id, language, ct));
     [HttpPost("/api/listings/{id}/comparison-answer")]
     public async Task<IActionResult> Answer(string id, ComparisonAnswer request, CancellationToken ct) => Ok(await service.Answer(await Owner(ct), id, request, ct));
+    [HttpPost("/api/listings/{id}/comparison-correction")]
+    public async Task<IActionResult> Correct(string id, ExperienceCorrection request, CancellationToken ct) => Ok(await service.CorrectExperience(await Owner(ct), id, request, ct));
 }

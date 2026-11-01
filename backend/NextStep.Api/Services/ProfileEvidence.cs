@@ -32,6 +32,7 @@ public sealed record OpportunityRecommendation(string Decision, string Reason, s
 public sealed record OpportunityInsight(string Summary, InsightSection[] Connections, InsightSection[] Gaps, string[] Questions, string[] PreparationPriorities, OpportunityRecommendation? Recommendation = null);
 public sealed record InsightRequest(int ProfileVersion, int SourcesVersion, bool Consent, string Language);
 public sealed record ComparisonAnswer(int ProfileVersion, int SourcesVersion, string Language, string Question, string Answer);
+public sealed record ExperienceCorrection(int ProfileVersion, int SourcesVersion, string Language, string Experience);
 public sealed record InsightView(int ProfileVersion, int SourcesVersion, string SourceRevision, OpportunityInsight Analysis, string Language = "en", string? GeneratedAt = null, bool Outdated = false, int AnalysisVersion = 1);
 public interface IEvidenceIntelligence {
     Task<ExtractionOutput> Extract(ProfessionalSource[] sources, string language, CancellationToken ct);
@@ -182,7 +183,7 @@ public sealed class ProfileEvidenceService(EvidenceRepository repository, IEvide
         var record = catalog.All().SingleOrDefault(x => x.Id == id);
         var revision = Revision(listing, record);
         return await repository.Read(owner, (s, e) => e.Comparisons.TryGetValue(id + ":" + language, out var saved)
-            ? saved with { Outdated = saved.AnalysisVersion != 2 || saved.ProfileVersion != s.Profile.Version || saved.SourcesVersion != e.Version || saved.SourceRevision != revision }
+            ? saved with { Outdated = saved.AnalysisVersion != 3 || saved.ProfileVersion != s.Profile.Version || saved.SourcesVersion != e.Version || saved.SourceRevision != revision }
             : null, ct);
     }
     public async Task<InsightView> Compare(string owner, string id, InsightRequest request, CancellationToken ct) {
@@ -193,7 +194,7 @@ public sealed class ProfileEvidenceService(EvidenceRepository repository, IEvide
         var snapshot = await repository.Read(owner, (s, e) => {
             Current(s, e, request.ProfileVersion, request.SourcesVersion);
             return new {
-                facts = CurrentFacts(s.Profile, e).Where(f => !f.Id.StartsWith("opportunity-decision:", StringComparison.Ordinal) || f.Id.StartsWith(AnswerPrefix(id, revision), StringComparison.Ordinal)).Select(f => new { f.Id, f.Kind, Value = ProfessionalDocuments.Clean(f.Value), Contribution = ProfessionalDocuments.Clean(f.Contribution),
+                facts = CurrentFacts(s.Profile, e).Where(f => !f.Id.StartsWith("opportunity-decision:", StringComparison.Ordinal) || f.Id.StartsWith(AnswerPrefix(id, revision), StringComparison.Ordinal) || f.Id.StartsWith("opportunity-decision:" + MySqlStateStore.Hash(id + "|" + revision)[..16] + ":", StringComparison.Ordinal)).Select(f => new { f.Id, f.Kind, Value = ProfessionalDocuments.Clean(f.Value), Contribution = ProfessionalDocuments.Clean(f.Contribution),
                     basis = f.References.Length > 0 ? "student_confirmed_source_fact" : "student_profile_statement",
                     supportingPassages = f.References.Select(reference => new { reference.Quote, sourceKind = e.Sources.FirstOrDefault(source => source.Id == reference.SourceId)?.Kind, locator = e.Sources.FirstOrDefault(source => source.Id == reference.SourceId)?.Chunks.FirstOrDefault(chunk => chunk.Id == reference.ChunkId)?.Locator }).ToArray()
                 }).ToArray(),
@@ -215,14 +216,17 @@ public sealed class ProfileEvidenceService(EvidenceRepository repository, IEvide
         if (revision != Revision(latest, catalog.All().SingleOrDefault(x => x.Id == id))) throw new ApiFault("version_conflict", "The opportunity changed during analysis. Request a fresh comparison.");
         return await repository.Transaction(owner, (s, e) => {
             Current(s, e, request.ProfileVersion, request.SourcesVersion);
-            var result = new InsightView(request.ProfileVersion, request.SourcesVersion, revision, analysis, request.Language, DateTimeOffset.UtcNow.ToString("O"), AnalysisVersion: 2);
+            var result = new InsightView(request.ProfileVersion, request.SourcesVersion, revision, analysis, request.Language, DateTimeOffset.UtcNow.ToString("O"), AnalysisVersion: 3);
             e.Comparisons[id + ":" + request.Language] = result;
             if (e.Comparisons.Count > 12) e.Comparisons.Remove(e.Comparisons.OrderBy(pair => pair.Value.GeneratedAt).First().Key);
             return result;
         }, ct);
     }
-    private static string AnswerPrefix(string id, string revision) => "opportunity-decision:" + MySqlStateStore.Hash(id + "|" + revision)[..16] + ":";
-    public async Task<EvidenceView> Answer(string owner, string id, ComparisonAnswer request, CancellationToken ct) {
+    private static string OpportunityAnswerPrefix(string id) => "opportunity-decision:" + MySqlStateStore.Hash(id)[..16] + ":";
+    private static string AnswerPrefix(string id, string revision) => OpportunityAnswerPrefix(id) + MySqlStateStore.Hash(revision)[..16] + ":";
+    public static string[] PlanningClarifications(StudentProfile profile, string opportunityId) => profile.ClarificationAnswers.Where(a => a.QuestionId.StartsWith(OpportunityAnswerPrefix(opportunityId), StringComparison.Ordinal)).Select(a => "Student-confirmed opportunity experience, not an organizer requirement: " + a.Answer).ToArray();
+    public Task<EvidenceView> CorrectExperience(string owner, string id, ExperienceCorrection request, CancellationToken ct) => Answer(owner, id, new(request.ProfileVersion, request.SourcesVersion, request.Language, request.Language == "ar" ? "شو بتعرف أصلًا من موضوع هاي الفرصة؟" : "What do you already know about this opportunity's subject?", request.Experience), ct, true);
+    public async Task<EvidenceView> Answer(string owner, string id, ComparisonAnswer request, CancellationToken ct, bool correction = false) {
         Input.Require(request.Language is "en" or "ar" && request.Question is { Length: > 0 and <= 1500 } && !string.IsNullOrWhiteSpace(request.Answer) && request.Answer.Length <= 1500, "Provide a short answer to the selected question.");
         Input.Require(request.Question.Length + request.Answer.Trim().Length <= 980, "Keep the clarification under the profile's 1,000-character answer limit.");
         var listing = (await feed.Listings(ct)).SingleOrDefault(x => x.Id == id) ?? throw new ApiFault("not_found", "The opportunity is unavailable.");
@@ -234,7 +238,7 @@ public sealed class ProfileEvidenceService(EvidenceRepository repository, IEvide
             if (e.Version == request.SourcesVersion && s.Profile.Version == (long)request.ProfileVersion + 1 && s.Profile.ClarificationAnswers.Any(a => a.QuestionId == questionId && a.Answer == confirmedText)) return new EvidenceView(s.Profile.Version, e, CurrentFacts(s.Profile, e));
             Current(s, e, request.ProfileVersion, request.SourcesVersion);
             var saved = e.Comparisons.GetValueOrDefault(id + ":" + request.Language);
-            Input.Require(saved is not null && saved.AnalysisVersion == 2 && saved.ProfileVersion == s.Profile.Version && saved.SourceRevision == revision && saved.Analysis.Questions.Contains(request.Question, StringComparer.Ordinal), "This question is outdated. Update the comparison before answering.");
+            Input.Require(saved is not null && saved.AnalysisVersion == 3 && saved.ProfileVersion == s.Profile.Version && saved.SourceRevision == revision && (correction || saved.Analysis.Questions.Contains(request.Question, StringComparer.Ordinal)), "This comparison is outdated. Update it before confirming experience.");
             var others = s.Profile.ClarificationAnswers.Where(a => a.QuestionId != questionId).ToArray();
             Input.Require(others.Length < 30, "The clarification limit was reached; existing information was preserved.");
             var answer = new ClarificationAnswer(questionId, confirmedText, DateTimeOffset.UtcNow.ToString("O"));
