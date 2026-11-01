@@ -82,6 +82,25 @@ export interface InsightView {
 }
 const base = "/profile/evidence";
 export const evidenceService = {
+  correctExperience: async (
+    id: string,
+    view: EvidenceView,
+    language: string,
+    experience: string,
+  ) => {
+    const result = await apiJson<EvidenceView>(
+      "/listings/" + encodeURIComponent(id) + "/comparison-correction",
+      "POST",
+      {
+        profileVersion: view.profileVersion,
+        sourcesVersion: view.workspace.version,
+        language,
+        experience,
+      },
+    );
+    accountDataChanged();
+    return result;
+  },
   answer: async (
     id: string,
     view: EvidenceView,

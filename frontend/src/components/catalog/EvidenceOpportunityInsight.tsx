@@ -20,8 +20,15 @@ export function EvidenceOpportunityInsight({ opportunityId }: { opportunityId: s
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [showCorrection, setShowCorrection] = useState(false);
+  const [correctionText, setCorrectionText] = useState("");
+  const [correctionSaved, setCorrectionSaved] = useState(false);
+  const correctionLock = useRef(false);
   const generation = useRef(0);
+  const contextEpoch = useRef(0);
   useEffect(() => {
+    contextEpoch.current++;
+    const epoch = contextEpoch;
     let active = true;
     const requestGeneration = generation;
     const controller = new AbortController();
@@ -50,11 +57,17 @@ export function EvidenceOpportunityInsight({ opportunityId }: { opportunityId: s
     setView(undefined);
     setConsent(false);
     setAnswers({});
+    setShowCorrection(false);
+    setCorrectionText("");
+    setCorrectionSaved(false);
     setError("");
+    setBusy(false);
+    correctionLock.current = false;
     refresh();
     window.addEventListener("nextstep:account-data", refresh);
     return () => {
       active = false;
+      epoch.current++;
       requestGeneration.current++;
       controller.abort();
       window.removeEventListener("nextstep:account-data", refresh);
@@ -68,20 +81,23 @@ export function EvidenceOpportunityInsight({ opportunityId }: { opportunityId: s
       insight.sourcesVersion !== view.workspace.version);
   async function compare() {
     if (!view || busy || !consent) return;
+    const epoch = contextEpoch.current;
     const ticket = ++generation.current;
     setBusy(true);
     setError("");
+    setCorrectionSaved(false);
     try {
       const result = await evidenceService.compare(opportunityId, view, language);
       if (ticket === generation.current) setInsight(result);
     } catch (e) {
       if (ticket === generation.current) setError((e as Error).message);
     } finally {
-      setBusy(false);
+      if (epoch === contextEpoch.current) setBusy(false);
     }
   }
   async function confirmAnswer(question: string) {
     if (!view || busy || outdated || !answers[question]?.trim()) return;
+    const epoch = contextEpoch.current;
     setBusy(true);
     setError("");
     try {
@@ -92,12 +108,41 @@ export function EvidenceOpportunityInsight({ opportunityId }: { opportunityId: s
         question,
         answers[question]!.trim(),
       );
+      if (epoch !== contextEpoch.current) return;
       setView(saved);
       setAnswers((previous) => ({ ...previous, [question]: "" }));
     } catch (failure) {
-      setError((failure as Error).message);
+      if (epoch === contextEpoch.current) setError((failure as Error).message);
     } finally {
-      setBusy(false);
+      if (epoch === contextEpoch.current) setBusy(false);
+    }
+  }
+  async function saveCorrection() {
+    if (!view || busy || outdated || correctionLock.current || !correctionText.trim()) return;
+    const epoch = contextEpoch.current;
+    correctionLock.current = true;
+    setBusy(true);
+    setError("");
+    setCorrectionSaved(false);
+    try {
+      const updated = await evidenceService.correctExperience(
+        opportunityId,
+        view,
+        language,
+        correctionText.trim(),
+      );
+      if (epoch !== contextEpoch.current) return;
+      setView(updated);
+      setShowCorrection(false);
+      setCorrectionText("");
+      setCorrectionSaved(true);
+    } catch (failure) {
+      if (epoch === contextEpoch.current) setError((failure as Error).message);
+    } finally {
+      if (epoch === contextEpoch.current) {
+        correctionLock.current = false;
+        setBusy(false);
+      }
     }
   }
   return (
@@ -196,8 +241,8 @@ export function EvidenceOpportunityInsight({ opportunityId }: { opportunityId: s
       {outdated && (
         <p role="status" className="mt-4 text-sm text-amber-500">
           {t(
-            "Outdated explanation · your profile or sources changed. Request an updated comparison.",
-            "تحليل قديم · ملفك أو مصادرك تغيّرت؛ اطلب تحديث المقارنة.",
+            "Outdated explanation · your profile, sources or recommendation method changed. Update the comparison first.",
+            "تحليل قديم · الملف أو المصادر أو طريقة التوصية تغيّرت؛ حدّث المقارنة أولًا.",
           )}
         </p>
       )}
@@ -207,6 +252,12 @@ export function EvidenceOpportunityInsight({ opportunityId }: { opportunityId: s
             <div className="rounded-2xl border border-primary/25 bg-gradient-to-br from-cyan-400/10 to-violet-500/10 p-5 sm:p-6">
               <p className="text-xs font-semibold uppercase tracking-widest text-primary">
                 {t("My recommendation for you", "توصيتي إلك")}
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {t(
+                  "Based on your current profile · a recommendation you can correct",
+                  "حسب ملفك الحالي · توصية بتقدر تصحّحها",
+                )}
               </p>
               <h3 className="mt-2 text-xl font-bold">
                 {
@@ -247,6 +298,72 @@ export function EvidenceOpportunityInsight({ opportunityId }: { opportunityId: s
                   </dd>
                 </div>
               </dl>
+              <button
+                type="button"
+                className="detail-secondary mt-4"
+                disabled={busy || outdated}
+                aria-expanded={showCorrection}
+                onClick={() => {
+                  setShowCorrection((value) => !value);
+                  setCorrectionSaved(false);
+                }}
+              >
+                {t("I already know this subject", "بعرف هالموضوع أصلًا")}
+              </button>
+              {showCorrection && (
+                <div className="mt-4 border-t border-primary/15 pt-4">
+                  <label
+                    htmlFor="existing-subject-experience"
+                    className="block text-sm font-medium"
+                  >
+                    {t(
+                      "What have you already learned or personally built in this subject?",
+                      "شو متعلّم أو شو بنيت بنفسك بهاد الموضوع؟",
+                    )}
+                  </label>
+                  <textarea
+                    id="existing-subject-experience"
+                    rows={3}
+                    maxLength={800}
+                    value={correctionText}
+                    disabled={busy}
+                    onChange={(event) => setCorrectionText(event.target.value)}
+                    className="mt-2 w-full rounded-xl border border-border bg-background/70 p-3 text-sm"
+                  />
+                  <p className="mt-2 text-xs leading-6 text-muted-foreground">
+                    {t(
+                      "A short example is enough. This records your own experience; it does not mark every topic mastered or any participation requirement satisfied.",
+                      "مثال مختصر بكفي. بنحفظ وصفك لتجربتك؛ مش معناته إنك أتقنت كل المواضيع أو استوفيت شروط المشاركة.",
+                    )}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className="detail-primary"
+                      disabled={busy || !correctionText.trim()}
+                      onClick={() => void saveCorrection()}
+                    >
+                      {t("Confirm my experience", "اعتمد تجربتي")}
+                    </button>
+                    <button
+                      type="button"
+                      className="detail-secondary"
+                      disabled={busy}
+                      onClick={() => setShowCorrection(false)}
+                    >
+                      {t("Cancel", "إلغاء")}
+                    </button>
+                  </div>
+                </div>
+              )}
+              {correctionSaved && (
+                <p role="status" className="mt-3 text-sm text-primary">
+                  {t(
+                    "Experience confirmed. Update my comparison to reconsider the recommendation. Your plan and completed tasks are preserved.",
+                    "تم اعتماد تجربتك. اضغط حدّث مقارنتي عشان يعيد النظر بالتوصية. خطتك والمهام المكتملة محفوظة.",
+                  )}
+                </p>
+              )}
               {!!insight.analysis.recommendation.evidenceIds.length && (
                 <details className="mt-4 text-xs">
                   <summary className="cursor-pointer text-primary">
