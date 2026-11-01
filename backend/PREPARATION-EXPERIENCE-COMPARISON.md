@@ -45,3 +45,32 @@ Question IDs bind to opportunity + canonical source revision (or listing summary
 - Local browser used only a synthetic provider and disposable account: unknown -> independent confirmation -> not-yet correction, controlled failed-save/Retry, explicit re-analysis, different actual actions for the same AI interest, quoted goal/project data, Arabic/390px layout and no implicit plan creation passed. Account removed.
 
 The owner explicitly chose **local tests only** for this revision. No live Meta call was performed for the new raw-description/starting-point flow. Previous topic-selector live evidence does not validate this revised model context. Final live semantic/compatibility review and any combined #28 composition remain separate gates; do not merge #27 or main on the strength of local-provider tests alone.
+
+## Professional profile evidence
+
+The profile evidence workspace extends the same explicit-confirmation boundary with source-backed CV, selected public GitHub, and LinkedIn information:
+
+- A signed-in student may upload a PDF or DOCX (maximum 5 MB), paste professional text, or attach a LinkedIn profile URL as provenance. A LinkedIn URL alone is never fetched; students must paste or upload the professional information they want analyzed.
+- GitHub imports are restricted to one selected public repository. The backend snapshots a bounded set of README/code files at a commit SHA, excludes common generated/dependency/secret paths, and never executes imported code. A repository does not establish who authored its contents.
+- Only extracted text is persisted; the uploaded binary is discarded. Sources are private to the owning account and may be deleted. Deleting a source removes its stored quotations, but leaves facts the student previously confirmed and existing plan progress intact.
+- The student reviews selected sources and explicitly consents before Meta proposes facts. Proposals must cite exact passages from selected sources and remain drafts until the student edits/selects them. A project requires a personal-contribution description before acceptance.
+- Accepted facts enter the existing profile/planning contract as student-confirmed information. Opportunity comparison requires separate consent and sends current professional facts/contributions (including manually entered skills, projects and background), reported availability, goals, practical constraints and participation preferences, plus the selected published opportunity. It does not send raw source documents/quotations or identity/contact fields. It is an explanation, not a verified-skill or eligibility decision.
+- Source/profile versions reject stale analysis and edits. Source reads do not increment the shared account revision. The companion `profile_evidence` table is migration 6; existing plan and submission records are not replaced.
+
+Evidence endpoints are authenticated: `GET /api/profile/evidence`, `POST /api/profile/evidence/text`, `POST /api/profile/evidence/upload`, `GET/POST /api/profile/evidence/github`, `POST /api/profile/evidence/analyze`, `POST /api/profile/evidence/accept`, `DELETE /api/profile/evidence/{id}`, and `POST /api/listings/{id}/evidence-comparison`.
+
+The LinkedIn workflow is user-provided text/document only. Reading full LinkedIn profiles requires permissions and API access this app does not have; do not imply that pasting a profile URL grants that access.
+
+### Scope and validation boundary
+
+This feature is an explicitly requested extension to the earlier MVP restriction against CV upload. It does not change the shared v0.2 `StudentProfile`, eligibility statuses, task statuses or plan schema. Companion provenance lives in migration 6 in the existing MySQL authority. No alternative browser profile/plan store is introduced.
+
+The normal opportunity UI uses the new evidence comparison, rather than the four-way starting-point selector. The earlier briefing endpoint remains backward-compatible for existing clients. No model call runs on page load, source import, profile save or source deletion. Source analysis and opportunity comparison each require a deliberate request and explicit consent.
+
+PDFs must contain readable text; scanned/encrypted/unreadable documents need a text PDF, DOCX or pasted text. DOCX parsing rejects external XML entities, macro payloads and oversized archives. GitHub supports public repositories only, up to 30 listed repositories and a bounded 10-file sample; reimport to obtain a newer commit snapshot. Only extracted text is stored. Contact/identity/secret redaction is best-effort, so students must inspect the selected text before consent.
+
+Exact-quotation and reference validation checks provenance, not semantic truth. Student confirmation does not independently prove authorship or competence. Rich generated prose needs a new synthetic live-provider compatibility and semantic-quality review with Rofi before merge; the previous closed-vocabulary briefing results cannot validate this new model interface. The owner requested local tests only, so no live Meta request or real student CV was used for this feature.
+
+Comparisons are persisted per opportunity/language in the private evidence workspace (maximum 12). `GET /api/listings/{id}/evidence-comparison?language=en|ar` restores a prior result without a model call and marks it outdated if the saved profile, sources or opportunity revision changed. A failed or late generation does not overwrite the previous result.
+
+Local validation: 110/110 ASP.NET/MySQL checks, including PDF/DOCX extraction, pinned GitHub transport fixtures, consent, fabricated quotations, owner isolation, idempotent acceptance, atomic rollback, stale response rejection, cached comparison freshness, canonical planning projection and retained Done progress. Frontend: 164/164 tests, TypeScript, changed-file lint, canonical fixture validation and production build. Browser: actual synthetic DOCX upload -> private MySQL source -> extraction via local adapter -> student contribution confirmation -> canonical profile -> reload -> selected real event comparison, with English/Arabic and a 390px viewport; disposable accounts removed afterward. Browser results are synthetic provider evidence, not a Meta quality assessment. The scheduled production collector is stopped during the integration suite because its shared advisory lock can legitimately cause collection fixtures to skip a run.
