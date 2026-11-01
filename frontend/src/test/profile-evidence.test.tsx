@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { ProfileEvidenceWorkspace } from "@/components/profile/ProfileEvidenceWorkspace";
@@ -13,6 +13,7 @@ const service = vi.hoisted(() => ({
   compare: vi.fn(),
   savedComparison: vi.fn(),
   answer: vi.fn(),
+  correctExperience: vi.fn(),
 }));
 vi.mock("@/lib/profile/evidence", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/profile/evidence")>()),
@@ -96,6 +97,101 @@ beforeEach(() => {
   service.savedComparison.mockResolvedValue(null);
 });
 afterEach(cleanup);
+
+const recommended = {
+  ...insight,
+  analysis: {
+    ...insight.analysis,
+    recommendation: {
+      decision: "recommended" as const,
+      reason: "Based on your saved profile, this introduction may add Python-specific practice.",
+      benefit: "Python exercises and tests, if not already covered by your work.",
+      nextStep: "Start with the published introductory exercise.",
+      evidenceIds: [],
+    },
+  },
+};
+
+it("does not save an existing-knowledge correction until the student confirms it", async () => {
+  service.savedComparison.mockResolvedValue(recommended);
+  render(<EvidenceOpportunityInsight opportunityId="selected-event" />);
+  fireEvent.click(await screen.findByRole("button", { name: "I already know this subject" }));
+  const input = screen.getByRole("textbox", { name: /What have you already learned/ });
+  fireEvent.change(input, {
+    target: { value: "I built Python tools with file handling and tests." },
+  });
+  expect(service.correctExperience).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+  expect(service.correctExperience).not.toHaveBeenCalled();
+  expect(service.compare).not.toHaveBeenCalled();
+});
+
+it("saves a student correction and requires deliberate re-analysis without creating mastery facts", async () => {
+  service.savedComparison.mockResolvedValue(recommended);
+  service.correctExperience.mockResolvedValue({ ...initial, profileVersion: 3 });
+  render(<EvidenceOpportunityInsight opportunityId="selected-event" />);
+  fireEvent.click(await screen.findByRole("button", { name: "I already know this subject" }));
+  fireEvent.change(screen.getByRole("textbox", { name: /What have you already learned/ }), {
+    target: { value: "I independently built Python command-line tools with tests." },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Confirm my experience" }));
+  await screen.findByText(/Experience confirmed/);
+  expect(service.correctExperience).toHaveBeenCalledWith(
+    "selected-event",
+    initial,
+    "en",
+    "I independently built Python command-line tools with tests.",
+  );
+  expect(service.compare).not.toHaveBeenCalled();
+  expect(screen.getByRole("button", { name: "I already know this subject" })).toBeDisabled();
+});
+
+it("retains an unsaved correction after a failed save and makes the same action retryable", async () => {
+  service.savedComparison.mockResolvedValue(recommended);
+  service.correctExperience.mockRejectedValueOnce(new Error("Correction storage failed"));
+  service.correctExperience.mockResolvedValueOnce({ ...initial, profileVersion: 3 });
+  render(<EvidenceOpportunityInsight opportunityId="selected-event" />);
+  fireEvent.click(await screen.findByRole("button", { name: "I already know this subject" }));
+  const input = screen.getByRole("textbox", { name: /What have you already learned/ });
+  fireEvent.change(input, { target: { value: "I already implemented Python file parsing." } });
+  fireEvent.click(screen.getByRole("button", { name: "Confirm my experience" }));
+  await screen.findByText(/Correction storage failed/);
+  expect(input).toHaveValue("I already implemented Python file parsing.");
+  expect(screen.queryByText(/Experience confirmed/)).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Confirm my experience" }));
+  await screen.findByText(/Experience confirmed/);
+  expect(service.correctExperience.mock.calls[1]).toEqual(service.correctExperience.mock.calls[0]);
+});
+
+it("does not apply a late correction response to a different opportunity", async () => {
+  let resolve!: (value: EvidenceView) => void;
+  service.savedComparison.mockResolvedValue(recommended);
+  service.correctExperience.mockReturnValueOnce(
+    new Promise<EvidenceView>((done) => {
+      resolve = done;
+    }),
+  );
+  const rendered = render(<EvidenceOpportunityInsight opportunityId="first-event" />);
+  fireEvent.click(await screen.findByRole("button", { name: "I already know this subject" }));
+  fireEvent.change(screen.getByRole("textbox", { name: /What have you already learned/ }), {
+    target: { value: "I built this before." },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Confirm my experience" }));
+  await waitFor(() => expect(service.correctExperience).toHaveBeenCalledOnce());
+  rendered.rerender(<EvidenceOpportunityInsight opportunityId="second-event" />);
+  await waitFor(() =>
+    expect(service.savedComparison).toHaveBeenCalledWith(
+      "second-event",
+      "en",
+      expect.any(AbortSignal),
+    ),
+  );
+  await act(async () => {
+    resolve({ ...initial, profileVersion: 3 });
+  });
+  expect(screen.queryByText(/Experience confirmed/)).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "I already know this subject" })).toBeEnabled();
+});
 
 it("confirms a focused answer without automatically requesting another AI analysis", async () => {
   service.savedComparison.mockResolvedValue({

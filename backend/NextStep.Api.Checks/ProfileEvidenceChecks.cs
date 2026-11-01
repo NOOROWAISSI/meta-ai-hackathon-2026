@@ -60,6 +60,27 @@ public static class ProfileEvidenceChecks {
         result.EnsureSuccessStatusCode(); return (await result.Content.ReadFromJsonAsync<EvidenceView>(Wire.Json))!;
     }
     public static void Register(Action<string, Func<Task>> test) {
+        test("prior knowledge correction is scoped, confirmed, retryable and does not assert mastery", () => Run(async (host, client, view) => {
+            const string eventId = "harvard-cs50-python";
+            var generated = await client.PostAsJsonAsync($"/api/listings/{eventId}/evidence-comparison", new InsightRequest(view.ProfileVersion, view.Workspace.Version, true, "en"), Wire.Json); generated.EnsureSuccessStatusCode();
+            var calls = host.Evidence.Calls;
+            var plans = await client.GetStringAsync("/api/plans");
+            var correction = new ExperienceCorrection(view.ProfileVersion, view.Workspace.Version, "en", "I built Python file-processing tools with functions and unit tests.");
+            var response = await client.PostAsJsonAsync($"/api/listings/{eventId}/comparison-correction", correction, Wire.Json); response.EnsureSuccessStatusCode();
+            var updated = (await response.Content.ReadFromJsonAsync<EvidenceView>(Wire.Json))!;
+            var profile = (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!;
+            Check(updated.ProfileVersion == view.ProfileVersion + 1 && profile.Skills.Length == 0 && host.Evidence.Calls == calls && await client.GetStringAsync("/api/plans") == plans);
+            Check(profile.ClarificationAnswers.Length == 1 && ProfileEvidenceService.PlanningClarifications(profile, eventId).Single().Contains(correction.Experience) && ProfileEvidenceService.PlanningClarifications(profile, "meta-global-ai-2026").Length == 0);
+            var repeated = await client.PostAsJsonAsync($"/api/listings/{eventId}/comparison-correction", correction, Wire.Json); repeated.EnsureSuccessStatusCode();
+            Check((await repeated.Content.ReadFromJsonAsync<EvidenceView>(Wire.Json))!.ProfileVersion == updated.ProfileVersion);
+            Check((await client.GetFromJsonAsync<InsightView>($"/api/listings/{eventId}/evidence-comparison?language=en", Wire.Json))!.Outdated);
+            (await client.PostAsJsonAsync($"/api/listings/{eventId}/evidence-comparison", new InsightRequest(updated.ProfileVersion, updated.Workspace.Version, true, "en"), Wire.Json)).EnsureSuccessStatusCode();
+            Check(host.Evidence.LastContext!["confirmed"]!.AsArray().Any(f => f!["value"]!.GetValue<string>().Contains(correction.Experience)));
+            var other = await client.PostAsJsonAsync("/api/listings/meta-global-ai-2026/evidence-comparison", new InsightRequest(updated.ProfileVersion, updated.Workspace.Version, true, "en"), Wire.Json); other.EnsureSuccessStatusCode();
+            Check(!host.Evidence.LastContext!["confirmed"]!.AsArray().Any(f => f!["value"]!.GetValue<string>().Contains(correction.Experience)));
+            var stale = await client.PostAsJsonAsync($"/api/listings/{eventId}/comparison-correction", correction with { Experience = "A different claim" }, Wire.Json);
+            Check(stale.StatusCode == HttpStatusCode.Conflict);
+        }));
         test("decision rejects already-covered claims based only on skill tags and rejects invented evidence", () => {
             foreach (var recommendation in new[] {
                 new OpportunityRecommendation("already_covered", "Known React", "No new value", "Skip", ["skill-react"]),
@@ -213,7 +234,7 @@ public static class ProfileEvidenceChecks {
         }));
         test("source acceptance preserves an existing plan and confirmed Done progress", () => Run(async (host, client, view) => {
             var original = (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!;
-            var updated = original with { Goals = [new("goal-evidence", "Prepare an interaction walkthrough")], AvailableHoursPerWeek = new JsonObject { ["state"] = "known", ["value"] = 5, ["reportedAt"] = DateTimeOffset.UtcNow.ToString("O") } };
+            var updated = original with { Goals = [new("goal-evidence", "Prepare an interaction walkthrough")], AvailableHoursPerWeek = new JsonObject { ["state"] = "known", ["value"] = 5, ["reportedAt"] = DateTimeOffset.UtcNow.ToString("O") }, ClarificationAnswers = [new("opportunity-decision:" + MySqlStateStore.Hash("E01")[..16] + ":fixture-source:fixture-question", "I already built independent Python file-processing tools.", DateTimeOffset.UtcNow.ToString("O"))] };
             (await client.PutAsJsonAsync("/api/profile", new ProfileUpdate(original.Version, updated), Wire.Json)).EnsureSuccessStatusCode();
             var profile = (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!;
             var opportunity = (await client.GetFromJsonAsync<Opportunity>("/api/opportunities/E01", Wire.Json))!;
@@ -233,6 +254,7 @@ public static class ProfileEvidenceChecks {
             host.Model.Prefix = "Adapt";
             var next = await client.PostAsJsonAsync("/api/opportunities/E01/plan-candidates", new AnalysisRequest(opportunity.SourceRevision, profile, submission, (await done.Content.ReadFromJsonAsync<Plan>(Wire.Json))!), Wire.Json); next.EnsureSuccessStatusCode();
             Check(host.Model.LastContext!.SelfReport.ReportedSkills.Any(s => s.Contains("React")));
+            Check(host.Model.LastContext.SelfReport.AcceptedExperience.Any(s => s.Contains("independent Python file-processing")));
         }));
         test("focused clarification preserves progress context and reaches the next comparison with weekly-hour units", () => Run(async (host, client, view) => {
             var profile = (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!;
