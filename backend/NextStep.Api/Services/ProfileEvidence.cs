@@ -28,9 +28,11 @@ public sealed record EvidenceAnalysisRequest(int ProfileVersion, int SourcesVers
 public sealed record FactAcceptance(int Index, string Value, string Contribution);
 public sealed record EvidenceAcceptance(string DraftId, int ProfileVersion, int SourcesVersion, FactAcceptance[] Facts);
 public sealed record InsightSection(string Title, string Explanation, string[] EvidenceIds);
-public sealed record OpportunityInsight(string Summary, InsightSection[] Connections, InsightSection[] Gaps, string[] Questions, string[] PreparationPriorities);
+public sealed record OpportunityRecommendation(string Decision, string Reason, string Benefit, string NextStep, string[] EvidenceIds);
+public sealed record OpportunityInsight(string Summary, InsightSection[] Connections, InsightSection[] Gaps, string[] Questions, string[] PreparationPriorities, OpportunityRecommendation? Recommendation = null);
 public sealed record InsightRequest(int ProfileVersion, int SourcesVersion, bool Consent, string Language);
-public sealed record InsightView(int ProfileVersion, int SourcesVersion, string SourceRevision, OpportunityInsight Analysis, string Language = "en", string? GeneratedAt = null, bool Outdated = false);
+public sealed record ComparisonAnswer(int ProfileVersion, int SourcesVersion, string Language, string Question, string Answer);
+public sealed record InsightView(int ProfileVersion, int SourcesVersion, string SourceRevision, OpportunityInsight Analysis, string Language = "en", string? GeneratedAt = null, bool Outdated = false, int AnalysisVersion = 1);
 public interface IEvidenceIntelligence {
     Task<ExtractionOutput> Extract(ProfessionalSource[] sources, string language, CancellationToken ct);
     Task<OpportunityInsight> Compare(JsonObject context, string language, CancellationToken ct);
@@ -74,6 +76,7 @@ public sealed class EvidenceRepository(MySqlStateStore store) {
 }
 
 public sealed class ProfileEvidenceService(EvidenceRepository repository, IEvidenceIntelligence intelligence, DiscoveryFeed feed, Catalog catalog) {
+    private static string Revision(ListingSummary? listing, Opportunity? record) => MySqlStateStore.Hash(JsonSerializer.Serialize(new { listing, record, learningOutline = listing is null ? null : ReviewedLearningOutlines.Get(listing.Id) }, Wire.Json));
     private static ConfirmedFact[] CurrentFacts(StudentProfile profile, EvidenceWorkspace workspace) {
         var adopted = workspace.Confirmed.Where(f => f.Kind switch {
             "skill" => profile.Skills.Any(x => x.Label == f.Value && x.State == "reported_has"),
@@ -82,9 +85,11 @@ public sealed class ProfileEvidenceService(EvidenceRepository repository, IEvide
             _ => profile.Background.Contains(f.Value, StringComparison.Ordinal)
         }).ToList();
         foreach (var skill in profile.Skills.Where(x => x.State == "reported_has" && !adopted.Any(f => f.Kind == "skill" && f.Value == x.Label))) adopted.Add(new("profile-skill-" + skill.Id, "skill", skill.Label, "", [], ""));
+        foreach (var skill in profile.Skills.Where(x => x.State == "reported_lacks")) adopted.Add(new("profile-gap-" + skill.Id, "reported_gap", skill.Label, "Student explicitly reported lacking this skill; scope/depth still needs interpretation.", [], ""));
         foreach (var project in profile.ProjectExperience.Where(x => !adopted.Any(f => f.Id == x.Id))) adopted.Add(new("profile-project-" + project.Id, "project", project.Description, "Student-entered project description; clarify personal contribution if unclear.", [], ""));
         foreach (var goal in profile.Goals.Where(x => !adopted.Any(f => f.Id == x.Id))) adopted.Add(new("profile-goal-" + goal.Id, "goal", goal.Statement, "", [], ""));
         if (!string.IsNullOrWhiteSpace(profile.Background)) adopted.Add(new("profile-background", "experience", ProfessionalDocuments.Clean(profile.Background), "", [], ""));
+        foreach (var answer in profile.ClarificationAnswers.Where(a => a.QuestionId.StartsWith("opportunity-decision:", StringComparison.Ordinal))) adopted.Add(new(answer.QuestionId, "experience", ProfessionalDocuments.Clean(answer.Answer), "Explicit student clarification, not independent verification.", [], answer.AnsweredAt));
         return adopted.ToArray();
     }
     public Task<EvidenceView> Read(string owner, CancellationToken ct) => repository.Read(owner, (s, e) => new EvidenceView(s.Profile.Version, e, CurrentFacts(s.Profile, e)), ct);
@@ -175,40 +180,73 @@ public sealed class ProfileEvidenceService(EvidenceRepository repository, IEvide
         Input.Require(language is "en" or "ar", "Choose English or Arabic.");
         var listing = (await feed.Listings(ct)).SingleOrDefault(x => x.Id == id) ?? throw new ApiFault("not_found", "The opportunity is unavailable.");
         var record = catalog.All().SingleOrDefault(x => x.Id == id);
-        var revision = MySqlStateStore.Hash(JsonSerializer.Serialize(new { listing, record }, Wire.Json));
+        var revision = Revision(listing, record);
         return await repository.Read(owner, (s, e) => e.Comparisons.TryGetValue(id + ":" + language, out var saved)
-            ? saved with { Outdated = saved.ProfileVersion != s.Profile.Version || saved.SourcesVersion != e.Version || saved.SourceRevision != revision }
+            ? saved with { Outdated = saved.AnalysisVersion != 2 || saved.ProfileVersion != s.Profile.Version || saved.SourcesVersion != e.Version || saved.SourceRevision != revision }
             : null, ct);
     }
     public async Task<InsightView> Compare(string owner, string id, InsightRequest request, CancellationToken ct) {
         Input.Require(request.Consent && request.Language is "en" or "ar", "Confirm that Meta may analyze your confirmed profile information.");
         var listing = (await feed.Listings(ct)).SingleOrDefault(x => x.Id == id) ?? throw new ApiFault("not_found", "The opportunity is unavailable.");
         var record = catalog.All().SingleOrDefault(x => x.Id == id);
-        var revision = MySqlStateStore.Hash(JsonSerializer.Serialize(new { listing, record }, Wire.Json));
+        var revision = Revision(listing, record);
         var snapshot = await repository.Read(owner, (s, e) => {
             Current(s, e, request.ProfileVersion, request.SourcesVersion);
             return new {
-                facts = CurrentFacts(s.Profile, e).Select(f => new { f.Id, f.Kind, Value = ProfessionalDocuments.Clean(f.Value), Contribution = ProfessionalDocuments.Clean(f.Contribution) }).ToArray(),
-                availability = s.Profile.AvailableHoursPerWeek,
+                facts = CurrentFacts(s.Profile, e).Where(f => !f.Id.StartsWith("opportunity-decision:", StringComparison.Ordinal) || f.Id.StartsWith(AnswerPrefix(id, revision), StringComparison.Ordinal)).Select(f => new { f.Id, f.Kind, Value = ProfessionalDocuments.Clean(f.Value), Contribution = ProfessionalDocuments.Clean(f.Contribution),
+                    basis = f.References.Length > 0 ? "student_confirmed_source_fact" : "student_profile_statement",
+                    supportingPassages = f.References.Select(reference => new { reference.Quote, sourceKind = e.Sources.FirstOrDefault(source => source.Id == reference.SourceId)?.Kind, locator = e.Sources.FirstOrDefault(source => source.Id == reference.SourceId)?.Chunks.FirstOrDefault(chunk => chunk.Id == reference.ChunkId)?.Locator }).ToArray()
+                }).ToArray(),
+                availability = new { fact = s.Profile.AvailableHoursPerWeek, unit = "hours_per_week", meaning = "Available preparation hours each week; not an unspecified number. Zero is zero; unknown remains unknown." },
+                sourceCoverage = new { uploadedSources = e.Sources.Count, adoptedSourceFacts = e.Confirmed.Count, pendingReview = e.Draft is not null },
                 goals = s.Profile.Goals.Select(goal => new { goal.Id, Statement = ProfessionalDocuments.Clean(goal.Statement) }).ToArray(),
                 constraints = s.Profile.Constraints.Select(ProfessionalDocuments.Clean).ToArray(),
                 preferredFormats = s.Profile.PreferredFormats
             };
         }, ct);
-        var facts = JsonSerializer.SerializeToNode(new { confirmed = snapshot.facts, snapshot.availability, snapshot.goals, snapshot.constraints, snapshot.preferredFormats, listing, opportunity = record }, Wire.Json)!.AsObject();
+        var facts = JsonSerializer.SerializeToNode(new { confirmed = snapshot.facts, snapshot.availability, snapshot.sourceCoverage, snapshot.goals, snapshot.constraints, snapshot.preferredFormats, listing, opportunity = record, learningOutline = ReviewedLearningOutlines.Get(id) }, Wire.Json)!.AsObject();
         var analysis = await intelligence.Compare(facts, request.Language, ct);
-        Input.Require(analysis.Summary is { Length: > 0 and <= 3000 } && analysis.Connections is { Length: <= 6 } && analysis.Gaps is { Length: <= 6 } && analysis.Questions is { Length: <= 8 } && analysis.PreparationPriorities is { Length: <= 8 }, "The comparison returned an invalid structure.");
+        Input.Require(analysis.Summary is { Length: > 0 and <= 3000 } && analysis.Connections is { Length: <= 3 } && analysis.Gaps is { Length: <= 3 } && analysis.Questions is { Length: <= 2 } && analysis.Questions.All(q => q is { Length: > 0 and <= 300 }) && analysis.PreparationPriorities is { Length: <= 3 }, "The comparison returned an invalid structure.");
         var ids = snapshot.facts.Select(f => f.Id).ToHashSet();
+        ValidateRecommendation(analysis.Recommendation, snapshot.facts.Where(f => f.Kind is "project" or "experience").Select(f => f.Id).ToHashSet(), snapshot.facts.Where(f => f.Kind == "reported_gap").Select(f => f.Id).ToHashSet(), ids);
         foreach (var section in analysis.Connections.Concat(analysis.Gaps)) Input.Require(section.Title is { Length: > 0 and <= 150 } && section.Explanation is { Length: > 0 and <= 2000 } && section.EvidenceIds is { Length: <= 8 } && section.EvidenceIds.All(ids.Contains), "The comparison referenced information outside your confirmed evidence.");
         Input.Require(analysis.Connections.All(x => x.EvidenceIds.Length > 0) && analysis.Questions.Concat(analysis.PreparationPriorities).All(x => x is { Length: > 0 and <= 1500 }), "A personal connection requires confirmed evidence.");
         var latest = (await feed.Listings(ct)).SingleOrDefault(x => x.Id == id);
-        if (revision != MySqlStateStore.Hash(JsonSerializer.Serialize(new { listing = latest, record = catalog.All().SingleOrDefault(x => x.Id == id) }, Wire.Json))) throw new ApiFault("version_conflict", "The opportunity changed during analysis. Request a fresh comparison.");
+        if (revision != Revision(latest, catalog.All().SingleOrDefault(x => x.Id == id))) throw new ApiFault("version_conflict", "The opportunity changed during analysis. Request a fresh comparison.");
         return await repository.Transaction(owner, (s, e) => {
             Current(s, e, request.ProfileVersion, request.SourcesVersion);
-            var result = new InsightView(request.ProfileVersion, request.SourcesVersion, revision, analysis, request.Language, DateTimeOffset.UtcNow.ToString("O"));
+            var result = new InsightView(request.ProfileVersion, request.SourcesVersion, revision, analysis, request.Language, DateTimeOffset.UtcNow.ToString("O"), AnalysisVersion: 2);
             e.Comparisons[id + ":" + request.Language] = result;
             if (e.Comparisons.Count > 12) e.Comparisons.Remove(e.Comparisons.OrderBy(pair => pair.Value.GeneratedAt).First().Key);
             return result;
         }, ct);
+    }
+    private static string AnswerPrefix(string id, string revision) => "opportunity-decision:" + MySqlStateStore.Hash(id + "|" + revision)[..16] + ":";
+    public async Task<EvidenceView> Answer(string owner, string id, ComparisonAnswer request, CancellationToken ct) {
+        Input.Require(request.Language is "en" or "ar" && request.Question is { Length: > 0 and <= 1500 } && !string.IsNullOrWhiteSpace(request.Answer) && request.Answer.Length <= 1500, "Provide a short answer to the selected question.");
+        Input.Require(request.Question.Length + request.Answer.Trim().Length <= 980, "Keep the clarification under the profile's 1,000-character answer limit.");
+        var listing = (await feed.Listings(ct)).SingleOrDefault(x => x.Id == id) ?? throw new ApiFault("not_found", "The opportunity is unavailable.");
+        var record = catalog.All().SingleOrDefault(x => x.Id == id);
+        var revision = Revision(listing, record);
+        return await repository.Transaction(owner, (s, e) => {
+            var questionId = AnswerPrefix(id, revision) + MySqlStateStore.Hash(request.Question)[..16];
+            var confirmedText = request.Question + "\nStudent answer: " + ProfessionalDocuments.Clean(request.Answer.Trim());
+            if (e.Version == request.SourcesVersion && s.Profile.Version == (long)request.ProfileVersion + 1 && s.Profile.ClarificationAnswers.Any(a => a.QuestionId == questionId && a.Answer == confirmedText)) return new EvidenceView(s.Profile.Version, e, CurrentFacts(s.Profile, e));
+            Current(s, e, request.ProfileVersion, request.SourcesVersion);
+            var saved = e.Comparisons.GetValueOrDefault(id + ":" + request.Language);
+            Input.Require(saved is not null && saved.AnalysisVersion == 2 && saved.ProfileVersion == s.Profile.Version && saved.SourceRevision == revision && saved.Analysis.Questions.Contains(request.Question, StringComparer.Ordinal), "This question is outdated. Update the comparison before answering.");
+            var others = s.Profile.ClarificationAnswers.Where(a => a.QuestionId != questionId).ToArray();
+            Input.Require(others.Length < 30, "The clarification limit was reached; existing information was preserved.");
+            var answer = new ClarificationAnswer(questionId, confirmedText, DateTimeOffset.UtcNow.ToString("O"));
+            s.Profile = s.Profile with { Version = checked(s.Profile.Version + 1), ClarificationAnswers = [..others, answer] };
+            Input.Profile(s.Profile);
+            return new EvidenceView(s.Profile.Version, e, CurrentFacts(s.Profile, e));
+        }, ct);
+    }
+    public static void ValidateRecommendation(OpportunityRecommendation? recommendation, HashSet<string> workIds, HashSet<string> gapIds, HashSet<string> allIds) {
+        Input.Require(recommendation is not null && recommendation.Decision is "recommended" or "prepare_first" or "already_covered" or "not_aligned" or "needs_clarification" && recommendation.Reason is { Length: > 0 and <= 1200 } && recommendation.Benefit is { Length: > 0 and <= 1000 } && recommendation.NextStep is { Length: > 0 and <= 1000 } && recommendation.EvidenceIds is { Length: <= 8 } && recommendation.EvidenceIds.All(allIds.Contains), "The recommendation is missing a clear, source-grounded decision.");
+        if (recommendation!.Decision == "already_covered") Input.Require(recommendation.EvidenceIds.Any(workIds.Contains), "Already-covered advice requires concrete project or experience evidence, not a skill label.");
+        if (recommendation.Decision == "prepare_first") Input.Require(recommendation.EvidenceIds.Any(gapIds.Contains) || recommendation.EvidenceIds.Any(workIds.Contains), "Preparation-first advice requires evidence of the relevant gap or task experience; unreported skills alone are insufficient.");
+        if (recommendation.Decision is "recommended" or "not_aligned") Input.Require(recommendation.EvidenceIds.Length > 0, "A personal recommendation must cite confirmed profile information.");
     }
 }
