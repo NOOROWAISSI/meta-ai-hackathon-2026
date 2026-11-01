@@ -12,6 +12,7 @@ const service = vi.hoisted(() => ({
   repositories: vi.fn(),
   compare: vi.fn(),
   savedComparison: vi.fn(),
+  answer: vi.fn(),
 }));
 vi.mock("@/lib/profile/evidence", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/profile/evidence")>()),
@@ -95,6 +96,63 @@ beforeEach(() => {
   service.savedComparison.mockResolvedValue(null);
 });
 afterEach(cleanup);
+
+it("confirms a focused answer without automatically requesting another AI analysis", async () => {
+  service.savedComparison.mockResolvedValue({
+    ...insight,
+    analysis: {
+      ...insight.analysis,
+      recommendation: {
+        decision: "needs_clarification",
+        reason: "Python experience is not described.",
+        benefit: "The answer distinguishes a useful introduction from repeated material.",
+        nextStep: "Describe one Python task you have done, if any.",
+        evidenceIds: [],
+      },
+    },
+  });
+  service.answer.mockResolvedValue({ ...initial, profileVersion: 3 });
+  render(<EvidenceOpportunityInsight opportunityId="selected-event" />);
+  const answer = await screen.findByRole("textbox", { name: "Have you integrated a model API?" });
+  fireEvent.change(answer, {
+    target: { value: "I have not used a model API; I built the interface independently." },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Confirm answer" }));
+  await waitFor(() => expect(service.answer).toHaveBeenCalledOnce());
+  expect(service.answer).toHaveBeenCalledWith(
+    "selected-event",
+    initial,
+    "en",
+    "Have you integrated a model API?",
+    "I have not used a model API; I built the interface independently.",
+  );
+  await screen.findByText(/Outdated explanation/);
+  expect(service.compare).not.toHaveBeenCalled();
+});
+
+it("leads with a useful recommendation, benefit and next move rather than a profile inventory", async () => {
+  service.savedComparison.mockResolvedValue({
+    ...insight,
+    analysis: {
+      ...insight.analysis,
+      recommendation: {
+        decision: "already_covered",
+        reason:
+          "Your confirmed Python project already implements the published introductory topics.",
+        benefit: "Review unfamiliar topics; repeating the full introduction adds little.",
+        nextStep: "Compare the published topics with your existing project before enrolling.",
+        evidenceIds: [],
+      },
+    },
+  });
+  render(<EvidenceOpportunityInsight opportunityId="selected-event" />);
+  await screen.findByText("Much of this repeats your existing work");
+  expect(screen.getByText("What would you gain?")).toBeInTheDocument();
+  expect(screen.getByText("Your next move")).toBeInTheDocument();
+  expect(
+    screen.getByText("See the reasoning and preparation details").closest("details"),
+  ).not.toHaveAttribute("open");
+});
 
 it("restores a saved comparison without another model call and marks old context", async () => {
   service.savedComparison.mockResolvedValue({ ...insight, outdated: true });

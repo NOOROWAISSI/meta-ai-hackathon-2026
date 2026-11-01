@@ -46,6 +46,18 @@ Question IDs bind to opportunity + canonical source revision (or listing summary
 
 The owner explicitly chose **local tests only** for this revision. No live Meta call was performed for the new raw-description/starting-point flow. Previous topic-selector live evidence does not validate this revised model context. Final live semantic/compatibility review and any combined #28 composition remain separate gates; do not merge #27 or main on the strength of local-provider tests alone.
 
+## Decision-focused comparison revision
+
+The current comparison leads with a recommendation: `recommended`, `prepare_first`, `already_covered`, `not_aligned`, or `needs_clarification`. Each result states its reason, incremental learning value and one next action, with profile evidence IDs. Detailed transfer/gap reasoning is expandable, with at most three meaningful points per group, two decisive questions and three preparation priorities. These are learning recommendations, not eligibility decisions or global proficiency scores.
+
+The model receives confirmed source facts with their supporting passages, plus explicit `hours_per_week` units for the typed availability fact. Imported sources awaiting student confirmation are disclosed rather than silently treated as established experience. Skill labels alone cannot justify an already-covered recommendation; a missing skill label cannot justify a confirmed deficit. Unknown experience stays unknown. Concrete work can support a topic-specific judgment without claiming independently verified competence.
+
+`ReviewedLearningOutlines` adds organizer-reviewed content for CS50 Python, SQL, Web and Google's ML Crash Course, checked 2026-11-01. Sources: https://cs50.harvard.edu/python/, https://cs50.harvard.edu/sql/, https://cs50.harvard.edu/web/, https://developers.google.com/machine-learning/crash-course/prereqs-and-prework. The comparison uses these published outcomes and starting-point notes rather than extrapolating a syllabus from tags. An introductory course that teaches foundations does not require learning those same foundations first. A topic may partially overlap with an existing project without the entire course being redundant. Missing outlines remain missing.
+
+`POST /api/listings/{id}/comparison-answer` explicitly confirms a short answer to a question from the current saved comparison. It binds to the selected opportunity/source revision, preserves plans and progress, increments the canonical profile version, supports identical retries and makes the old explanation outdated. The next explicit comparison receives that answer; confirmation itself makes no model request. Answers to unrelated/older opportunity contexts do not enter the new comparison.
+
+Comparisons use `analysisVersion: 2`; saved older prose remains visible but outdated until the student explicitly updates it. There is no automatic regeneration or deletion of progress. Local validation covers source-grounded recommendation guards, known weekly-hour units, supporting quotations, course foundation distinctions, inline answer confirmation, idempotency and stale-context rejection. No live Meta request or real student document is used in these tests. New rich decision semantics still need synthetic live-provider review with Rofi before merge.
+
 ## Professional profile evidence
 
 The profile evidence workspace extends the same explicit-confirmation boundary with source-backed CV, selected public GitHub, and LinkedIn information:

@@ -22,7 +22,7 @@ public sealed class FakeEvidenceIntelligence : IEvidenceIntelligence {
         Calls++;
         LastContext = (JsonObject)context.DeepClone();
         var id = context["confirmed"]!.AsArray().FirstOrDefault()?["id"]?.GetValue<string>();
-        return Task.FromResult(new OpportunityInsight("LOCAL TEST ADAPTER ONLY: the scheduling interface provides a concrete interaction to adapt, but it does not establish experience with the opportunity's model integration or fulfillment of its submission rules.", id is null ? [] : [new("An interface you can adapt", "Use your confirmed scheduling application contribution as an existing interface, then identify the new integration needed for the selected challenge.", [Invalid ? "another-owner-fact" : id])], [new("Model integration is unreported", "The provided evidence does not describe model integration; clarify that experience before choosing the scope.", [])], ["Have you implemented a model API call in a project?"], ["Build one demonstrable model interaction in the existing interface and document the inputs, output and failure state."]));
+        return Task.FromResult(new OpportunityInsight("LOCAL TEST ADAPTER ONLY: the scheduling interface provides a concrete interaction to adapt, but it does not establish experience with the opportunity's model integration or fulfillment of its submission rules.", id is null ? [] : [new("An interface you can adapt", "Use your confirmed scheduling application contribution as an existing interface, then identify the new integration needed for the selected challenge.", [Invalid ? "another-owner-fact" : id])], [new("Model integration is unreported", "The provided evidence does not describe model integration; clarify that experience before choosing the scope.", [])], ["Have you implemented a model API call in a project?"], ["Build one demonstrable model interaction in the existing interface and document the inputs, output and failure state."], new("needs_clarification", "Model integration experience is not documented in this local fixture.", "The challenge may add an integration task rather than repeat interface work.", "Confirm whether you have already built a model-backed interaction.", id is null ? [] : [id])));
     }
 }
 
@@ -60,6 +60,23 @@ public static class ProfileEvidenceChecks {
         result.EnsureSuccessStatusCode(); return (await result.Content.ReadFromJsonAsync<EvidenceView>(Wire.Json))!;
     }
     public static void Register(Action<string, Func<Task>> test) {
+        test("decision rejects already-covered claims based only on skill tags and rejects invented evidence", () => {
+            foreach (var recommendation in new[] {
+                new OpportunityRecommendation("already_covered", "Known React", "No new value", "Skip", ["skill-react"]),
+                new OpportunityRecommendation("prepare_first", "Python unreported", "Learn basics", "Prepare", []),
+                new OpportunityRecommendation("recommended", "Reason", "Benefit", "Next", ["invented"])
+            }) { var rejected = false; try { ProfileEvidenceService.ValidateRecommendation(recommendation, [], [], ["skill-react"]); } catch (ApiFault) { rejected = true; } Check(rejected); }
+            ProfileEvidenceService.ValidateRecommendation(new("already_covered", "A demonstrated Python project covers this scope", "Review only the new material", "Compare the published topics", ["project-python"]), ["project-python"], [], ["project-python"]);
+            ProfileEvidenceService.ValidateRecommendation(new("prepare_first", "An explicit gap is reported", "Build the foundation", "Try one foundational task", ["gap-python"]), [], ["gap-python"], ["gap-python"]);
+            return Task.CompletedTask;
+        });
+        test("reviewed course outlines distinguish teaching foundations from requiring them", () => {
+            var python = ReviewedLearningOutlines.Get("harvard-cs50-python")!;
+            var web = ReviewedLearningOutlines.Get("harvard-cs50-web")!;
+            Check(python.Topics.Any(t => t.Contains("Unit testing")) && python.StartingPoint.Contains("not a prerequisite") && web.StartingPoint.Contains("prior experience"));
+            Check(ReviewedLearningOutlines.Get("unreviewed-course") is null);
+            return Task.CompletedTask;
+        });
         test("professional text PDF extraction preserves page references", () => {
             var builder = new UglyToad.PdfPig.Writer.PdfDocumentBuilder();
             var font = builder.AddStandard14Font(UglyToad.PdfPig.Fonts.Standard14Fonts.Standard14Font.Helvetica);
@@ -181,6 +198,8 @@ public static class ProfileEvidenceChecks {
             var insight = (await response.Content.ReadFromJsonAsync<InsightView>(Wire.Json))!;
             var modelContext = host.Evidence.LastContext ?? throw new Exception("The comparison model context was not captured.");
             Check(modelContext["profile"] is null && modelContext["confirmed"]!.AsArray().All(f => f?["value"] is not null && f?["contribution"] is not null));
+            Check(modelContext["availability"]?["unit"]?.GetValue<string>() == "hours_per_week" && modelContext["sourceCoverage"] is not null && insight.Analysis.Recommendation is not null);
+            Check(modelContext["confirmed"]!.AsArray().Any(f => f?["supportingPassages"]?.AsArray().Count > 0));
             Check(insight.Analysis.Connections[0].EvidenceIds[0] == view.Workspace.Confirmed[0].Id && await client.GetStringAsync("/api/profile") == before);
             var calls = host.Evidence.Calls;
             var restored = (await client.GetFromJsonAsync<InsightView>("/api/listings/meta-global-ai-2026/evidence-comparison?language=en", Wire.Json))!;
@@ -214,6 +233,26 @@ public static class ProfileEvidenceChecks {
             host.Model.Prefix = "Adapt";
             var next = await client.PostAsJsonAsync("/api/opportunities/E01/plan-candidates", new AnalysisRequest(opportunity.SourceRevision, profile, submission, (await done.Content.ReadFromJsonAsync<Plan>(Wire.Json))!), Wire.Json); next.EnsureSuccessStatusCode();
             Check(host.Model.LastContext!.SelfReport.ReportedSkills.Any(s => s.Contains("React")));
+        }));
+        test("focused clarification preserves progress context and reaches the next comparison with weekly-hour units", () => Run(async (host, client, view) => {
+            var profile = (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!;
+            (await client.PutAsJsonAsync("/api/profile", new ProfileUpdate(profile.Version, profile with { AvailableHoursPerWeek = new JsonObject { ["state"] = "known", ["value"] = 8, ["reportedAt"] = DateTimeOffset.UtcNow.ToString("O") } }), Wire.Json)).EnsureSuccessStatusCode();
+            view = (await client.GetFromJsonAsync<EvidenceView>("/api/profile/evidence", Wire.Json))!;
+            var generated = await client.PostAsJsonAsync("/api/listings/meta-global-ai-2026/evidence-comparison", new InsightRequest(view.ProfileVersion, view.Workspace.Version, true, "en"), Wire.Json); generated.EnsureSuccessStatusCode();
+            var analysis = (await generated.Content.ReadFromJsonAsync<InsightView>(Wire.Json))!;
+            Check(host.Evidence.LastContext!["availability"]!["unit"]!.GetValue<string>() == "hours_per_week" && host.Evidence.LastContext!["availability"]!["fact"]!["value"]!.GetValue<int>() == 8);
+            var calls = host.Evidence.Calls;
+            const string answer = "I built a Python command-line project with functions, file storage and tests myself.";
+            var response = await client.PostAsJsonAsync("/api/listings/meta-global-ai-2026/comparison-answer", new ComparisonAnswer(view.ProfileVersion, view.Workspace.Version, "en", analysis.Analysis.Questions[0], answer), Wire.Json); response.EnsureSuccessStatusCode();
+            var updated = (await response.Content.ReadFromJsonAsync<EvidenceView>(Wire.Json))!;
+            Check(updated.ProfileVersion == view.ProfileVersion + 1 && host.Evidence.Calls == calls);
+            var repeated = await client.PostAsJsonAsync("/api/listings/meta-global-ai-2026/comparison-answer", new ComparisonAnswer(view.ProfileVersion, view.Workspace.Version, "en", analysis.Analysis.Questions[0], answer), Wire.Json); repeated.EnsureSuccessStatusCode();
+            Check((await repeated.Content.ReadFromJsonAsync<EvidenceView>(Wire.Json))!.ProfileVersion == updated.ProfileVersion);
+            Check((await client.GetFromJsonAsync<InsightView>("/api/listings/meta-global-ai-2026/evidence-comparison?language=en", Wire.Json))!.Outdated);
+            var next = await client.PostAsJsonAsync("/api/listings/meta-global-ai-2026/evidence-comparison", new InsightRequest(updated.ProfileVersion, updated.Workspace.Version, true, "en"), Wire.Json); next.EnsureSuccessStatusCode();
+            Check(host.Evidence.LastContext!["confirmed"]!.AsArray().Any(f => f!["value"]!.GetValue<string>().Contains(answer)));
+            var stale = await client.PostAsJsonAsync("/api/listings/meta-global-ai-2026/comparison-answer", new ComparisonAnswer(view.ProfileVersion, view.Workspace.Version, "en", analysis.Analysis.Questions[0], "Different answer"), Wire.Json);
+            Check(stale.StatusCode == HttpStatusCode.Conflict);
         }));
     }
 }
