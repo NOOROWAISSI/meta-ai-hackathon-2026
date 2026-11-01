@@ -10,13 +10,14 @@ public sealed class Factory(bool fake = true, bool recovery = false, bool google
 {
     public FakeModel Model { get; } = new();
     public FakePersonalBriefingModel Briefing { get; } = new();
+    public FakeEvidenceIntelligence Evidence { get; } = new();
     public FakeEmailSender Email { get; } = new();
     public FakeGoogleBackchannel Google { get; } = new();
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
         builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?> { ["ConnectionStrings:NextStep"] = Environment.GetEnvironmentVariable("NEXTSTEP_CHECKS_CONNECTION") ?? throw new InvalidOperationException("Set NEXTSTEP_CHECKS_CONNECTION to the dedicated local MySQL instance.") }));
-        if (fake) builder.ConfigureTestServices(services => { services.RemoveAll<IMetaModelClient>(); services.AddSingleton<IMetaModelClient>(Model); services.RemoveAll<NextStep.Api.IPersonalBriefingModel>(); services.AddSingleton<NextStep.Api.IPersonalBriefingModel>(Briefing); });
+        if (fake) builder.ConfigureTestServices(services => { services.RemoveAll<IMetaModelClient>(); services.AddSingleton<IMetaModelClient>(Model); services.RemoveAll<NextStep.Api.IPersonalBriefingModel>(); services.AddSingleton<NextStep.Api.IPersonalBriefingModel>(Briefing); services.RemoveAll<NextStep.Api.IEvidenceIntelligence>(); services.AddSingleton<NextStep.Api.IEvidenceIntelligence>(Evidence); });
         if (google) {
             builder.UseSetting("Authentication:Google:ClientId", "synthetic-client.apps.googleusercontent.com");
             builder.UseSetting("Authentication:Google:ClientSecret", "synthetic-test-only-client-secret");
