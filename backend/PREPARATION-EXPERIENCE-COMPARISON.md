@@ -48,6 +48,18 @@ The owner explicitly chose **local tests only** for this revision. No live Meta 
 
 ## Decision-focused comparison revision
 
+### Current working-profile revision (analysis version 3)
+
+Recommendations use the saved profile as a provisional starting point. Unrepresented material can be treated as potentially new when explaining a course's value; it is not persisted as a confirmed knowledge gap, low proficiency or failed organizer condition. Missing experience alone need not block a useful conditional recommendation. The student can correct that starting point directly using **I already know this subject**.
+
+The correction control opens an editable short experience statement. Opening or cancelling it changes no data. `POST /api/listings/{id}/comparison-correction` requires explicit confirmation, current account/profile/source versions and a current saved comparison. It records only the student's self-report, increments the profile version, supports identical retries and makes the old explanation outdated. It creates no skill-mastery fact, eligibility result or preparation plan and never calls the provider automatically. Failed saves retain the input. The student deliberately updates the comparison afterward.
+
+New clarification IDs include an opportunity hash and source hash. The new comparison receives only its own current-context corrections; legacy answers for the unchanged old source context remain readable. Preparation generation receives confirmed clarifications for its selected opportunity as labelled self-reports, while existing accepted plans, artifacts and Done progress are preserved.
+
+Versions 1 and 2 of cached explanations remain visible but outdated until explicit regeneration; version 3 is the current policy. The controlled-provider plan is in `CONTROLLED-META-VALIDATION-PLAN.md`. Live testing and merges remain on hold after Rofi's reported P1 unsupported-participation-approval output bypass in the older #27/#28 integration candidate. No new paid request is authorized by this feature or document.
+
+Local regression results for this revision: 114/114 ASP.NET/MySQL checks, 170/170 frontend tests and 177/177 AI offline checks, with TypeScript, changed-file lint, canonical fixture validation and production builds. The AI checks' nonrepository provenance case now uses a private invalid-Git fixture, because Windows TEMP can be inside an unrelated parent repository; production AI code and the known P1 behavior are unchanged by that test-only fix. Passing these regressions does not resolve the separate security finding or establish live semantic quality.
+
 The current comparison leads with a recommendation: `recommended`, `prepare_first`, `already_covered`, `not_aligned`, or `needs_clarification`. Each result states its reason, incremental learning value and one next action, with profile evidence IDs. Detailed transfer/gap reasoning is expandable, with at most three meaningful points per group, two decisive questions and three preparation priorities. These are learning recommendations, not eligibility decisions or global proficiency scores.
 
 The model receives confirmed source facts with their supporting passages, plus explicit `hours_per_week` units for the typed availability fact. Imported sources awaiting student confirmation are disclosed rather than silently treated as established experience. Skill labels alone cannot justify an already-covered recommendation; a missing skill label cannot justify a confirmed deficit. Unknown experience stays unknown. Concrete work can support a topic-specific judgment without claiming independently verified competence.
