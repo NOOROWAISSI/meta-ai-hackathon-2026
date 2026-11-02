@@ -69,8 +69,17 @@ public static class GenerationPolicy
         var rules = input.ReviewedRequirements.ToDictionary(r => r.Id, StringComparer.Ordinal);
         // IDs alone convey no relevance. Only entries with reviewed metadata may be selected.
         var resources = input.ReviewedResources.Select(r => r.Id).ToHashSet(StringComparer.Ordinal);
-        var seen = input.ExistingTasks.Where(t => t.Status is "done" or "in_progress")
-            .Select(t => t.Title.Trim()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        // Duplicate identity is the trusted action code plus the target.
+        // Rendered titles are templates with step numbers, so a title is
+        // never identity for a structured task: the same action on a
+        // different goal or requirement is new work, and renumbering must
+        // not rescue a repeat. Titles remain the conservative fallback only
+        // where either side has no trusted action (legacy retained tasks,
+        // unrendered candidate output).
+        var retained = input.ExistingTasks.Where(t => t.Status is "done" or "in_progress").ToArray();
+        var identities = new HashSet<(string, string?, string?)>();
+        var trustedTitles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var untrustedTitles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var task in candidate.Tasks)
         {
             if (task is null || !Guidance(task.Title, 200) || !Guidance(task.Deliverable, 1000) ||
@@ -80,7 +89,24 @@ public static class GenerationPolicy
                 task.ResourceIds is null || task.ResourceIds.Count > 10 ||
                 task.ResourceIds.Distinct(StringComparer.Ordinal).Count() != task.ResourceIds.Count ||
                 task.ResourceIds.Any(r => !Id(r) || !resources.Contains(r))) InvalidOutput();
-            if (!seen.Add(task.Title.Trim())) InvalidOutput(); // Exact-title guard only.
+            var title = task.Title.Trim();
+            if (task.Action is { } action)
+            {
+                if (!identities.Add((action, task.Target.GoalId, task.Target.RequirementId))) InvalidOutput();
+                if (untrustedTitles.Contains(title)) InvalidOutput();
+                trustedTitles.Add(title);
+            }
+            else
+            {
+                if (untrustedTitles.Contains(title) || trustedTitles.Contains(title)) InvalidOutput();
+                untrustedTitles.Add(title);
+            }
+            foreach (var old in retained)
+            {
+                if (task.Action is { } newAction && old.ActionCode is { } oldAction)
+                { if (oldAction == newAction && old.Target == task.Target) InvalidOutput(); }
+                else if (string.Equals(old.Title.Trim(), title, StringComparison.OrdinalIgnoreCase)) InvalidOutput();
+            }
             var target = task.Target;
             var valid = target.Kind switch
             {

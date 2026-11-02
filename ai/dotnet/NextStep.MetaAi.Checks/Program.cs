@@ -513,6 +513,7 @@ Test("quality instructions require full mandatory actions and honest infeasible 
 });
 NextStep.MetaAi.Checks.QualityRegressionChecks.Register(Sync);
 NextStep.MetaAi.Checks.SubmissionCoverageChecks.Register(Sync);
+NextStep.MetaAi.Checks.DuplicateIdentityChecks.Register(Sync);
 
 // Structured response regression tests exercise the production decoder through an in-memory provider.
 var validSelection = "{\"tasks\":[{\"action\":\"clarify\",\"target\":{\"kind\":\"goal\",\"goalId\":\"goal-demo\"},\"priority\":\"should\",\"estimatedHours\":1,\"resourceIds\":[]}],\"reason\":\"unknown\"}";

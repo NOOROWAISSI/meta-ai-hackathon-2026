@@ -26,6 +26,18 @@ public sealed class Application(IStateStore store, Catalog catalog, IMetaModelCl
             state.Submissions[id] = Wire.Copy(confirmed); return confirmed;
         }, ct);
     }
+    // A candidate task repeats retained work only when both sides carry a
+    // trusted action and the action and target match. Rendered titles are
+    // templates with step numbers, not identity. When either side lacks a
+    // trusted action (a legacy retained task, an unrendered candidate), fall
+    // back to the conservative exact-title comparison.
+    private static bool RepeatsRetained(CandidateTask task, PreparationTask old, Dictionary<string, string> trustedActions)
+    {
+        var oldAction = trustedActions.GetValueOrDefault(old.Id);
+        if (task.Action is { } action && oldAction is not null)
+            return string.Equals(action, oldAction, StringComparison.Ordinal) && old.Target == task.Target;
+        return string.Equals(old.Title.Trim(), task.Title.Trim(), StringComparison.OrdinalIgnoreCase);
+    }
     private static void Check(Opportunity o, UserState state, AnalysisRequest request)
     {
         Input.Require(request is not null && request.Profile is not null && request.Submission is not null);
@@ -57,7 +69,7 @@ public sealed class Application(IStateStore store, Catalog catalog, IMetaModelCl
         GenerationPolicy.ValidateInput(projection); GenerationPolicy.ValidateCandidate(output, projection);
         output = PlanActionRenderer.WithCapacityGuidance(output, projection);
         var renderingProof = PlanActionRenderer.ProofFor(output, projection) ?? throw new ApiFault("invalid_model_output", "The draft did not pass the structured rendering boundary. Generate another draft.");
-        if (output.Tasks.Any(t => retained.Any(old => string.Equals(old.Title.Trim(), t.Title.Trim(), StringComparison.OrdinalIgnoreCase)))) throw new ApiFault("invalid_model_output", "The draft repeats retained work. Your accepted plan is unchanged.");
+        if (output.Tasks.Any(t => retained.Any(old => RepeatsRetained(t, old, trustedActions)))) throw new ApiFault("invalid_model_output", "The draft repeats retained work. Your accepted plan is unchanged.");
         return await store.Change(owner, state => {
             Check(opportunity, state, request);
             if (state.Plans.GetValueOrDefault(id)?.Version != previous?.Version) throw new ApiFault("version_conflict", "Progress changed while generating. Request a fresh draft.");

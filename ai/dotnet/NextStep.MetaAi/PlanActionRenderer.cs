@@ -91,7 +91,7 @@ public static class PlanActionRenderer
                 if (lastStage.TryGetValue(goal, out var previous) && stage <= previous) Invalid();
                 lastStage[goal] = stage;
             }
-            result.Add(new($"Step {result.Count + 1}: {template.Title}", s.Target, s.Priority, template.Deliverable, template.Criteria, s.EstimatedHours, s.ResourceIds));
+            result.Add(new($"Step {result.Count + 1}: {template.Title}", s.Target, s.Priority, template.Deliverable, template.Criteria, s.EstimatedHours, s.ResourceIds) { Action = s.Action });
         }
         var explanation = reason switch {
             "scope" => "Review the smallest useful scope and dependency order. Defer optional work and reassess effort against your available time.",

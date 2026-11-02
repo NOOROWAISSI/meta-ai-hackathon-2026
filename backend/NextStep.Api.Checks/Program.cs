@@ -818,6 +818,7 @@ Test("Meta selection self-report cannot bypass a published age blocker or satisf
     Assert((await client.PostAsJsonAsync("/api/opportunities/meta-global-ai-2026/plan-candidates", Request(profile, submission, opportunity), Wire.Json)).StatusCode == HttpStatusCode.BadRequest && host.Model.Calls == 0);
 });
 CapacityAndNetworkChecks.Register(Test);
+RetainedDuplicateChecks.Register(Test);
 Test("stale-profile progress preserves accepted context and never adopts new capacity silently", async () => {
     await using var host = new Factory();
     var data = await Ready(host); var (plan, _) = await Accepted(data.Client, data.Profile, data.Submission, data.Opportunity);

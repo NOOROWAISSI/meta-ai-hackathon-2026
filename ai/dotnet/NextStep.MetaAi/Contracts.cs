@@ -9,7 +9,14 @@ public static class ContractJson
 }
 public sealed record PlanCandidateOutput(IReadOnlyList<CandidateTask> Tasks, string Explanation);
 public sealed record CandidateTask(string Title, TaskTarget Target, string Priority,
-    string Deliverable, string CompletionCriteria, double EstimatedHours, IReadOnlyList<string> ResourceIds);
+    string Deliverable, string CompletionCriteria, double EstimatedHours, IReadOnlyList<string> ResourceIds)
+{
+    // Trusted renderer action code for this task, set only by
+    // PlanActionRenderer. Never serialized: wire contracts are unchanged.
+    // Null means the task carries no trusted structured identity, and
+    // duplicate checks must fall back to conservative title comparison.
+    [JsonIgnore] public string? Action { get; init; }
+}
 public sealed record TaskTarget(string Kind,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? GoalId = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? RequirementId = null);
