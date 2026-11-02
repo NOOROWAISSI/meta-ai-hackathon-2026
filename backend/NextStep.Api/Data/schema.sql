@@ -95,6 +95,33 @@ CREATE TABLE IF NOT EXISTS profile_evidence (
   CONSTRAINT fk_profile_evidence_session FOREIGN KEY(owner_id) REFERENCES anonymous_sessions(owner_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 INSERT IGNORE INTO schema_migrations(version) VALUES (6);
+-- Version 7: announcement_extractions (PR #30).
+CREATE TABLE IF NOT EXISTS announcement_extractions (
+  cache_key CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+  page_url VARCHAR(2000) NOT NULL,
+  outcome VARCHAR(40) NOT NULL,
+  payload JSON NULL,
+  created_at DATETIME(6) NOT NULL
+) ENGINE=InnoDB;
+INSERT IGNORE INTO schema_migrations(version) VALUES (7);
+-- Version 8: campus tables (PR #30).
+CREATE TABLE IF NOT EXISTS campus_follows (
+  owner_id CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  university_id VARCHAR(100) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  followed_at DATETIME(6) NOT NULL,
+  seen_at DATETIME(6) NOT NULL,
+  PRIMARY KEY(owner_id,university_id),
+  CONSTRAINT fk_campus_follow_session FOREIGN KEY(owner_id) REFERENCES anonymous_sessions(owner_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS campus_activities (
+  id VARCHAR(100) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+  source_id VARCHAR(100) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  payload JSON NOT NULL,
+  first_seen_at DATETIME(6) NOT NULL,
+  checked_at DATETIME(6) NOT NULL,
+  INDEX ix_campus_activity_source(source_id)
+) ENGINE=InnoDB;
+INSERT IGNORE INTO schema_migrations(version) VALUES (8);
 -- Version 9: disclosure_acks (P2). The standalone P2 branch recorded this
 -- table at version 6; the combined schema reserves 9 so version 6 keeps its
 -- single PR #29 meaning. The table definition is identical, and CREATE TABLE
@@ -107,3 +134,15 @@ CREATE TABLE IF NOT EXISTS disclosure_acks (
   CONSTRAINT fk_disclosure_owner FOREIGN KEY (owner_id) REFERENCES anonymous_sessions(owner_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 INSERT IGNORE INTO schema_migrations(version) VALUES (9);
+-- Version 10: evidence_import_optins (combined integration). One row per
+-- owner and imported source document; a row means the student opted in to
+-- external extraction for that document only.
+CREATE TABLE IF NOT EXISTS evidence_import_optins (
+  owner_id CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  source_id VARCHAR(100) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  version INT NOT NULL,
+  opted_in_at VARCHAR(40) NOT NULL,
+  PRIMARY KEY(owner_id, source_id),
+  CONSTRAINT fk_evidence_optin_session FOREIGN KEY (owner_id) REFERENCES anonymous_sessions(owner_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+INSERT IGNORE INTO schema_migrations(version) VALUES (10);

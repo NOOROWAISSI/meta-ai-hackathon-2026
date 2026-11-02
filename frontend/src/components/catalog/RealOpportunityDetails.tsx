@@ -25,6 +25,7 @@ import { useVisitState } from "@/components/VisitMemory";
 import { AccountFitConstellation } from "./AccountFitConstellation";
 import { AccountPreparation } from "@/components/account/AccountPlans";
 import { PreparationEntry } from "@/components/preparation/PreparationEntry";
+import { PreparationSelectionAction } from "@/components/preparation/PreparationSelection";
 import { ReportedParticipation } from "./ReportedParticipation";
 import { PublishedEventOverview } from "./PublishedEventOverview";
 import { accountApi, AccountApiError } from "@/lib/account/api";
@@ -174,11 +175,7 @@ export function RealOpportunityDetails({
             </div>
             <div className="mt-5 flex flex-wrap gap-3">
               <PreferenceActions item={item} />
-              {item.kind === "hackathon" && (
-                <Link to="/plans" search={{ event: item.id }} className="detail-primary">
-                  {t("Prepare for this opportunity", "حضّر لهذه الفرصة")}
-                </Link>
-              )}
+              {item.kind === "hackathon" && <PreparationSelectionAction opportunityId={item.id} />}
               <Link to="/profile" search={{ event: item.id }} className="detail-secondary">
                 {t("Edit my profile", "تعديل ملفي")}
               </Link>

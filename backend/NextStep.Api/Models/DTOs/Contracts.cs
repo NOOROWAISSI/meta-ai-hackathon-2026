@@ -68,6 +68,13 @@ public sealed record PlanRendering(string PlanId, PlanRenderingBatch[] Batches, 
 // acknowledged (or withdrawn).
 public sealed record DisclosureAck(int Version, string AcknowledgedAt);
 public sealed record DisclosureStatus(int CurrentVersion, int? AcknowledgedVersion, string? AcknowledgedAt, bool Required);
+public sealed record PreparationSelection(string OpportunityId, string Title, string Organizer, string SelectedAt);
+// Server-recorded opt-in for ONE document import's external extraction
+// (PR #29 evidence). Stored by EvidenceOptInStore in its own table, scoped
+// to a single source document, and entirely separate from the
+// plan-generation DisclosureAck above: neither implies the other.
+public sealed record EvidenceImportOptIn(int Version, string OptedInAt);
+public sealed record EvidenceImportOptInStatus(int CurrentVersion, bool OptedIn, string? OptedInAt, int? OptedInVersion);
 public sealed class UserState
 {
     public int SchemaVersion { get; set; } = 1;
@@ -81,4 +88,5 @@ public sealed class UserState
     public Dictionary<string, StoredCandidate> Candidates { get; set; } = [];
     public Dictionary<string, Receipt> Receipts { get; set; } = [];
     public Dictionary<string, OpportunityPreference> Preferences { get; set; } = [];
+    public Dictionary<string, PreparationSelection> PreparationSelections { get; set; } = [];
 }

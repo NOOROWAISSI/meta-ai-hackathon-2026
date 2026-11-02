@@ -43,6 +43,8 @@ import { ReportedParticipation } from "@/components/catalog/ReportedParticipatio
 import { useLocale } from "@/components/LocaleProvider";
 import { PlanProgress } from "@/components/preparation/PlanProgress";
 import { DraftFeasibility } from "@/components/preparation/DraftFeasibility";
+import { SelectedPreparations } from "@/components/preparation/PreparationSelection";
+import { usePreparationSelections } from "@/lib/account/preparation-selections";
 
 interface Candidate {
   candidateId: string;
@@ -74,6 +76,7 @@ export function AccountPlans({ eventId }: { eventId?: string }) {
 function AccountPlanIndex() {
   const auth = useAuth();
   const { t } = useLocale();
+  const selections = usePreparationSelections();
   const profile = useQuery({
     queryKey: ["account", auth?.user?.id, "profile"],
     queryFn: accountApi.profile,
@@ -102,9 +105,12 @@ function AccountPlanIndex() {
             <ListChecks className="size-4" aria-hidden />
             My Plans
           </p>
-          <h1>Your next steps, saved.</h1>
+          <h1>{t("Your next steps, saved.", "خطواتك الجاية، محفوظة.")}</h1>
           <p className="prep-organizer">
-            Confirmed plans and self-reported progress from your account.
+            {t(
+              "Selected opportunities, confirmed plans and your reported progress.",
+              "فرص اخترتها، وخطط مقبولة، وتقدّمك المحفوظ.",
+            )}
           </p>
         </div>
         <div className="text-end">
@@ -112,6 +118,9 @@ function AccountPlanIndex() {
           <p className="text-xs text-muted-foreground">{t("Confirmed plans", "خطط مؤكّدة")}</p>
         </div>
       </header>
+      <SelectedPreparations
+        acceptedOpportunityIds={plans.data?.map((p) => p.context.opportunityId) ?? []}
+      />
       {plans.isPending ? (
         <p role="status" className="prep-loading">
           Loading confirmed plans…
@@ -128,16 +137,30 @@ function AccountPlanIndex() {
           </button>
         </div>
       ) : !plans.data.length ? (
-        <div className="prep-empty">
-          <ListChecks className="size-10 text-primary" aria-hidden />
-          <h2>No preparation plans yet.</h2>
-          <p>
-            Choose a reviewed hackathon and generate a draft. Nothing is added until you accept it.
+        selections.isPending ? (
+          <p role="status" className="text-sm text-muted-foreground">
+            {t("Loading your preparation choices…", "جار تحميل اختيارات التحضير…")}
           </p>
-          <Link to="/" search={{}} className="detail-primary">
-            Explore opportunities
-          </Link>
-        </div>
+        ) : selections.data?.length ? (
+          <p className="text-sm text-muted-foreground">
+            {t(
+              "No accepted plan yet. Continue a selected opportunity above to review its preparation options.",
+              "لسه ما في خطة مقبولة. تابع إحدى الفرص اللي فوق لمراجعة خيارات التحضير.",
+            )}
+          </p>
+        ) : (
+          <div className="prep-empty">
+            <ListChecks className="size-10 text-primary" aria-hidden />
+            <h2>No preparation plans yet.</h2>
+            <p>
+              Choose a reviewed hackathon and generate a draft. Nothing is added until you accept
+              it.
+            </p>
+            <Link to="/" search={{}} className="detail-primary">
+              Explore opportunities
+            </Link>
+          </div>
+        )
       ) : (
         <div className="grid gap-5 md:grid-cols-2">
           {plans.data.map((plan) => {
