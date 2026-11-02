@@ -107,6 +107,22 @@ function commit(store: IDBObjectStore, plan: Plan) {
   store.put(progress, `progress:${plan.id}`);
   store.put({ updatedAt: new Date().toISOString() }, `plan-meta:${plan.id}`);
 }
+function localPlanDisplay(plan: Plan): Plan {
+  return {
+    ...plan,
+    goals: plan.goals.map((goal, index) => ({ ...goal, statement: `Saved goal ${index + 1}` })),
+    tasks: plan.tasks.map((task, index) => ({
+      ...task,
+      title: `Historical task ${index + 1}`,
+      deliverable: "The earlier description has not been verified.",
+      completionCriteria: "Review this task before relying on its description.",
+    })),
+    warnings: [
+      "Local plan: earlier descriptions have not been verified. Review this history before relying on it; saved progress is unchanged.",
+      "Task progress does not establish eligibility or submission evidence.",
+    ],
+  };
+}
 export const preparationRepository = {
   /** Explicit demo action. Never replaces a plan or changes the student's profile. */
   async loadSamplePlan(): Promise<Plan> {
@@ -195,7 +211,7 @@ export const preparationRepository = {
           ],
         };
         commit(store, plan);
-        return plan;
+        return localPlanDisplay(plan);
       });
       if (result) return result;
     }
@@ -216,7 +232,7 @@ export const preparationRepository = {
         submission: records.submission,
         context: current(records),
         resources: records.resources,
-        plan: records.plan ?? null,
+        plan: records.plan ? localPlanDisplay(records.plan) : null,
         updatedAt: records.meta?.updatedAt ?? null,
       };
     });
@@ -251,10 +267,12 @@ export const preparationRepository = {
       input.opportunityId,
       true,
       (records, store) => {
-        if (records.receipt && records.plan?.id === records.receipt.planId) return records.plan;
+        if (records.receipt && records.plan?.id === records.receipt.planId)
+          return localPlanDisplay(records.plan);
         assertContext(records, input.context);
         if ((records.plan?.version ?? null) !== input.baseVersion) {
-          if (records.plan && records.plan.id === `plan-${input.operationId}`) return records.plan;
+          if (records.plan && records.plan.id === `plan-${input.operationId}`)
+            return localPlanDisplay(records.plan);
           throw new Error(
             "Plan version changed in another tab. Keep the confirmed plan and generate a new candidate.",
           );
@@ -323,9 +341,17 @@ export const preparationRepository = {
               : []),
           ],
         };
+        if (records.plan) {
+          const previousPlan = records.plan;
+          const key = `historical-plan-backup:${input.opportunityId}`;
+          const backup = store.get(key);
+          backup.onsuccess = () => {
+            if (backup.result === undefined) store.put(previousPlan, key);
+          };
+        }
         commit(store, plan);
         store.put({ planId: plan.id, version: plan.version }, `receipt:${input.operationId}`);
-        return plan;
+        return localPlanDisplay(plan);
       },
       input.operationId,
     );
@@ -354,7 +380,7 @@ export const preparationRepository = {
                 "This confirmed plan is unavailable. Reload before changing progress.",
               );
             if (receipt.result) {
-              finish(plan);
+              finish(localPlanDisplay(plan));
               return;
             }
             if (plan.version !== input.baseVersion)
@@ -401,7 +427,7 @@ export const preparationRepository = {
             };
             commit(store, next);
             store.put({ planId: plan.id, version: next.version }, `receipt:${input.operationId}`);
-            finish(next);
+            finish(localPlanDisplay(next));
           } catch (error) {
             fail(error instanceof Error ? error : new Error("Progress was not saved."));
           }
@@ -463,7 +489,7 @@ export const preparationRepository = {
         ),
       };
       commit(store, next);
-      return next;
+      return localPlanDisplay(next);
     });
   },
 };
