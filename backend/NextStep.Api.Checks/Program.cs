@@ -558,7 +558,7 @@ Test("configured Google challenge uses same-origin callback, profile-only scopes
     var client = host.CreateClient(new() { AllowAutoRedirect = false, BaseAddress = new Uri("https://localhost:8082") });
     var response = await client.GetAsync("/api/auth/google?returnTo=%2Fplans%3Fevent%3DE01");
     Assert(response.StatusCode == HttpStatusCode.Redirect && response.Headers.Location!.Host == "accounts.google.com", await response.Content.ReadAsStringAsync());
-    var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(response.Headers.Location.Query);
+    var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(response.Headers.Location!.Query);
     Assert(query["redirect_uri"] == "https://localhost:8082/api/auth/google/callback" && query["code_challenge_method"] == "S256" && !string.IsNullOrEmpty(query["state"]));
     Assert(!query["scope"].ToString().Contains("gmail", StringComparison.OrdinalIgnoreCase) && !query["scope"].ToString().Contains("drive", StringComparison.OrdinalIgnoreCase));
     Assert(host.Google.Calls == 0);
@@ -608,6 +608,8 @@ Test("Google callback rejects unverified email and never automatically links a p
 });
 
 SourceCollectionChecks.Register(Test);
+PalestineNetworkChecks.Register(Test);
+CampusActivityChecks.Register(Test);
 Test("preparation navigation uses a planning record rather than an event ID prefix", () => {
     var record = new Catalog().Get("E01") with { Id = "new-university-hackathon" };
     var listing = new DiscoveryCatalog(new Catalog()).Listings().Single(item => item.Id == "E01") with { Id = record.Id };

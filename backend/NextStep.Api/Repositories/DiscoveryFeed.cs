@@ -4,16 +4,18 @@ using MySqlConnector;
 namespace NextStep.Api;
 
 public sealed record SourceCheck(string SourceId, string LastAttemptAt, string Outcome, int CandidateCount);
+public sealed record AnnouncementCollectionStatus(bool Enabled, int DailyRequestLimit, int RequestsToday, int ExtractedCount, int FailedCount);
 public sealed record CollectionStatus(bool Enabled, int IntervalHours, string? LastAttemptAt, int PendingReviewCount, int AutomaticallyDiscoveredCount)
 {
     public SourceCheck[] Sources { get; init; } = [];
+    public AnnouncementCollectionStatus? MetaExtraction { get; init; }
 }
-public sealed class DiscoveryFeed(DiscoveryCatalog catalog, MySqlStateStore store, IConfiguration configuration)
+public sealed class DiscoveryFeed(DiscoveryCatalog catalog, MySqlStateStore store, IConfiguration configuration, CampusActivityFeed activityFeed)
 {
     private static string Instant(DateTime value) => new DateTimeOffset(DateTime.SpecifyKind(value, DateTimeKind.Utc)).ToString("O");
     public async Task<ListingSummary[]> Listings(CancellationToken ct)
     {
-        var items = catalog.Listings().ToList();
+        var items = catalog.Listings().Concat(await activityFeed.Opportunities(ct)).DistinctBy(p => p.Id).ToList();
         await using var db = await store.Open(ct);
         await using var query = new MySqlCommand("SELECT d.payload,d.first_seen_at,d.checked_at,p.result,p.checked_at FROM discovered_listings d LEFT JOIN source_pages p ON p.url_hash=d.page_hash ORDER BY d.first_seen_at DESC,d.id", db);
         await using var rows = await query.ExecuteReaderAsync(ct);
@@ -45,7 +47,11 @@ public sealed class DiscoveryFeed(DiscoveryCatalog catalog, MySqlStateStore stor
         }
         await using var query = new MySqlCommand("SELECT (SELECT COUNT(*) FROM intake_candidates WHERE state='pending_review'),(SELECT COUNT(*) FROM discovered_listings)", db);
         await using var row = await query.ExecuteReaderAsync(ct); await row.ReadAsync(ct);
-        return new(configuration.GetValue<bool>("SourceCollection:Enabled"), Math.Clamp(configuration.GetValue("SourceCollection:IntervalHours", 12), 1, 168), checks.Select(c => c.LastAttemptAt).OrderDescending(StringComparer.Ordinal).FirstOrDefault(), row.GetInt32(0), row.GetInt32(1)) { Sources = checks.ToArray() };
+        var pending = row.GetInt32(0); var discovered = row.GetInt32(1); await row.DisposeAsync();
+        await using var stats = new MySqlCommand("SELECT COALESCE(SUM(created_at>=UTC_DATE()),0),COALESCE(SUM(outcome='extracted_unreviewed'),0),COALESCE(SUM(outcome IN ('timeout','provider_unavailable','invalid_model_output')),0) FROM announcement_extractions", db);
+        await using var counts = await stats.ExecuteReaderAsync(ct); await counts.ReadAsync(ct);
+        var meta = new AnnouncementCollectionStatus(configuration.GetValue<bool>("SourceCollection:MetaExtraction:Enabled"), Math.Clamp(configuration.GetValue("SourceCollection:MetaExtraction:MaxDailyRequests", 3), 0, 30), counts.GetInt32(0), counts.GetInt32(1), counts.GetInt32(2));
+        return new(configuration.GetValue<bool>("SourceCollection:Enabled"), Math.Clamp(configuration.GetValue("SourceCollection:IntervalHours", 12), 1, 168), checks.Select(c => c.LastAttemptAt).OrderDescending(StringComparer.Ordinal).FirstOrDefault(), pending, discovered) { Sources = checks.ToArray(), MetaExtraction = meta };
     }
     internal async Task StorePage(SourceRegistration source, Uri page, SourcePage result, ListingSummary[] listings, CancellationToken ct)
     {

@@ -1,0 +1,388 @@
+[
+  {
+    "id": "campus-binxttech-rag-announcement",
+    "universityIds": [
+      "bethlehem",
+      "ppu",
+      "birzeit",
+      "ptuk",
+      "palestine-ahliya",
+      "alquds",
+      "aaup",
+      "najah",
+      "hebron"
+    ],
+    "organizationIds": [
+      "ieee-bethlehem",
+      "ieee-ppu",
+      "ieee-birzeit",
+      "cse-ptuk",
+      "ieee-pau",
+      "ieee-alquds",
+      "ieee-aaup",
+      "ieee-najah"
+    ],
+    "title": "RAG AI Bootcamp & Hackathon",
+    "summary": "أعلنت BinX Tech بالتعاون مع IEEE جامعة بيت لحم عن بوتكامب وهاكاثون RAG AI بمشاركة مجتمعات تقنية من عدة جامعات فلسطينية. لم يحدد الاقتباس المتاح موعد الفعالية أو آخر موعد للتسجيل؛ المشاركة والأهلية تحتاجان مراجعة إعلان المنظم.",
+    "originalUrl": "https://www.linkedin.com/company/binxtech",
+    "contentUrl": "https://www.linkedin.com/company/binxtech",
+    "channel": "linkedin",
+    "kind": "hackathon",
+    "publishedDateText": "Relative timestamp only; exact publication date not available",
+    "eventDateText": null,
+    "availability": "unknown",
+    "sourcePassage": "وفي RAG AI Bootcamp & Hackathon، وبالتعاون مع IEEE BU Student Branch",
+    "verificationLevel": "primary_source",
+    "collectedAt": "2026-11-02T01:18:07.639Z",
+    "organizerName": "BinX Tech × IEEE Bethlehem University Student Branch"
+  },
+  {
+    "id": "campus-cse-ptuk-newcomers-results",
+    "universityIds": [
+      "ptuk"
+    ],
+    "organizationIds": [
+      "cse-ptuk"
+    ],
+    "title": "نتائج Newcomers Programming Competition",
+    "summary": "نشر نادي الحاسوب نتائج مسابقة للمبرمجين الجدد شارك فيها طلبة فروع خضوري. هذا تقرير نتائج لفعالية منتهية، وليس دعوة تسجيل جديدة.",
+    "originalUrl": "https://cseptuk.com/events/إعلان-نتائج-newcomers-programming-competition/",
+    "contentUrl": "https://cseptuk.com/events/إعلان-نتائج-newcomers-programming-competition/",
+    "channel": "official_website",
+    "kind": "competition",
+    "publishedDateText": null,
+    "eventDateText": "17 February 2026",
+    "availability": "ended",
+    "sourcePassage": "يعلن نادي هندسة الحاسوب عن نتائج المسابقة التي أُقيمت على مستوى فروع جامعة فلسطين التقنية خضوري",
+    "verificationLevel": "primary_source",
+    "collectedAt": "2026-11-02T01:18:07.639Z",
+    "postType": "recap"
+  },
+  {
+    "id": "campus-gdg-bzu-0",
+    "universityIds": [
+      "birzeit"
+    ],
+    "organizationIds": [
+      "gdg-birzeit"
+    ],
+    "title": "DevOps Foundations Bootcamp: Git & Docker Essentials",
+    "summary": "بوتكامب عملي للتعرّف على Git وGitHub وDocker وأساسيات DevOps. الفعالية مدرجة ضمن الأرشيف المنتهي في صفحة جوجل الرسمية.",
+    "originalUrl": "https://gdg.community.dev/events/details/google-gdg-on-campus-birzeit-university-birzeit-palestine-presents-devops-foundations-bootcamp-git-amp-docker-essentials/",
+    "contentUrl": "https://gdg.community.dev/gdg-on-campus-birzeit-university-birzeit-palestine/",
+    "channel": "official_website",
+    "kind": "training",
+    "publishedDateText": null,
+    "eventDateText": "2026-07-25T08:00:47Z",
+    "availability": "ended",
+    "sourcePassage": "DevOps Foundations Bootcamp: Git & Docker Essentials",
+    "verificationLevel": "primary_source",
+    "collectedAt": "2026-11-02T01:18:07.639Z"
+  },
+  {
+    "id": "campus-gdg-bzu-1",
+    "universityIds": [
+      "birzeit"
+    ],
+    "organizationIds": [
+      "gdg-birzeit"
+    ],
+    "title": "Datathon 2026 Preparation Session",
+    "summary": "جلسة تحضير للداتاثون حول تحليل البيانات وبناء حلول تعلم الآلة والعمل ضمن فرق. الفعالية انتهت في يونيو 2026.",
+    "originalUrl": "https://gdg.community.dev/events/details/google-gdg-on-campus-birzeit-university-birzeit-palestine-presents-datathon-2026-preparation-session/",
+    "contentUrl": "https://gdg.community.dev/gdg-on-campus-birzeit-university-birzeit-palestine/",
+    "channel": "official_website",
+    "kind": "workshop",
+    "publishedDateText": null,
+    "eventDateText": "2026-06-12T17:00:00Z",
+    "availability": "ended",
+    "sourcePassage": "Datathon 2026 Preparation Session",
+    "verificationLevel": "primary_source",
+    "collectedAt": "2026-11-02T01:18:07.639Z"
+  },
+  {
+    "id": "campus-gdg-bzu-2",
+    "universityIds": [
+      "birzeit"
+    ],
+    "organizationIds": [
+      "gdg-birzeit"
+    ],
+    "title": "Build with AI: Build & Deploy to Google Cloud with Antigravity",
+    "summary": "جلسة تطبيقية حول بناء التطبيقات ونشرها باستخدام Google Cloud ووكلاء الذكاء الاصطناعي. مدرجة ضمن الفعاليات الماضية.",
+    "originalUrl": "https://gdg.community.dev/events/details/google-gdg-on-campus-birzeit-university-birzeit-palestine-presents-build-with-ai-build-amp-deploy-to-google-cloud-with-antigravity/",
+    "contentUrl": "https://gdg.community.dev/gdg-on-campus-birzeit-university-birzeit-palestine/",
+    "channel": "official_website",
+    "kind": "workshop",
+    "publishedDateText": null,
+    "eventDateText": "2026-05-21T16:00:00Z",
+    "availability": "ended",
+    "sourcePassage": "Build with AI: Build & Deploy to Google Cloud with Antigravity",
+    "verificationLevel": "primary_source",
+    "collectedAt": "2026-11-02T01:18:07.639Z"
+  },
+  {
+    "id": "campus-gdg-bzu-3",
+    "universityIds": [
+      "birzeit"
+    ],
+    "organizationIds": [
+      "gdg-birzeit"
+    ],
+    "title": "Build with AI: Next Gen Content",
+    "summary": "جلسة لتوظيف الذكاء الاصطناعي في الأفكار والمحتوى المرئي وصياغة التعليمات، مع نشاط تطبيقي. مدرجة ضمن الفعاليات الماضية.",
+    "originalUrl": "https://gdg.community.dev/events/details/google-gdg-on-campus-birzeit-university-birzeit-palestine-presents-build-with-ai-next-gen-content/",
+    "contentUrl": "https://gdg.community.dev/gdg-on-campus-birzeit-university-birzeit-palestine/",
+    "channel": "official_website",
+    "kind": "workshop",
+    "publishedDateText": null,
+    "eventDateText": "2026-05-07T11:00:01Z",
+    "availability": "ended",
+    "sourcePassage": "Build with AI: Next Gen Content",
+    "verificationLevel": "primary_source",
+    "collectedAt": "2026-11-02T01:18:07.639Z"
+  },
+  {
+    "id": "campus-gdg-alaqsa-info",
+    "universityIds": [
+      "alaqsa"
+    ],
+    "organizationIds": [
+      "gdg-alaqsa"
+    ],
+    "title": "GDG Al-Aqsa — Info Session",
+    "summary": "جلسة تعريفية بمجتمع جوجل في جامعة الأقصى وخططه وورشاته وفرص المشاركة الطلابية. الموعد المنشور كان 28 أكتوبر 2026، لذلك تظهر كفعالية انتهت.",
+    "originalUrl": "https://gdg.community.dev/events/details/google-gdg-on-campus-al-aqsa-university-gaza-state-of-palestine-presents-info-session/",
+    "contentUrl": "https://gdg.community.dev/events/details/google-gdg-on-campus-al-aqsa-university-gaza-state-of-palestine-presents-info-session/",
+    "channel": "official_website",
+    "kind": "community_update",
+    "publishedDateText": null,
+    "eventDateText": "2026-10-28T08:00:00Z",
+    "availability": "ended",
+    "sourcePassage": "Join us for the introductory Info Session of GDG on Campus – Al-Aqsa University!",
+    "verificationLevel": "primary_source",
+    "collectedAt": "2026-11-02T01:18:07.639Z"
+  },
+  {
+    "id": "campus-ieee-iug-extreme20",
+    "universityIds": [
+      "iug"
+    ],
+    "organizationIds": [
+      "ieee-iug"
+    ],
+    "title": "مشاركة الجامعة الإسلامية في IEEEXtreme 20",
+    "summary": "نشرت الجامعة تقرير مشاركتها في مسابقة البرمجة العالمية IEEEXtreme 20. هذا خبر عن مشاركة حدثت، ولا يعني فتح باب التسجيل الآن.",
+    "originalUrl": "https://www.iugaza.edu.ps/p34869/",
+    "contentUrl": "https://www.iugaza.edu.ps/p34869/",
+    "channel": "official_website",
+    "kind": "competition",
+    "publishedDateText": "31 October 2026",
+    "eventDateText": null,
+    "availability": "ended",
+    "sourcePassage": "IEEEXtreme 20",
+    "verificationLevel": "primary_source",
+    "collectedAt": "2026-11-02T01:18:07.639Z",
+    "postType": "recap"
+  },
+  {
+    "id": "campus-ieee-bethlehem-day",
+    "universityIds": [
+      "bethlehem"
+    ],
+    "organizationIds": [
+      "ieee-bethlehem",
+      "ieee-cs-bethlehem",
+      "ieee-pes-bethlehem",
+      "ieee-wie-bethlehem"
+    ],
+    "title": "IEEE Day — Bethlehem University",
+    "summary": "تقرير فعالية IEEE Day في جامعة بيت لحم، بمشاركة مجتمعات الحاسوب والطاقة والمرأة في الهندسة. هذه فعالية سابقة للاطلاع على نشاط الجمعية.",
+    "originalUrl": "https://events.vtools.ieee.org/m/509175",
+    "contentUrl": "https://events.vtools.ieee.org/m/509175",
+    "channel": "official_website",
+    "kind": "community_update",
+    "publishedDateText": null,
+    "eventDateText": "2025 — archived event",
+    "availability": "ended",
+    "sourcePassage": "The IEEE Student Branch at Bethlehem University organized IEEE Day 2025",
+    "verificationLevel": "primary_source",
+    "collectedAt": "2026-11-02T01:18:07.639Z",
+    "postType": "recap"
+  },
+  {
+    "id": "campus-bzu-fb-computer-vision",
+    "universityIds": [
+      "birzeit"
+    ],
+    "organizationIds": [
+      "ieee-birzeit",
+      "ieee-cs-birzeit"
+    ],
+    "title": "Computer Vision Workshop",
+    "summary": "منشور منسوب إلى مجتمع الحاسوب في IEEE بيرزيت يعلن ورشة في أساسيات الرؤية الحاسوبية واكتشاف الجسم والوجه ووضعية الجسم. النص متاح عبر إعادة نشر عامة؛ المنشور الأصلي لم يُقرأ مباشرة.",
+    "originalUrl": "https://www.facebook.com/355654031195591",
+    "contentUrl": "https://www.findglocal.com/PS/Ramallah/355654031195591/IEEE---Birzeit-University-Student-Branch",
+    "channel": "facebook",
+    "kind": "workshop",
+    "publishedDateText": "31 July 2026",
+    "eventDateText": "1 August 2026",
+    "availability": "ended",
+    "sourcePassage": "جاهزين تكتشفوا أساسيات الـ Computer Vision وتتعرفوا على أبرز تطبيقاته من خلال تجربة عملية مميزة؟",
+    "verificationLevel": "secondary_excerpt",
+    "collectedAt": "2026-11-02T01:18:07.639Z"
+  },
+  {
+    "id": "campus-bzu-fb-notion",
+    "universityIds": [
+      "birzeit"
+    ],
+    "organizationIds": [
+      "ieee-birzeit",
+      "ieee-cs-birzeit"
+    ],
+    "title": "Think in Notion",
+    "summary": "جلسة لتنظيم الدراسة والملاحظات وبناء لوحة شخصية على Notion. إعادة النشر تعرض تاريخ أغسطس 2026 مع تعارض بين اسم اليوم والتاريخ؛ تُعرض ضمن الأرشيف ولا يُفترض منها تسجيل مفتوح.",
+    "originalUrl": "https://www.facebook.com/355654031195591",
+    "contentUrl": "https://www.findglocal.com/PS/Ramallah/355654031195591/IEEE---Birzeit-University-Student-Branch",
+    "channel": "facebook",
+    "kind": "workshop",
+    "publishedDateText": "4 August 2026",
+    "eventDateText": "4 August 2026 — stated weekday conflicts",
+    "availability": "ended",
+    "sourcePassage": "انضم لـ Think in Notion Session وتعلّم كيف تبني مساحة عملك الخاصة على Notion من الصفر!",
+    "verificationLevel": "secondary_excerpt",
+    "collectedAt": "2026-11-02T01:18:07.639Z"
+  },
+  {
+    "id": "campus-bzu-fb-robotics",
+    "universityIds": [
+      "birzeit"
+    ],
+    "organizationIds": [
+      "ieee-birzeit",
+      "ieee-ras-birzeit"
+    ],
+    "title": "Interactive Booth Day — Robotics & Automation",
+    "summary": "منشور عن تجارب وتحديات تفاعلية في الروبوتات والأتمتة بجامعة بيرزيت. إعادة النشر تشير إلى أغسطس 2026 وتعارض في اليوم؛ ليست فرصة تسجيل حالية.",
+    "originalUrl": "https://www.facebook.com/355654031195591",
+    "contentUrl": "https://www.findglocal.com/PS/Ramallah/355654031195591/IEEE---Birzeit-University-Student-Branch",
+    "channel": "facebook",
+    "kind": "workshop",
+    "publishedDateText": null,
+    "eventDateText": "12 August 2026 — stated weekday conflicts",
+    "availability": "ended",
+    "sourcePassage": "يقدم لكم مجتمع الروبوتات والأتمتة RAS التابع للفرع الطلابي لجمعية مهندسي الكهرباء والإلكترونيات IEEE في جامعة بيرزيت فعالية مميزة",
+    "verificationLevel": "secondary_excerpt",
+    "collectedAt": "2026-11-02T01:18:07.639Z"
+  },
+  {
+    "id": "campus-gdg-bzu-instagram-nasa",
+    "universityIds": [
+      "birzeit"
+    ],
+    "organizationIds": [
+      "gdg-birzeit"
+    ],
+    "title": "NASA Space Apps — إعلان المسابقة والبوتكامب",
+    "summary": "نص مفهرس منسوب إلى حساب جوجل بيرزيت يعلن مسابقة وبوتكامب بالتعاون مع NOVA. يذكر 13 و14 نوفمبر دون سنة مؤكدة في الاقتباس؛ الموعد وحالة التسجيل يحتاجان تحققًا من المصدر الأصلي.",
+    "originalUrl": "https://www.instagram.com/gdgbzu/",
+    "contentUrl": "https://www.pixnoy.com/pl/profile/gdgbzu/",
+    "channel": "instagram",
+    "kind": "hackathon",
+    "publishedDateText": null,
+    "eventDateText": "13–14 November; year unconfirmed in excerpt",
+    "availability": "unknown",
+    "sourcePassage": "المسابقة رح تكون ب 13/11 و 14/11 و رح نعلن عن التفاصيل قريباً!",
+    "verificationLevel": "secondary_excerpt",
+    "collectedAt": "2026-11-02T01:18:07.639Z"
+  },
+  {
+    "id": "campus-gdg-bzu-instagram-core-team",
+    "universityIds": [
+      "birzeit"
+    ],
+    "organizationIds": [
+      "gdg-birzeit"
+    ],
+    "title": "GDG Birzeit — Core Team 2026–2027",
+    "summary": "منشور مفهرس عن فتح باب الانضمام لفريق جوجل بيرزيت للشابتر 2026–2027. آخر موعد للتقديم غير مذكور في النص المتاح؛ هذه دعوة للمجتمع وليست دورة أو حكمًا بأهلية الطالب.",
+    "originalUrl": "https://www.instagram.com/gdgbzu/",
+    "contentUrl": "https://www.pixnoy.com/pl/profile/gdgbzu/",
+    "channel": "instagram",
+    "kind": "community_update",
+    "publishedDateText": null,
+    "eventDateText": null,
+    "availability": "unknown",
+    "sourcePassage": "فتحنا باب التسجيل للانضمام إلى Core Team للشابتر القادم 2026–2027.",
+    "verificationLevel": "secondary_excerpt",
+    "collectedAt": "2026-11-02T01:18:07.639Z"
+  },
+  {
+    "id": "campus-najah-iot-workshop",
+    "universityIds": [
+      "najah"
+    ],
+    "organizationIds": [
+      "ieee-najah",
+      "ieee-comsoc-najah"
+    ],
+    "title": "IEEE النجاح — ورشة إنترنت الأشياء",
+    "summary": "تقرير الجامعة عن ورشة متخصصة نظّمها مجتمع الاتصالات في IEEE حول إنترنت الأشياء وتطوير المهارات التقنية. هذا خبر نشاط سابق، وليس إعلان تسجيل حالي.",
+    "originalUrl": "https://www.najah.edu/ar/about/history-and-traditions/campus-life/deanship-student-affairs/news-activities/2026/05/11/jm-y-ieee-tnzm-wrsh-mtkhss-hwl-ntrnt-lshy-lt-zyz-mhrt-ltlb-ltqny/",
+    "contentUrl": "https://www.najah.edu/ar/about/history-and-traditions/campus-life/deanship-student-affairs/news-activities/2026/05/11/jm-y-ieee-tnzm-wrsh-mtkhss-hwl-ntrnt-lshy-lt-zyz-mhrt-ltlb-ltqny/",
+    "channel": "official_website",
+    "kind": "workshop",
+    "publishedDateText": "11 May 2026",
+    "eventDateText": null,
+    "availability": "ended",
+    "sourcePassage": "جمعية IEEE تنظم ورشة متخصصة حول \"إنترنت الأشياء\" لتعزيز مهارات الطلبة التقنية",
+    "verificationLevel": "primary_source",
+    "collectedAt": "2026-11-02T01:18:07.639Z",
+    "postType": "recap"
+  },
+  {
+    "id": "campus-najah-arduino-training",
+    "universityIds": [
+      "najah"
+    ],
+    "organizationIds": [
+      "ieee-najah"
+    ],
+    "title": "IEEE النجاح — برنامج تدريبي في الآردوينو",
+    "summary": "نشرت الجامعة خبر إطلاق برنامج تدريبي في الآردوينو لتنمية المهارات العملية، بإشراف عمادة شؤون الطلبة وكلية الهندسة. الخبر منشور في يوليو؛ نهاية البرنامج والتسجيل الحالي غير مؤكّدين.",
+    "originalUrl": "https://www.najah.edu/ar/about/history-and-traditions/campus-life/deanship-student-affairs/news-activities/2026/07/12/bshrf-md-shwwn-ltlb-wkly-lhnds-jm-y-ieee-ttlq-brnmjan-tdrybyan-mtkhssan-fy-lardwynw-ltnmy-mhrt-ltlb-l-mly/",
+    "contentUrl": "https://www.najah.edu/ar/about/history-and-traditions/campus-life/deanship-student-affairs/news-activities/2026/07/12/bshrf-md-shwwn-ltlb-wkly-lhnds-jm-y-ieee-ttlq-brnmjan-tdrybyan-mtkhssan-fy-lardwynw-ltnmy-mhrt-ltlb-l-mly/",
+    "channel": "official_website",
+    "kind": "training",
+    "publishedDateText": "12 July 2026",
+    "eventDateText": null,
+    "availability": "unknown",
+    "sourcePassage": "جمعية IEEE تطلق برنامجًا تدريبيًا متخصصًا في الآردوينو لتنمية مهارات الطلبة العملية",
+    "verificationLevel": "primary_source",
+    "collectedAt": "2026-11-02T01:18:07.639Z",
+    "postType": "recap"
+  },
+  {
+    "id": "campus-aaup-engineering-festival",
+    "universityIds": [
+      "aaup"
+    ],
+    "organizationIds": [
+      "ieee-aaup"
+    ],
+    "title": "AAUP & IEEE — Engineering Festival",
+    "summary": "خبر الجامعة عن مهرجان هندسي نظّمته كلية الهندسة بالتعاون مع IEEE وبمشاركة شركات فلسطينية. يُعرض كتقرير عن نشاط الجمعية، ولا يُفترض أنه إعلان تسجيل مستقبلي.",
+    "originalUrl": "https://www.aaup.edu/ieee",
+    "contentUrl": "https://www.aaup.edu/ieee",
+    "channel": "official_website",
+    "kind": "community_update",
+    "publishedDateText": "25 June 2026 — university news listing",
+    "eventDateText": null,
+    "availability": "unknown",
+    "sourcePassage": "AAUP Faculty of Engineering and IEEE AAUP Hold “Engineering Festival” with Participation of Elite Group of Palestinian Companies",
+    "verificationLevel": "primary_source",
+    "collectedAt": "2026-11-02T01:18:07.639Z",
+    "postType": "recap"
+  }
+]

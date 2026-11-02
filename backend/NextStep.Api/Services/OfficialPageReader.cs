@@ -24,7 +24,9 @@ public sealed class OfficialPageReader : IOfficialPageReader, IDisposable
             using var response = await client.GetAsync(address, HttpCompletionOption.ResponseHeadersRead, ct);
             if (!response.IsSuccessStatusCode) return new("http_" + (int)response.StatusCode, null);
             if (response.Content.Headers.ContentType?.MediaType is not ("text/html" or "application/xhtml+xml")) return new("unsupported_content", null);
-            return new("checked", await ReadBody(response.Content, 524288, ct));
+            // GDG embeds chapter/event data and its site configuration in the public HTML (about 730 KB).
+            var limit = address.Host == "gdg.community.dev" ? 1048576 : 524288;
+            return new("checked", await ReadBody(response.Content, limit, ct));
         } catch (OperationCanceledException) when (!ct.IsCancellationRequested) { return new("timeout", null); }
           catch (HttpRequestException) { return new("source_unavailable", null); }
           catch (InvalidDataException) { return new("page_too_large", null); }
