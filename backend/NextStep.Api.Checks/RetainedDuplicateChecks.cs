@@ -20,6 +20,10 @@ public static class RetainedDuplicateChecks
             await using var host = new Factory();
             var client = host.CreateClient(); client.DefaultRequestHeaders.Add("X-NextStep-Request", "1");
             (await client.PostAsync("/api/session", null)).EnsureSuccessStatusCode();
+            // P2 gate: this flow exercises generation, so it acknowledges the
+            // data-sharing disclosure first (the gate itself is covered by
+            // DisclosureChecks).
+            (await client.PostAsync("/api/profile/disclosure/acknowledge", null)).EnsureSuccessStatusCode();
             var original = (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!;
             var profile = await SaveProfile(client, original, [new("goal-a", "First goal"), new("goal-b", "Second goal")]);
             var opportunity = (await client.GetFromJsonAsync<Opportunity>("/api/opportunities/E01", Wire.Json))!;
