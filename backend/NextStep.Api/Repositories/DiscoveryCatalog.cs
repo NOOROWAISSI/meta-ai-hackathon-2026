@@ -13,6 +13,7 @@ public sealed record ListingSummary(string Id, string Kind, string Title, string
     public string AvailabilityState { get; init; } = "unknown";
     public string SourceFreshness { get; init; } = "not_checked";
     public string? UniversityId { get; init; }
+    public string[] UniversityIds { get; init; } = [];
     public string? OrganizationId { get; init; }
     public string ExtractionMethod { get; init; } = "source_record";
 }

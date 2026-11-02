@@ -21,7 +21,7 @@ public sealed class CampusFollowsController(MySqlStateStore store, PalestineNetw
         var result = new List<CampusFollow>(); await using var rows = await query.ExecuteReaderAsync(ct);
         while (await rows.ReadAsync(ct)) {
             var id = rows.GetString(0); var followed = DateTime.SpecifyKind(rows.GetDateTime(1), DateTimeKind.Utc); var seen = DateTime.SpecifyKind(rows.GetDateTime(2), DateTimeKind.Utc);
-            var ids = listings.Where(l => l.UniversityId == id && l.FirstSeenAt is not null && DateTimeOffset.Parse(l.FirstSeenAt) > new DateTimeOffset(seen) && l.AvailabilityState != "ended" && l.AvailabilityState != "cancelled").Select(l => l.Id).ToArray();
+            var ids = listings.Where(l => (l.UniversityId == id || l.UniversityIds.Contains(id)) && l.FirstSeenAt is not null && DateTimeOffset.Parse(l.FirstSeenAt) > new DateTimeOffset(seen) && l.AvailabilityState != "ended" && l.AvailabilityState != "cancelled").Select(l => l.Id).ToArray();
             result.Add(new(id, followed.ToString("O"), seen.ToString("O"), ids));
         }
         return result.ToArray();
