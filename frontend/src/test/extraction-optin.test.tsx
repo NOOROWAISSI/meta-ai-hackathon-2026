@@ -48,6 +48,26 @@ it("extraction disclosure names Meta, the per-document rule, and the withdrawal 
   expect(screen.getByText(/per document and recorded on the server/)).toBeVisible();
   expect(screen.getByText(/separate from the plan-generation acknowledgment/)).toBeVisible();
   expect(screen.getByText(/cannot retract text already sent/)).toBeVisible();
+  // Finding 1: the disclosure must not claim the documents are anonymized.
+  // It distinguishes account identity (not appended by the app) from
+  // personal information that may remain inside the documents themselves.
+  expect(
+    screen.getByText(/does not add your account name or email address/),
+  ).toBeVisible();
+  expect(
+    screen.getByText(/may still contain personal information/),
+  ).toBeVisible();
+  expect(screen.getByText(/cannot guarantee that all of it is removed/)).toBeVisible();
+  expect(
+    screen.queryByText(/Your name and email address are not sent/),
+  ).not.toBeInTheDocument();
+  // Finding 2: withdrawal is scoped to future extraction. Confirmed facts
+  // and their quotations may still be used by a separately consented
+  // comparison, and the panel says so.
+  expect(
+    screen.getByText(/does not delete facts you already confirmed/),
+  ).toBeVisible();
+  expect(screen.getByText(/every comparison asks for its own consent/)).toBeVisible();
   expect(screen.getByText("My CV.pdf")).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Opt in for this document" }));
   expect(onOptIn).toHaveBeenCalledWith("src-1");

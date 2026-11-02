@@ -37,14 +37,14 @@ export function ExtractionOptInPanel({
       </h4>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">
         {t(
-          "When you analyze, the full extracted text of the selected documents below is sent to Meta AI through the backend to propose professional facts for your review. Your name and email address are not sent. Nothing is confirmed in your profile automatically.",
-          "لما تحلّل، النص الكامل المستخرج من المستندات المختارة تحت بينرسل لـMeta AI عبر الباك لاقتراح معلومات مهنية تراجعها. اسمك وبريدك الإلكتروني ما بينرسلوا. وما في إشي بينعتمد بملفك تلقائيًا.",
+          "When you analyze, the full extracted text of the selected documents below is sent to Meta AI through the backend to propose professional facts for your review. The app does not add your account name or email address to what is sent. Your documents themselves may still contain personal information, such as your name, contact details, or other identifying text, and the app cannot guarantee that all of it is removed. Read each document's text before you opt in, and do not import a document whose contents you are not willing to send. Nothing is confirmed in your profile automatically.",
+          "لما تحلّل، النص الكامل المستخرج من المستندات المختارة تحت بينرسل لـMeta AI عبر الباك لاقتراح معلومات مهنية تراجعها. التطبيق ما بيضيف اسم حسابك أو بريدك الإلكتروني على اللي بينرسل. بس مستنداتك نفسها ممكن يكون فيها معلومات شخصية، مثل اسمك أو بيانات تواصل أو أي نص بيعرّف فيك، والتطبيق ما بيقدر يضمن إنو كلها تنشال. اقرأ نص كل مستند قبل ما تسمح، وما تستورد مستند مش مستعد ترسل محتواه. وما في إشي بينعتمد بملفك تلقائيًا.",
         )}
       </p>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">
         {t(
-          "This permission is per document and recorded on the server. It is separate from the plan-generation acknowledgment; neither one covers the other. If you replace a document, you will be asked again for the new copy. You can withdraw at any time; withdrawal stops future analyses for that document but cannot retract text already sent in an earlier analysis.",
-          "هاي الإذن لكل مستند وبتتسجّل على السيرفر. وهي منفصلة عن إقرار إنشاء الخطط؛ ولا وحدة بتغطي التانية. إذا بدّلت مستند، رح نطلب منك من جديد للنسخة الجديدة. بتقدر تسحب الإذن بأي وقت؛ السحب بوقف التحليلات الجاية لهداك المستند بس ما بيقدر يسترجع نص انرسل أصلًا بتحليل سابق.",
+          "This permission is per document and recorded on the server. It is separate from the plan-generation acknowledgment; neither one covers the other. If you replace a document, you will be asked again for the new copy. You can withdraw at any time; withdrawal stops future analyses for that document but cannot retract text already sent in an earlier analysis. Withdrawing also does not delete facts you already confirmed into your profile. Those confirmed facts, including their supporting quotations, can still be sent later if you separately agree to an opportunity comparison; every comparison asks for its own consent.",
+          "هاي الإذن لكل مستند وبتتسجّل على السيرفر. وهي منفصلة عن إقرار إنشاء الخطط؛ ولا وحدة بتغطي التانية. إذا بدّلت مستند، رح نطلب منك من جديد للنسخة الجديدة. بتقدر تسحب الإذن بأي وقت؛ السحب بوقف التحليلات الجاية لهداك المستند بس ما بيقدر يسترجع نص انرسل أصلًا بتحليل سابق. والسحب كمان ما بيمسح المعلومات اللي أكدتها أصلًا بملفك. هاي المعلومات المعتمدة، بما فيها الاقتباسات الداعمة إلها، ممكن تنرسل بعدين إذا وافقت بشكل منفصل على مقارنة فرصة؛ وكل مقارنة بتطلب موافقتها الخاصة.",
         )}
       </p>
       <ul className="mt-3 space-y-2">

@@ -252,6 +252,22 @@ public static class ProfileEvidenceChecks {
             host.Evidence.Invalid = true;
             Check(!(await client.PostAsJsonAsync("/api/listings/meta-global-ai-2026/evidence-comparison", new InsightRequest(view.ProfileVersion, view.Workspace.Version, true, "en"), Wire.Json)).IsSuccessStatusCode);
         }));
+        test("comparison keeps using confirmed quotations after extraction opt-in withdrawal, under its own consent", () => Run(async (host, client, view) => {
+            view = await Analyze(client, await Add(client, view));
+            var accepted = await client.PostAsJsonAsync("/api/profile/evidence/accept", new EvidenceAcceptance(view.Workspace.Draft!.Id, view.ProfileVersion, view.Workspace.Version, [new(0, "React", "")]), Wire.Json); accepted.EnsureSuccessStatusCode();
+            view = (await accepted.Content.ReadFromJsonAsync<EvidenceView>(Wire.Json))!;
+            // Withdraw the document's extraction opt-in. Withdrawal is
+            // scoped to future extraction: it must not reach facts already
+            // confirmed into the profile, and it must not switch off the
+            // separately consented comparison (finding: withdrawal scope).
+            (await client.PostAsync("/api/profile/evidence/opt-in/" + view.Workspace.Sources[0].Id + "/withdraw", null)).EnsureSuccessStatusCode();
+            var calls = host.Evidence.Calls;
+            var refused = await client.PostAsJsonAsync("/api/listings/meta-global-ai-2026/evidence-comparison", new InsightRequest(view.ProfileVersion, view.Workspace.Version, false, "en"), Wire.Json);
+            Check(!refused.IsSuccessStatusCode && host.Evidence.Calls == calls);
+            var response = await client.PostAsJsonAsync("/api/listings/meta-global-ai-2026/evidence-comparison", new InsightRequest(view.ProfileVersion, view.Workspace.Version, true, "en"), Wire.Json); response.EnsureSuccessStatusCode();
+            var modelContext = host.Evidence.LastContext ?? throw new Exception("The comparison model context was not captured.");
+            Check(modelContext["confirmed"]!.AsArray().Any(f => f?["supportingPassages"]?.AsArray().Count > 0));
+        }));
         test("source acceptance preserves an existing plan and confirmed Done progress", () => Run(async (host, client, view) => {
             var original = (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!;
             var updated = original with { Goals = [new("goal-evidence", "Prepare an interaction walkthrough")], AvailableHoursPerWeek = new JsonObject { ["state"] = "known", ["value"] = 5, ["reportedAt"] = DateTimeOffset.UtcNow.ToString("O") }, ClarificationAnswers = [new("opportunity-decision:" + MySqlStateStore.Hash("E01")[..16] + ":fixture-source:fixture-question", "I already built independent Python file-processing tools.", DateTimeOffset.UtcNow.ToString("O"))] };

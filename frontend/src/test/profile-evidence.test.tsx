@@ -404,6 +404,15 @@ it("explains concrete transfers, gaps, citations and preparation rather than mat
   const compare = await screen.findByRole("button", { name: "Explain this opportunity for me" });
   expect(compare).toBeDisabled();
   expect(service.compare).not.toHaveBeenCalled();
+  // Finding 2: the comparison consent explains that it is governed by its
+  // own consent, independent of the extraction opt-in state, and that
+  // confirmed facts may include quotations from imported documents.
+  expect(
+    screen.getByText(/governed by this consent alone/),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText(/even if I have withdrawn a document's extraction permission/),
+  ).toBeInTheDocument();
   fireEvent.click(screen.getByRole("checkbox", { name: /Use Meta through the backend/ }));
   await waitFor(() => expect(compare).toBeEnabled());
   fireEvent.click(compare);
