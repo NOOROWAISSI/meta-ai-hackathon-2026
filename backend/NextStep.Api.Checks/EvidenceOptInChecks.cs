@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
+using MySqlConnector;
 using NextStep.Api;
 using NextStep.Api.Controllers;
 
@@ -32,6 +33,21 @@ public static class EvidenceOptInChecks
 
     private static async Task<HttpResponseMessage> Analyze(HttpClient client, EvidenceView view, string sourceId) =>
         await client.PostAsJsonAsync("/api/profile/evidence/analyze", new EvidenceAnalysisRequest(view.ProfileVersion, view.Workspace.Version, [sourceId], true, "en"), Wire.Json);
+
+    private static async Task Sql(string statement, params (string, object)[] parameters)
+    {
+        await using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("NEXTSTEP_CHECKS_CONNECTION") ?? throw new InvalidOperationException("Set NEXTSTEP_CHECKS_CONNECTION."));
+        await connection.OpenAsync();
+        await using var command = new MySqlCommand(statement, connection);
+        foreach (var (name, value) in parameters) command.Parameters.AddWithValue(name, value);
+        await command.ExecuteNonQueryAsync();
+    }
+
+    private static async Task<string> OwnerOf(HttpClient client)
+    {
+        var profile = (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!;
+        return profile.Id["profile-".Length..];
+    }
 
     public static void Register(Action<string, Func<Task>> test)
     {
@@ -83,6 +99,85 @@ public static class EvidenceOptInChecks
             var blocked = await Analyze(client, viewNow, first);
             Check(blocked.StatusCode == HttpStatusCode.Forbidden);
             Check(host.Evidence.Calls == calls + 1);
+        }));
+        test("the opt-in is bound to the document content and dies with a stale version", () => Run(async (host, client, view) =>
+        {
+            view = await AddSource(client, view, "Bound CV");
+            var sourceId = view.Workspace.Sources[0].Id;
+            var owner = await OwnerOf(client);
+            (await client.PostAsync("/api/profile/evidence/opt-in/" + sourceId, null)).EnsureSuccessStatusCode();
+            // Simulate the document being materially updated after opt-in:
+            // the recorded fingerprint no longer matches the content.
+            await Sql("UPDATE evidence_import_optins SET source_hash = @h WHERE owner_id = @o AND source_id = @s", ("@h", new string('0', 64)), ("@o", owner), ("@s", sourceId));
+            var status = (await client.GetFromJsonAsync<EvidenceImportOptInStatus>("/api/profile/evidence/opt-in/" + sourceId, Wire.Json))!;
+            Check(!status.OptedIn);
+            var calls = host.Evidence.Calls;
+            var refused = await Analyze(client, view, sourceId);
+            Check(refused.StatusCode == HttpStatusCode.Forbidden && host.Evidence.Calls == calls);
+            // A stale policy version in the record is equally dead.
+            await Sql("UPDATE evidence_import_optins SET version = 99 WHERE owner_id = @o AND source_id = @s", ("@o", owner), ("@s", sourceId));
+            var refusedAgain = await Analyze(client, view, sourceId);
+            Check(refusedAgain.StatusCode == HttpStatusCode.Forbidden && host.Evidence.Calls == calls);
+            // A fresh opt-in against the current content works again.
+            (await client.PostAsync("/api/profile/evidence/opt-in/" + sourceId, null)).EnsureSuccessStatusCode();
+            (await Analyze(client, view, sourceId)).EnsureSuccessStatusCode();
+        }));
+        test("replacing a document requires a renewed opt-in", () => Run(async (host, client, view) =>
+        {
+            view = await AddSource(client, view, "Original CV");
+            var originalId = view.Workspace.Sources[0].Id;
+            (await client.PostAsync("/api/profile/evidence/opt-in/" + originalId, null)).EnsureSuccessStatusCode();
+            using var delete = new HttpRequestMessage(HttpMethod.Delete, "/api/profile/evidence/" + originalId) { Content = JsonContent.Create(new DeleteSourceRequest(view.ProfileVersion, view.Workspace.Version), options: Wire.Json) };
+            view = (await (await client.SendAsync(delete)).Content.ReadFromJsonAsync<EvidenceView>(Wire.Json))!;
+            view = await AddSource(client, view, "Replacement CV");
+            var replacementId = view.Workspace.Sources[0].Id;
+            Check(replacementId != originalId);
+            var calls = host.Evidence.Calls;
+            var refused = await Analyze(client, view, replacementId);
+            Check(refused.StatusCode == HttpStatusCode.Forbidden && host.Evidence.Calls == calls);
+        }));
+        test("opt-ins are isolated per account", () => Run(async (host, client, view) =>
+        {
+            view = await AddSource(client, view, "Private CV");
+            var sourceId = view.Workspace.Sources[0].Id;
+            (await client.PostAsync("/api/profile/evidence/opt-in/" + sourceId, null)).EnsureSuccessStatusCode();
+            using var other = host.CreateClient(); other.DefaultRequestHeaders.Add("X-NextStep-Request", "1");
+            (await other.PostAsJsonAsync("/api/auth/register", new RegisterRequest("optin-other-" + Guid.NewGuid().ToString("N") + "@example.invalid", "Synthetic-OptIn-Check-2026!", "Other account"), Wire.Json)).EnsureSuccessStatusCode();
+            var otherProfile = (await other.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!;
+            try
+            {
+                // The other account cannot see the source, its opt-in, or use it.
+                Check((await other.GetAsync("/api/profile/evidence/opt-in/" + sourceId)).StatusCode == HttpStatusCode.NotFound);
+                var otherView = (await other.GetFromJsonAsync<EvidenceView>("/api/profile/evidence", Wire.Json))!;
+                var calls = host.Evidence.Calls;
+                var refused = await Analyze(other, otherView, sourceId);
+                Check(refused.StatusCode == HttpStatusCode.NotFound && host.Evidence.Calls == calls);
+                // Their own identical-looking document still needs their own opt-in.
+                otherView = await AddSource(other, otherView, "Private CV");
+                var ownRefused = await Analyze(other, otherView, otherView.Workspace.Sources[0].Id);
+                Check(ownRefused.StatusCode == HttpStatusCode.Forbidden && host.Evidence.Calls == calls);
+            }
+            finally { await host.Services.GetRequiredService<IStateStore>().Delete(otherProfile.Id["profile-".Length..], CancellationToken.None); }
+        }));
+        test("withdrawal during an in-flight extraction blocks the next one, not the started transmission", () => Run(async (host, client, view) =>
+        {
+            view = await AddSource(client, view, "Flight CV");
+            var sourceId = view.Workspace.Sources[0].Id;
+            (await client.PostAsync("/api/profile/evidence/opt-in/" + sourceId, null)).EnsureSuccessStatusCode();
+            host.Evidence.Entered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            host.Evidence.Resume = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            var pending = Analyze(client, view, sourceId);
+            await host.Evidence.Entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            // The document text has already been transmitted at this point;
+            // withdrawal prevents future transmissions, it cannot retract
+            // this one (the same rule the disclosure states in the UI).
+            (await client.PostAsync("/api/profile/evidence/opt-in/" + sourceId + "/withdraw", null)).EnsureSuccessStatusCode();
+            host.Evidence.Resume.TrySetResult();
+            (await pending).EnsureSuccessStatusCode();
+            var viewNow = (await client.GetFromJsonAsync<EvidenceView>("/api/profile/evidence", Wire.Json))!;
+            var calls = host.Evidence.Calls;
+            var refused = await Analyze(client, viewNow, sourceId);
+            Check(refused.StatusCode == HttpStatusCode.Forbidden && host.Evidence.Calls == calls);
         }));
         test("an extraction opt-in does not satisfy the plan-generation disclosure gate", () => Run(async (host, client, view) =>
         {

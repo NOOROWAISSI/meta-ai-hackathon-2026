@@ -8,6 +8,9 @@ using NextStep.MetaAi;
 
 // Real MySQL + in-process ASP.NET host; only the provider is replaced in tests.
 // Each case owns a fresh anonymous session. No database-wide reset/delete occurs.
+// Demo accounts read their password from NEXTSTEP_DEMO_SEED_PASSWORD; the
+// harness supplies a synthetic value (never a repository literal).
+Environment.SetEnvironmentVariable("NEXTSTEP_DEMO_SEED_PASSWORD", "Synthetic-Demo-Check-2026!");
 var cases = new List<(string Name, Func<Task> Run)>();
 void Test(string name, Func<Task> run) => cases.Add((name, run));
 static void Assert(bool value, string message = "Assertion failed") { if (!value) throw new Exception(message); }

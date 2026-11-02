@@ -94,6 +94,25 @@ public sealed class ProfileEvidenceService(EvidenceRepository repository, IEvide
         return adopted.ToArray();
     }
     public Task<EvidenceView> Read(string owner, CancellationToken ct) => repository.Read(owner, (s, e) => new EvidenceView(s.Profile.Version, e, CurrentFacts(s.Profile, e)), ct);
+    private async Task<ProfessionalSource> Source(string owner, string sourceId, CancellationToken ct) =>
+        await repository.Read(owner, (s, e) => e.Sources.SingleOrDefault(x => x.Id == sourceId) ?? throw new ApiFault("not_found", "That source is unavailable."), ct);
+    public async Task<EvidenceImportOptInStatus> OptInStatus(string owner, string sourceId, CancellationToken ct)
+    {
+        var source = await Source(owner, sourceId, ct);
+        return EvidenceOptIn.Status(await optIns.Get(owner, sourceId, ct), source);
+    }
+    public async Task<EvidenceImportOptInStatus> OptIn(string owner, string sourceId, CancellationToken ct)
+    {
+        var source = await Source(owner, sourceId, ct);
+        var record = new EvidenceImportOptIn(EvidenceOptIn.CurrentVersion, DateTimeOffset.UtcNow.ToString("O"), EvidenceOptIn.Fingerprint(source));
+        await optIns.Set(owner, sourceId, record, ct);
+        return EvidenceOptIn.Status(record, source);
+    }
+    public async Task<EvidenceImportOptInStatus> WithdrawOptIn(string owner, string sourceId, CancellationToken ct)
+    {
+        await optIns.Clear(owner, sourceId, ct);
+        return new EvidenceImportOptInStatus(EvidenceOptIn.CurrentVersion, false, null, null);
+    }
     private static void Current(UserState state, EvidenceWorkspace evidence, int profile, int sources) {
         if (state.Profile.Version != profile || evidence.Version != sources) throw new ApiFault("version_conflict", "Your profile or sources changed. Refresh before continuing; existing progress is preserved.");
     }
@@ -133,10 +152,11 @@ public sealed class ProfileEvidenceService(EvidenceRepository repository, IEvide
             return selected;
         }, ct);
         // Combined integration gate: every selected source needs its own
-        // server-recorded extraction opt-in before any document text leaves
-        // for the provider. The plan-generation disclosure acknowledgment
-        // does not satisfy this, and this opt-in does not satisfy that one.
-        foreach (var source in sources) EvidenceOptIn.RequireCurrent(await optIns.Get(owner, source.Id, ct), source.Title);
+        // server-recorded extraction opt-in, bound to the source's current
+        // content fingerprint, before any document text leaves for the
+        // provider. The plan-generation disclosure acknowledgment does not
+        // satisfy this, and this opt-in does not satisfy that one.
+        foreach (var source in sources) EvidenceOptIn.RequireCurrent(await optIns.Get(owner, source.Id, ct), source);
         var output = await intelligence.Extract(sources, request.Language, ct);
         Validate(output, sources);
         return await repository.Transaction(owner, (s, e) => {
@@ -210,7 +230,26 @@ public sealed class ProfileEvidenceService(EvidenceRepository repository, IEvide
                 preferredFormats = s.Profile.PreferredFormats
             };
         }, ct);
-        var facts = JsonSerializer.SerializeToNode(new { confirmed = snapshot.facts, snapshot.availability, snapshot.sourceCoverage, snapshot.goals, snapshot.constraints, snapshot.preferredFormats, listing, opportunity = record, learningOutline = ReviewedLearningOutlines.Get(id) }, Wire.Json)!.AsObject();
+        // Outbound minimization for the comparison (field-by-field against
+        // the UI disclosure): the listing and the curated record are
+        // projected to the fields the comparison policy actually uses.
+        // Withheld: URLs, internal listing provenance (source passage,
+        // source status, verification note, last reviewed), the record's
+        // source evidence and coverage machinery, claim-level grounding
+        // data, and revision strings. Server-side Revision() above still
+        // hashes the full objects; only the provider payload is minimized.
+        var outboundListing = listing is null ? null : new
+        {
+            listing.Id, listing.Kind, listing.Title, listing.Organizer, listing.Format, listing.Summary,
+            listing.Topics, listing.Scope, listing.RegistrationDeadline, listing.RegistrationState, listing.CostStatus
+        };
+        var outboundOpportunity = record is null ? null : new
+        {
+            record.Id, record.Title, record.Organizer, record.Format, record.Theme, record.CostStatus, record.Benefits,
+            Requirements = record.Requirements.Select(r => new { r.Id, r.Statement, r.Lane }).ToArray(),
+            Timeline = record.TimelineEvents.Select(e => new { e.Id, e.Kind }).ToArray()
+        };
+        var facts = JsonSerializer.SerializeToNode(new { confirmed = snapshot.facts, snapshot.availability, snapshot.sourceCoverage, snapshot.goals, snapshot.constraints, snapshot.preferredFormats, listing = outboundListing, opportunity = outboundOpportunity, learningOutline = ReviewedLearningOutlines.Get(id) }, Wire.Json)!.AsObject();
         var analysis = await intelligence.Compare(facts, request.Language, ct);
         Input.Require(analysis.Summary is { Length: > 0 and <= 3000 } && analysis.Connections is { Length: <= 3 } && analysis.Gaps is { Length: <= 3 } && analysis.Questions is { Length: <= 2 } && analysis.Questions.All(q => q is { Length: > 0 and <= 300 }) && analysis.PreparationPriorities is { Length: <= 3 }, "The comparison returned an invalid structure.");
         var ids = snapshot.facts.Select(f => f.Id).ToHashSet();

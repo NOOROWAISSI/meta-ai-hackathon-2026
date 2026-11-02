@@ -202,8 +202,8 @@ export function EvidenceOpportunityInsight({ opportunityId }: { opportunityId: s
             />
             <span>
               {t(
-                "Use Meta through the backend to compare my confirmed profile facts and their supporting passages with this opportunity. This is AI interpretation, not verified ability or an eligibility decision.",
-                "بوافق Meta يقارن معلومات ملفي المعتمدة والمقاطع الداعمة إلها بالفرصة عبر الباك. هاد تفسير AI، مش تقييم كفاءة موثّق أو قرار أهلية.",
+                "Use Meta through the backend to compare my confirmed profile facts and their supporting passages, my goals and constraints, my weekly preparation hours and preferred formats, with this opportunity's published details and requirements. Links, source files and internal review notes are not sent. This consent covers this comparison only, not document extraction or plan generation. This is AI interpretation, not verified ability or an eligibility decision.",
+                "بوافق Meta يقارن عبر الباك معلومات ملفي المعتمدة والمقاطع الداعمة إلها وأهدافي وقيودي وساعات التحضير الأسبوعية والتنسيقات المفضلة عندي بتفاصيل هاي الفرصة المنشورة ومتطلباتها. الروابط وملفات المصدر وملاحظات المراجعة الداخلية ما بتنرسل. هاي الموافقة لهاي المقارنة بس، مش لاستخراج المستندات أو إنشاء الخطط. هاد تفسير AI، مش تقييم كفاءة موثّق أو قرار أهلية.",
               )}
             </span>
           </label>

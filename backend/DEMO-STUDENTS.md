@@ -9,7 +9,7 @@ These are actual accounts in development MySQL with synthetic names and self-rep
 | Lina Hassan | lina.student@example.invalid | Partial profile, design/AI interests, unknown availability |
 | Adam Saleh | adam.student@example.invalid | Python, React, APIs, five weekly hours and two preparation goals |
 
-Development password for all four: `NextStep-Demo-2026!`
+Development password for all four: the value of the NEXTSTEP_DEMO_SEED_PASSWORD environment variable on the machine that ran the seed. It is deliberately not written in this repository; set it locally before seeding (any value you choose), and use the same value to sign in. Seeding fails when the variable is unset.
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File backend/Seed-Students.ps1

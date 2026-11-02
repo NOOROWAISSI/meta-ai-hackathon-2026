@@ -72,8 +72,11 @@ public sealed record PreparationSelection(string OpportunityId, string Title, st
 // Server-recorded opt-in for ONE document import's external extraction
 // (PR #29 evidence). Stored by EvidenceOptInStore in its own table, scoped
 // to a single source document, and entirely separate from the
-// plan-generation DisclosureAck above: neither implies the other.
-public sealed record EvidenceImportOptIn(int Version, string OptedInAt);
+// plan-generation DisclosureAck above: neither implies the other. The
+// opt-in is bound to the source's content fingerprint: if the document is
+// replaced or materially updated, the fingerprint no longer matches and a
+// renewed opt-in is required.
+public sealed record EvidenceImportOptIn(int Version, string OptedInAt, string SourceHash);
 public sealed record EvidenceImportOptInStatus(int CurrentVersion, bool OptedIn, string? OptedInAt, int? OptedInVersion);
 public sealed class UserState
 {

@@ -142,6 +142,7 @@ CREATE TABLE IF NOT EXISTS evidence_import_optins (
   source_id VARCHAR(100) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   version INT NOT NULL,
   opted_in_at VARCHAR(40) NOT NULL,
+  source_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   PRIMARY KEY(owner_id, source_id),
   CONSTRAINT fk_evidence_optin_session FOREIGN KEY (owner_id) REFERENCES anonymous_sessions(owner_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;

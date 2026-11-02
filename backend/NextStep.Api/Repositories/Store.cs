@@ -90,7 +90,7 @@ public sealed class MySqlStateStore(IConfiguration configuration) : IStateStore
     // every required table, the critical columns other code reads by name,
     // and every named foreign key. Any missing object reports unhealthy.
     private static readonly string[] RequiredTables = ["account_sessions", "accounts", "announcement_extractions", "anonymous_sessions", "campus_activities", "campus_follows", "disclosure_acks", "discovered_listings", "evidence_import_optins", "intake_candidates", "password_recovery", "profile_evidence", "schema_migrations", "source_pages", "source_runs", "user_state"];
-    private static readonly (string Table, string Column)[] RequiredColumns = [("user_state", "payload"), ("user_state", "revision"), ("disclosure_acks", "version"), ("disclosure_acks", "acknowledged_at"), ("profile_evidence", "payload"), ("evidence_import_optins", "opted_in_at"), ("schema_migrations", "version")];
+    private static readonly (string Table, string Column)[] RequiredColumns = [("user_state", "payload"), ("user_state", "revision"), ("disclosure_acks", "version"), ("disclosure_acks", "acknowledged_at"), ("profile_evidence", "payload"), ("evidence_import_optins", "opted_in_at"), ("evidence_import_optins", "source_hash"), ("schema_migrations", "version")];
     private static readonly string[] RequiredForeignKeys = ["fk_account_owner", "fk_account_session", "fk_campus_follow_session", "fk_disclosure_owner", "fk_evidence_optin_session", "fk_profile_evidence_session", "fk_recovery_account", "fk_user_state_session"];
     public async Task<bool> Healthy(CancellationToken ct)
     {

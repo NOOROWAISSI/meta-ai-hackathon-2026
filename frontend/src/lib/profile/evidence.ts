@@ -51,6 +51,12 @@ export interface EvidenceView {
     }[];
   };
 }
+export interface EvidenceOptInStatus {
+  currentVersion: number;
+  optedIn: boolean;
+  optedInAt: string | null;
+  optedInVersion: number | null;
+}
 export interface InsightSection {
   title: string;
   explanation: string;
@@ -133,6 +139,25 @@ export const evidenceService = {
       signal,
     ),
   read: (signal?: AbortSignal) => apiJson<EvidenceView>(base, "GET", undefined, signal),
+  optInStatus: (sourceId: string, signal?: AbortSignal) =>
+    apiJson<EvidenceOptInStatus>(
+      base + "/opt-in/" + encodeURIComponent(sourceId),
+      "GET",
+      undefined,
+      signal,
+    ),
+  optIn: (sourceId: string) =>
+    apiJson<EvidenceOptInStatus>(
+      base + "/opt-in/" + encodeURIComponent(sourceId),
+      "POST",
+      undefined,
+    ),
+  withdrawOptIn: (sourceId: string) =>
+    apiJson<EvidenceOptInStatus>(
+      base + "/opt-in/" + encodeURIComponent(sourceId) + "/withdraw",
+      "POST",
+      undefined,
+    ),
   mutate: async (path: string, body: unknown, method = "POST") => {
     const result = await apiJson<EvidenceView>(
       base + path,

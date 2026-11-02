@@ -14,6 +14,9 @@ const service = vi.hoisted(() => ({
   savedComparison: vi.fn(),
   answer: vi.fn(),
   correctExperience: vi.fn(),
+  optInStatus: vi.fn(),
+  optIn: vi.fn(),
+  withdrawOptIn: vi.fn(),
 }));
 vi.mock("@/lib/profile/evidence", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/profile/evidence")>()),
@@ -95,6 +98,26 @@ beforeEach(() => {
   vi.clearAllMocks();
   service.read.mockResolvedValue(structuredClone(initial));
   service.savedComparison.mockResolvedValue(null);
+  // Combined integration: extraction sits behind the per-document opt-in.
+  // Default to not opted in; the opt-in action flips it.
+  service.optInStatus.mockResolvedValue({
+    currentVersion: 1,
+    optedIn: false,
+    optedInAt: null,
+    optedInVersion: null,
+  });
+  service.optIn.mockResolvedValue({
+    currentVersion: 1,
+    optedIn: true,
+    optedInAt: "2026-11-02T00:00:00Z",
+    optedInVersion: 1,
+  });
+  service.withdrawOptIn.mockResolvedValue({
+    currentVersion: 1,
+    optedIn: false,
+    optedInAt: null,
+    optedInVersion: null,
+  });
 });
 afterEach(cleanup);
 
@@ -266,6 +289,13 @@ it("does not analyze imported sources before selection and explicit consent", as
   fireEvent.click(screen.getByRole("checkbox", { name: "Analyze Synthetic CV" }));
   expect(analyze).toBeDisabled();
   fireEvent.click(screen.getByRole("checkbox", { name: /I reviewed the selected text/ }));
+  // Selection and consent are no longer enough on their own: the
+  // per-document extraction opt-in must be recorded first.
+  expect(analyze).toBeDisabled();
+  expect(service.mutate).not.toHaveBeenCalled();
+  fireEvent.click(await screen.findByRole("button", { name: "Opt in for this document" }));
+  expect(service.optIn).toHaveBeenCalledWith("cv-1");
+  await waitFor(() => expect(analyze).toBeEnabled());
   service.mutate.mockResolvedValue(structuredClone(drafted));
   fireEvent.click(analyze);
   await screen.findByText("Your review comes first");

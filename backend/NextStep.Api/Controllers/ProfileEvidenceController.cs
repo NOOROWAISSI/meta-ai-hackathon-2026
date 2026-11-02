@@ -8,7 +8,7 @@ public sealed record GitHubSourceRequest(string Url, int ProfileVersion, int Sou
 public sealed record DeleteSourceRequest(int ProfileVersion, int SourcesVersion);
 
 [ApiController]
-public sealed class ProfileEvidenceController(ProfileEvidenceService service, PublicGitHubSources github, Accounts accounts, EvidenceOptInStore optIns) : ControllerBase {
+public sealed class ProfileEvidenceController(ProfileEvidenceService service, PublicGitHubSources github, Accounts accounts) : ControllerBase {
     private async Task<string> Owner(CancellationToken ct) {
         if (await accounts.Me(Request.Cookies["nextstep-session"], ct) is null) throw new ApiFault("invalid_input", "Sign in to manage your private professional sources.");
         return (string)HttpContext.Items["owner"]!;
@@ -36,24 +36,16 @@ public sealed class ProfileEvidenceController(ProfileEvidenceService service, Pu
     [HttpDelete("/api/profile/evidence/{id}")]
     public async Task<IActionResult> Delete(string id, DeleteSourceRequest request, CancellationToken ct) => Ok(await service.Delete(await Owner(ct), id, request.ProfileVersion, request.SourcesVersion, ct));
     // Per-document extraction opt-in (combined integration). Recorded by the
-    // server with a server timestamp, scoped to one source id, and checked
-    // inside ProfileEvidenceService.Analyze before any provider call. It is
+    // server with a server timestamp, scoped to one source id and bound to
+    // that source's content fingerprint, and checked inside
+    // ProfileEvidenceService.Analyze before any provider call. It is
     // separate from the plan-generation disclosure acknowledgment.
     [HttpGet("/api/profile/evidence/opt-in/{sourceId}")]
-    public async Task<IActionResult> OptInStatus(string sourceId, CancellationToken ct) => Ok(EvidenceOptIn.Status(await optIns.Get(await Owner(ct), sourceId, ct)));
+    public async Task<IActionResult> OptInStatus(string sourceId, CancellationToken ct) => Ok(await service.OptInStatus(await Owner(ct), sourceId, ct));
     [HttpPost("/api/profile/evidence/opt-in/{sourceId}")]
-    public async Task<IActionResult> OptIn(string sourceId, CancellationToken ct) {
-        var owner = await Owner(ct);
-        var record = new EvidenceImportOptIn(EvidenceOptIn.CurrentVersion, DateTimeOffset.UtcNow.ToString("O"));
-        await optIns.Set(owner, sourceId, record, ct);
-        return Ok(EvidenceOptIn.Status(record));
-    }
+    public async Task<IActionResult> OptIn(string sourceId, CancellationToken ct) => Ok(await service.OptIn(await Owner(ct), sourceId, ct));
     [HttpPost("/api/profile/evidence/opt-in/{sourceId}/withdraw")]
-    public async Task<IActionResult> WithdrawOptIn(string sourceId, CancellationToken ct) {
-        var owner = await Owner(ct);
-        await optIns.Clear(owner, sourceId, ct);
-        return Ok(EvidenceOptIn.Status(null));
-    }
+    public async Task<IActionResult> WithdrawOptIn(string sourceId, CancellationToken ct) => Ok(await service.WithdrawOptIn(await Owner(ct), sourceId, ct));
     [HttpPost("/api/profile/evidence/analyze")]
     [EnableRateLimiting("generation")]
     public async Task<IActionResult> Analyze(EvidenceAnalysisRequest request, CancellationToken ct) => Ok(await service.Analyze(await Owner(ct), request, ct));

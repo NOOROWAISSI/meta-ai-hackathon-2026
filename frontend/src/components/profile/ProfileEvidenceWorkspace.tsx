@@ -13,9 +13,11 @@ import { useLocale } from "@/components/LocaleProvider";
 import {
   evidenceService,
   sourceLocation,
+  type EvidenceOptInStatus,
   type EvidenceView,
   type ProposedFact,
 } from "@/lib/profile/evidence";
+import { ExtractionOptInPanel } from "./ExtractionOptInPanel";
 
 type Edit = { selected: boolean; value: string; contribution: string };
 export function ProfileEvidenceWorkspace({
@@ -38,6 +40,8 @@ export function ProfileEvidenceWorkspace({
   const [repos, setRepos] = useState<{ name: string; url: string; description: string }[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [consent, setConsent] = useState(false);
+  const [optIns, setOptIns] = useState<Record<string, EvidenceOptInStatus>>({});
+  const [optInBusy, setOptInBusy] = useState(false);
   const [edits, setEdits] = useState<Edit[]>([]);
   const draft = view?.workspace.draft;
   const previousDraftId = useRef<string | null>(null);
@@ -104,6 +108,44 @@ export function ProfileEvidenceWorkspace({
     }
   }
   const locked = disabled || !!busy || !view;
+  const selectedSources = (view?.workspace.sources ?? []).filter((s) =>
+    selected.includes(s.id),
+  );
+  const allOptedIn =
+    selectedSources.length > 0 &&
+    selectedSources.every((s) => optIns[s.id]?.optedIn);
+  useEffect(() => {
+    const missing = selected.filter((id) => !(id in optIns));
+    if (!missing.length) return;
+    let cancelled = false;
+    void Promise.all(
+      missing.map(async (id) => {
+        try {
+          const status = await evidenceService.optInStatus(id);
+          if (!cancelled) setOptIns((prev) => ({ ...prev, [id]: status }));
+        } catch {
+          // A failed status read leaves the source un-opted-in here; the
+          // server gate remains the authority either way.
+        }
+      }),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [selected, optIns]);
+  const changeOptIn = async (sourceId: string, optIn: boolean) => {
+    setOptInBusy(true);
+    try {
+      const status = optIn
+        ? await evidenceService.optIn(sourceId)
+        : await evidenceService.withdrawOptIn(sourceId);
+      setOptIns((prev) => ({ ...prev, [sourceId]: status }));
+    } catch (e) {
+      setError(String((e as Error).message));
+    } finally {
+      setOptInBusy(false);
+    }
+  };
   const stale =
     !!draft &&
     (draft.profileVersion !== view?.profileVersion ||
@@ -427,10 +469,17 @@ export function ProfileEvidenceWorkspace({
                 )}
               </span>
             </label>
+            <ExtractionOptInPanel
+              sources={selectedSources}
+              statuses={optIns}
+              busy={locked || optInBusy}
+              onOptIn={(id) => void changeOptIn(id, true)}
+              onWithdraw={(id) => void changeOptIn(id, false)}
+            />
             <button
               type="button"
               className="detail-primary mt-4"
-              disabled={locked || !consent || !selected.length || selected.length > 3}
+              disabled={locked || !consent || !selected.length || selected.length > 3 || !allOptedIn}
               onClick={() =>
                 void run(
                   "analysis",
@@ -450,8 +499,8 @@ export function ProfileEvidenceWorkspace({
             </button>
             <p className="mt-2 text-xs text-muted-foreground">
               {t(
-                "Select 1–3 sources. Imported files are processed locally on the server; only extracted text is stored. Avoid identity documents and confidential code.",
-                "اختار 1–3 مصادر. الملف بنقرأ على السيرفر وبنخزّن النص المستخرج فقط. تجنّب أوراق الهوية والكود السري.",
+                "Select 1–3 sources. Files are read on the server and the extracted text is stored with your sources. Document text is sent to Meta only for sources you selected and opted in above. Avoid identity documents and confidential code.",
+                "اختار 1–3 مصادر. الملفات بتنقرأ على السيرفر والنص المستخرج بينخزّن مع مصادرك. نص المستند بينرسل لـMeta بس للمصادر اللي اخترتها وسمحت فيها فوق. تجنّب أوراق الهوية والكود السري.",
               )}
             </p>
           </div>
