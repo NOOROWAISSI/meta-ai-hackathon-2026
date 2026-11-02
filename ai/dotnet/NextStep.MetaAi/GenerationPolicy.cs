@@ -46,7 +46,9 @@ public static class GenerationPolicy
         if (input.Goals.Select(g => g.Id).Distinct(StringComparer.Ordinal).Count() != input.Goals.Count ||
             input.ReviewedRequirements.Select(r => r.Id).Distinct(StringComparer.Ordinal).Count() != input.ReviewedRequirements.Count) InvalidInput();
         ValidateReviewedMetadata(input);
-        foreach (var facts in new[] { input.SelfReport.AcceptedExperience, input.SelfReport.ReportedSkills, input.SelfReport.Constraints })
+        if (input.SelfReport.AcceptedExperience is null || input.SelfReport.AcceptedExperience.Count > 30 ||
+            input.SelfReport.AcceptedExperience.Any(e => e is null || !ExperienceKinds.Valid(e.Kind) || !Text(e.Text, 1000))) InvalidInput();
+        foreach (var facts in new[] { input.SelfReport.ReportedSkills, input.SelfReport.Constraints })
             if (facts is null || facts.Count > 30 || facts.Any(s => !Text(s, 1000))) InvalidInput();
     }
 
