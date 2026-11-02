@@ -87,3 +87,10 @@ CREATE TABLE IF NOT EXISTS discovered_listings (
   INDEX ix_discovered_source(source_id)
 ) ENGINE=InnoDB;
 INSERT IGNORE INTO schema_migrations(version) VALUES (5);
+CREATE TABLE IF NOT EXISTS disclosure_acks (
+  owner_id CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+  version INT NOT NULL,
+  acknowledged_at VARCHAR(40) NOT NULL,
+  CONSTRAINT fk_disclosure_owner FOREIGN KEY (owner_id) REFERENCES anonymous_sessions(owner_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+INSERT IGNORE INTO schema_migrations(version) VALUES (6);

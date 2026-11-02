@@ -34,6 +34,7 @@ builder.Services.AddSingleton<PasswordRecoveryRepository>();
 builder.Services.AddScoped<PasswordRecoveryService>();
 builder.Services.AddSingleton<DemoStudentSeed>();
 builder.Services.AddSingleton<MySqlStateStore>();
+builder.Services.AddSingleton<DisclosureStore>();
 builder.Services.AddSingleton<IStateStore>(services => services.GetRequiredService<MySqlStateStore>());
 builder.Services.AddScoped<NextStep.Api.Application>();
 builder.Services.AddMetaAiClient(builder.Configuration);
@@ -78,7 +79,7 @@ app.Use(async (http, next) => {
 app.UseRateLimiter();
 app.UseAuthentication();
 app.MapControllers();
-if (args.Contains("--migrate")) { await app.Services.GetRequiredService<MySqlStateStore>().Migrate(CancellationToken.None); Console.WriteLine("MySQL migrations applied through version 5."); return; }
+if (args.Contains("--migrate")) { await app.Services.GetRequiredService<MySqlStateStore>().Migrate(CancellationToken.None); Console.WriteLine("MySQL migrations applied through version 6."); return; }
 if (args.Contains("--seed-students")) {
     var result = await app.Services.GetRequiredService<DemoStudentSeed>().Run(DemoStudentSeed.Students, CancellationToken.None);
     Console.WriteLine($"Demo students: {result.Created} created, {result.Skipped} already present and unchanged. See backend/DEMO-STUDENTS.md for test sign-in details.");

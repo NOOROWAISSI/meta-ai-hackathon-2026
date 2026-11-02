@@ -5,7 +5,7 @@ using NextStep.MetaAi.Application;
 
 namespace NextStep.Api;
 
-public sealed class Application(IStateStore store, Catalog catalog, IMetaModelClient model, ResourceCatalog resources)
+public sealed class Application(IStateStore store, Catalog catalog, IMetaModelClient model, ResourceCatalog resources, DisclosureStore disclosure)
 {
     public static SubmissionState Submission(UserState state, Opportunity opportunity) => state.Submissions.GetValueOrDefault(opportunity.Id) ?? Catalog.EmptySubmission(opportunity);
     public Task<StudentProfile> SaveProfile(string owner, ProfileUpdate update, CancellationToken ct)
@@ -83,7 +83,7 @@ public sealed class Application(IStateStore store, Catalog catalog, IMetaModelCl
         // P2 disclosure gate: after request integrity and input validation, but
         // before any provider call or candidate write. A missing or outdated
         // acknowledgment therefore produces no external request and no draft.
-        Disclosure.RequireCurrent(snapshot);
+        Disclosure.RequireCurrent(await disclosure.Get(owner, ct));
         var output = await model.GenerateCandidateAsync(projection, ct);
         GenerationPolicy.ValidateInput(projection); GenerationPolicy.ValidateCandidate(output, projection);
         output = PlanActionRenderer.WithCapacityGuidance(output, projection);

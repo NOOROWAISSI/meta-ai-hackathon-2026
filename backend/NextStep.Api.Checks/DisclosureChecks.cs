@@ -54,8 +54,8 @@ public static class DisclosureChecks
         test("an outdated acknowledgment version blocks generation until re-acknowledged", async () => {
             await using var host = new Factory();
             var (client, profile, submission, opportunity) = await Setup(host);
-            var store = host.Services.GetRequiredService<IStateStore>();
-            await store.Change(Owner(profile), state => { state.Disclosure = new DisclosureAck(Disclosure.CurrentVersion - 1, DateTimeOffset.UtcNow.ToString("O")); return true; }, CancellationToken.None);
+            var disclosureStore = host.Services.GetRequiredService<DisclosureStore>();
+            await disclosureStore.Set(Owner(profile), new DisclosureAck(Disclosure.CurrentVersion - 1, DateTimeOffset.UtcNow.ToString("O")), CancellationToken.None);
             var refused = await client.PostAsJsonAsync("/api/opportunities/E01/plan-candidates", Request(profile, submission, opportunity), Wire.Json);
             Check(refused.StatusCode == HttpStatusCode.Forbidden);
             Check((await refused.Content.ReadFromJsonAsync<ApiError>(Wire.Json))!.Code == "disclosure_required");
