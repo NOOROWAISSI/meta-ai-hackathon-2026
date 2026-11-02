@@ -610,6 +610,21 @@ Test("Google callback rejects unverified email and never automatically links a p
 SourceCollectionChecks.Register(Test);
 PalestineNetworkChecks.Register(Test);
 CampusActivityChecks.Register(Test);
+PreparationSelectionChecks.Register(Test);
+Test("saving and removing a preparation choice preserves an existing accepted plan", async () => {
+    await using var host = new Factory(); using var client = host.CreateClient(); client.DefaultRequestHeaders.Add("X-NextStep-Request", "1");
+    var registered = await client.PostAsJsonAsync("/api/auth/register", new RegisterRequest("selection-plan-" + Guid.NewGuid().ToString("N") + "@example.test", "Synthetic-password-42!"), Wire.Json); registered.EnsureSuccessStatusCode();
+    var account = (await registered.Content.ReadFromJsonAsync<AccountView>(Wire.Json))!;
+    var profile = (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!; owners.Add(profile.Id["profile-".Length..]);
+    var changed = profile with { AvailableHoursPerWeek = Known(5), Goals = [new("goal-test", "Prepare a prototype walkthrough")], EntrantType = KnownText("individual"), Enrollment = KnownText("higher_education") };
+    var saved = await client.PutAsJsonAsync("/api/profile", new ProfileUpdate(profile.Version, changed), Wire.Json); saved.EnsureSuccessStatusCode(); profile = (await saved.Content.ReadFromJsonAsync<StudentProfile>(Wire.Json))!;
+    var opportunity = (await client.GetFromJsonAsync<Opportunity>("/api/opportunities/E01", Wire.Json))!; var submission = (await client.GetFromJsonAsync<SubmissionState>("/api/submissions/E01", Wire.Json))!;
+    var (plan, _) = await Accepted(client, profile, submission, opportunity); var before = System.Text.Json.JsonSerializer.Serialize(plan, Wire.Json);
+    const string path = "/api/preparation-selections/palestine-summit-birzeit-demo-2026"; var request = new NextStep.Api.Controllers.PreparationSelectionRequest(account.Id);
+    (await client.PutAsJsonAsync(path, request, Wire.Json)).EnsureSuccessStatusCode();
+    using var remove = new HttpRequestMessage(HttpMethod.Delete, path) { Content = JsonContent.Create(request, options: Wire.Json) }; (await client.SendAsync(remove)).EnsureSuccessStatusCode();
+    var plans = (await client.GetFromJsonAsync<Plan[]>("/api/plans", Wire.Json))!; Assert(plans.Length == 1 && System.Text.Json.JsonSerializer.Serialize(plans[0], Wire.Json) == before);
+});
 Test("preparation navigation uses a planning record rather than an event ID prefix", () => {
     var record = new Catalog().Get("E01") with { Id = "new-university-hackathon" };
     var listing = new DiscoveryCatalog(new Catalog()).Listings().Single(item => item.Id == "E01") with { Id = record.Id };
