@@ -5,22 +5,25 @@ using MySqlConnector;
 namespace NextStep.Api;
 
 /// <summary>Bounded official-source discovery, shared by the scheduler and explicit CLI runs.</summary>
-public sealed class SourceCollector(DiscoveryCatalog catalog, MySqlStateStore store, IOfficialPageReader pages, DiscoveryFeed feed, IConfiguration configuration, ILogger<SourceCollector> logger)
+public sealed class SourceCollector(DiscoveryCatalog catalog, MySqlStateStore store, IOfficialPageReader pages, DiscoveryFeed feed, IConfiguration configuration, ILogger<SourceCollector> logger, AnnouncementIntake announcements)
 {
     private static readonly Regex Links = new("<a\\b[^>]*href\\s*=\\s*[\"'](?<url>[^\"']+)[\"'][^>]*>(?<text>.*?)</a>", RegexOptions.IgnoreCase | RegexOptions.Singleline, TimeSpan.FromSeconds(1));
     private static readonly Regex Tags = new("<[^>]+>", RegexOptions.Singleline, TimeSpan.FromSeconds(1));
     private static readonly Regex Interesting = new("course|training|workshop|hackathon|competition|event|دورة|تدريب|ورشة|مسابقة|هاكاثون", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
     public Task Collect(CancellationToken ct) => CollectDue(true, ct);
     public Task CollectDue(bool force, CancellationToken ct) => CollectSources(catalog.Sources(), force, ct);
-    internal async Task CollectSources(SourceRegistration[] sources, bool force, CancellationToken ct)
+    internal async Task<bool> CollectSources(SourceRegistration[] sources, bool force, CancellationToken ct)
     {
         await using var gate = await store.Open(ct);
         await using var acquire = new MySqlCommand("SELECT GET_LOCK('nextstep:source-collection:v1',0)", gate);
-        if (Convert.ToInt32(await acquire.ExecuteScalarAsync(ct)) != 1) return;
+        if (Convert.ToInt32(await acquire.ExecuteScalarAsync(ct)) != 1) return false;
         try {
-            foreach (var source in sources) {
+            var ordered = await OldestFirst(sources, ct);
+            var processed = 0;
+            foreach (var source in ordered) {
                 ct.ThrowIfCancellationRequested();
                 if (!force && !await IsDue(source.Id, ct)) continue;
+                if (processed++ >= Math.Clamp(configuration.GetValue("SourceCollection:MaxSourcesPerSweep", 12), 1, 100)) break;
                 if (source.Collection != "public_html") { await Save(source.Id, [], "manual_review_required", null, ct); continue; }
                 var root = new Uri(source.Url); var result = await pages.Read(root, ct);
                 List<(string Url, string Title)> links = result.Html is null ? [] : CandidateLinks(result.Html, root);
@@ -41,13 +44,26 @@ public sealed class SourceCollector(DiscoveryCatalog catalog, MySqlStateStore st
             await using var release = new MySqlCommand("SELECT RELEASE_LOCK('nextstep:source-collection:v1')", gate);
             await release.ExecuteScalarAsync(CancellationToken.None);
         }
+        return true;
     }
     private async Task Capture(SourceRegistration source, Uri page, SourcePage result, CancellationToken ct)
     {
         ListingSummary[] listings = [];
-        if (result.Html is not null) try { listings = StructuredOpportunityReader.Read(result.Html, page, source).Concat(GoogleCourseCatalogReader.Read(result.Html, page, source)).DistinctBy(item => item.OfficialUrl).ToArray(); }
+        if (result.Html is not null) try {
+                listings = StructuredOpportunityReader.Read(result.Html, page, source).Concat(GoogleCourseCatalogReader.Read(result.Html, page, source)).DistinctBy(item => item.OfficialUrl).ToArray();
+                if (listings.Length == 0 && page.AbsoluteUri != new Uri(source.Url).AbsoluteUri) listings = await announcements.Read(source, page, result.Html, ct);
+                listings = listings.Select(item => item with { UniversityId = source.UniversityId }).ToArray();
+            }
             catch (RegexMatchTimeoutException) { result = new("parse_limit", null); }
         await feed.StorePage(source, page, result, listings, ct);
+    }
+    private async Task<SourceRegistration[]> OldestFirst(SourceRegistration[] sources, CancellationToken ct) {
+        var checkedAt = new Dictionary<string, DateTime>(StringComparer.Ordinal);
+        await using var db = await store.Open(ct);
+        await using var query = new MySqlCommand("SELECT source_id,checked_at FROM source_runs", db);
+        await using var rows = await query.ExecuteReaderAsync(ct);
+        while (await rows.ReadAsync(ct)) checkedAt[rows.GetString(0)] = rows.GetDateTime(1);
+        return sources.OrderBy(s => checkedAt.GetValueOrDefault(s.Id, DateTime.MinValue)).ThenBy(s => s.Id, StringComparer.Ordinal).ToArray();
     }
     public static List<(string Url, string Title)> CandidateLinks(string html, Uri address)
     {

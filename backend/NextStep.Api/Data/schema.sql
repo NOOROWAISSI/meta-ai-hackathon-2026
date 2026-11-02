@@ -93,3 +93,19 @@ CREATE TABLE IF NOT EXISTS profile_evidence (
   CONSTRAINT fk_profile_evidence_session FOREIGN KEY(owner_id) REFERENCES anonymous_sessions(owner_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 INSERT IGNORE INTO schema_migrations(version) VALUES (6);
+CREATE TABLE IF NOT EXISTS announcement_extractions (
+  cache_key CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+  page_url VARCHAR(2000) NOT NULL,
+  outcome VARCHAR(40) NOT NULL,
+  payload JSON NULL,
+  created_at DATETIME(6) NOT NULL
+) ENGINE=InnoDB;
+INSERT IGNORE INTO schema_migrations(version) VALUES (7);
+CREATE TABLE IF NOT EXISTS campus_follows (
+  owner_id CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  university_id VARCHAR(100) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  followed_at DATETIME(6) NOT NULL,
+  seen_at DATETIME(6) NOT NULL,
+  PRIMARY KEY(owner_id,university_id),
+  CONSTRAINT fk_campus_follow_session FOREIGN KEY(owner_id) REFERENCES anonymous_sessions(owner_id) ON DELETE CASCADE
+) ENGINE=InnoDB;

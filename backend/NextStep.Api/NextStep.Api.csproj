@@ -8,6 +8,7 @@
     <Content Update="Data/catalog.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Update="Data/sources.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Update="Data/listings.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Update="Data/palestine-network.json" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Data/schema.sql" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

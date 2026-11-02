@@ -22,6 +22,9 @@ builder.Services.AddControllers().AddJsonOptions(options => {
 });
 builder.Services.AddSingleton<Catalog>();
 builder.Services.AddSingleton<DiscoveryCatalog>();
+builder.Services.AddSingleton<PalestineNetwork>();
+builder.Services.AddHttpClient<IAnnouncementIntelligence, MetaAnnouncementIntelligence>(client => client.Timeout = TimeSpan.FromSeconds(95)).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
+builder.Services.AddSingleton<AnnouncementIntake>();
 builder.Services.AddSingleton<ResourceCatalog>();
 builder.Services.AddHttpClient<IPersonalBriefingModel, MetaPersonalBriefingModel>(client => client.Timeout = TimeSpan.FromSeconds(95)).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false, PooledConnectionLifetime = TimeSpan.FromMinutes(5) });
 builder.Services.AddSingleton<PersonalBriefingService>();
@@ -71,7 +74,7 @@ app.Use(async (http, next) => {
         var allowed = (builder.Configuration["AllowedOrigins"] ?? "http://127.0.0.1:8082;http://localhost:8082;http://127.0.0.1:8080;http://localhost:8080").Split(';');
         if (http.Request.Headers["X-NextStep-Request"] != "1" || (origin.Length > 0 && !allowed.Contains(origin, StringComparer.Ordinal))) { http.Response.StatusCode = 403; await http.Response.WriteAsJsonAsync(new ApiError("invalid_input", "Use an authorized same-origin application request.", Guid.NewGuid().ToString("N"), false)); return; }
     }
-    var isPublic = HttpMethods.IsGet(http.Request.Method) && (http.Request.Path.StartsWithSegments("/api/opportunities") || http.Request.Path == "/api/listings" || http.Request.Path == "/api/sources" || http.Request.Path == "/api/sources/status" || http.Request.Path == "/api/health");
+    var isPublic = HttpMethods.IsGet(http.Request.Method) && (http.Request.Path.StartsWithSegments("/api/opportunities") || http.Request.Path == "/api/listings" || http.Request.Path == "/api/sources" || http.Request.Path == "/api/sources/status" || http.Request.Path == "/api/sources/network" || http.Request.Path == "/api/health");
     if (http.Request.Path.StartsWithSegments("/api") && http.Request.Path != "/api/session" && !http.Request.Path.StartsWithSegments("/api/auth") && !isPublic) {
         var owner = http.Request.Cookies.TryGetValue("nextstep-session", out var token) ? await http.RequestServices.GetRequiredService<IStateStore>().ResolveSession(token, http.RequestAborted) : null;
         if (owner is null) { http.Response.StatusCode = 401; await http.Response.WriteAsJsonAsync(new ApiError("invalid_input", "Start an anonymous session to access saved information.", Guid.NewGuid().ToString("N"), false)); return; }
@@ -82,7 +85,7 @@ app.Use(async (http, next) => {
 app.UseRateLimiter();
 app.UseAuthentication();
 app.MapControllers();
-if (args.Contains("--migrate")) { await app.Services.GetRequiredService<MySqlStateStore>().Migrate(CancellationToken.None); Console.WriteLine("MySQL migrations applied through version 6."); return; }
+if (args.Contains("--migrate")) { await app.Services.GetRequiredService<MySqlStateStore>().Migrate(CancellationToken.None); Console.WriteLine("MySQL migrations applied through version 7."); return; }
 if (args.Contains("--seed-students")) {
     var result = await app.Services.GetRequiredService<DemoStudentSeed>().Run(DemoStudentSeed.Students, CancellationToken.None);
     Console.WriteLine($"Demo students: {result.Created} created, {result.Skipped} already present and unchanged. See backend/DEMO-STUDENTS.md for test sign-in details.");
@@ -96,8 +99,8 @@ if (args.Contains("--collect-sources")) {
         sources = sources.Where(source => source.Id == id).ToArray();
         if (sources.Length == 0) { Console.Error.WriteLine("Choose a registered source ID. No collection was made."); Environment.ExitCode = 1; return; }
     }
-    await app.Services.GetRequiredService<SourceCollector>().CollectSources(sources, true, CancellationToken.None);
-    Console.WriteLine("Collection complete. Check /api/sources/status for confirmed results; missing details remain unconfirmed.");
+    var collected = await app.Services.GetRequiredService<SourceCollector>().CollectSources(sources, true, CancellationToken.None);
+    Console.WriteLine(collected ? "Bounded collection sweep finished. Check /api/sources/status for confirmed results; missing details remain unconfirmed." : "Another source collection is active. No second sweep was started; retry after it finishes.");
     return;
 }
 app.Run();
