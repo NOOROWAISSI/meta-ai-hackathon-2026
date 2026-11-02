@@ -12,6 +12,45 @@ public static class CampusActivityChecks {
         return "<script id='__NEXT_DATA__' type='application/json'>" + JsonSerializer.Serialize(new { props = new { pageProps = new { chapterData = new { id = 2664, url = page }, prerenderData = events } } }) + "</script>";
     }
     public static void Register(Action<string, Func<Task>> test) {
+        test("fresh source collection never makes an undated old announcement current", () => {
+            var now = DateTimeOffset.Parse("2026-11-02T12:00:00Z");
+            var post = new CampusActivity("synthetic", ["najah"], [], "A training", "Synthetic activity", "https://example.invalid", "https://example.invalid", "official_website", "training", "1 April 2026", null, "unknown", "Source", "primary_source", now.ToString("O"));
+            Check(CampusFreshness.Classify(post, now) == "needs_recheck");
+            Check(CampusFreshness.Classify(post with { EventDateText = "17 November 2026 · zone unknown" }, now) == "current");
+            Check(CampusFreshness.Classify(post with { EventDateText = "17 February — year unknown" }, now) == "needs_recheck");
+            Check(CampusFreshness.Classify(post with { EventDateText = "2026-11-10T00:00:00Z" }, now) == "current");
+            Check(CampusFreshness.Classify(post with { RegistrationState = "closed", EventDateText = "17 November 2026" }, now) == "archived");
+            Check(CampusFreshness.Classify(post with { RegistrationState = "open", AvailabilityCheckedAt = now.AddDays(-8).ToString("O") }, now) == "needs_recheck");
+            return Task.CompletedTask;
+        });
+        test("Najah session controls distinguish open enrollment from completed courses and hidden modal text", () => {
+            var source = new SourceRegistration("najah-academy-live", "Academy", "https://www.najah.ai/Courses", "palestine", "official_website", "public_html", null, "Synthetic") { UniversityId = "najah" };
+            var page = new Uri("https://www.najah.ai/Courses/Details/100?EnrollTeacherCourseId=200");
+            const string start = "<h1>Synthetic AI course</h1><h3>Description</h3><div>A synthetic introduction to artificial intelligence.</div><div class=\"enrollment-controls\">";
+            const string end = "</div><div class=\"modal\">Congratulations on completing the course! Thank you for registering!</div>";
+            var open = NajahCourseReader.Read(start + "<a href=\"/Authentication/Login?returnUrl=%2FCourses%2FDetails%2F100\">Enroll now</a>" + end, page, source).Single();
+            Check(open.RegistrationState == "open" && open.DiscoveryState == "current" && open.RegistrationDeadline is null);
+            var closed = NajahCourseReader.Read(start + "<button disabled>The Course is Completed</button>" + end, page, source).Single();
+            Check(closed.RegistrationState == "closed" && closed.DiscoveryState == "archived");
+            Check(NajahCourseReader.Read(start + end, page, source).Length == 0);
+            Check(NajahCourseReader.Read(start + end, new Uri("https://different.example.invalid/Courses/Details/100"), source).Length == 0);
+            var links = NajahCourseReader.Links("<div onclick=\"window.location.href='/Courses/Details/100?EnrollTeacherCourseId=200'\"><h5>AI foundations</h5></div>", new Uri(source.Url));
+            Check(links.Count == 1 && links[0].Url.Contains("EnrollTeacherCourseId=200"));
+            Check(OfficialPageReader.IsMissingUniversityRobots(new Uri(source.Url), System.Net.HttpStatusCode.Found, new Uri("/Home/HandleError/404", UriKind.Relative)));
+            Check(!OfficialPageReader.IsMissingUniversityRobots(new Uri(source.Url), System.Net.HttpStatusCode.Found, new Uri("/Authentication/Login", UriKind.Relative)));
+            Check(!OfficialPageReader.IsMissingUniversityRobots(new Uri(source.Url), System.Net.HttpStatusCode.Found, new Uri("https://different.example.invalid/Home/HandleError/404")));
+            return Task.CompletedTask;
+        });
+        test("IEEE published-event moderation is not student approval or proof of current enrollment", () => {
+            var source = new SourceRegistration("ieee-najah-public-events", "IEEE", "https://ieeennu.com/api/events/approved", "palestine", "official_website", "public_html", null, "Synthetic") { UniversityId = "najah", OrganizationId = "ieee-najah" };
+            const string json = "[{\"id\":7,\"status\":\"APPROVED\",\"title\":\"Synthetic AI workshop\",\"description\":\"A synthetic hands-on workshop description.\",\"event_date\":\"2026-04-01T00:00:00Z\",\"report_text\":null}]";
+            var post = IeeeNajahReader.Read(json, new Uri(source.Url), source).Single();
+            Check(post.RegistrationState == "not_specified" && CampusFreshness.Classify(post, DateTimeOffset.Parse("2026-11-02T12:00:00Z")) == "needs_recheck");
+            Check(post.OriginalUrl == "https://ieeennu.com/activity-details?id=7");
+            Check(IeeeNajahReader.Read(json, new Uri("https://other.example.invalid/api/events/approved"), source).Length == 0);
+            Check(IeeeNajahReader.Read("{\"events\":" + json + "}", new Uri(source.Url), source).Length == 1);
+            return Task.CompletedTask;
+        });
         test("public GDG adapter reads actual event descriptions and rejects mismatched chapter and external links", () => {
             var page = new Uri("https://gdg.community.dev/gdg-on-campus-birzeit-university-birzeit-palestine/");
             var source = new SourceRegistration("campus-gdg-birzeit", "GDG Birzeit", page.AbsoluteUri, "palestine", "official_website", "public_html", page.AbsoluteUri, "Synthetic fixture") { UniversityId = "birzeit", OrganizationId = "gdg-birzeit" };
@@ -35,8 +74,8 @@ public static class CampusActivityChecks {
             var rag = listings.Single(l => l.Id == "campus-binxttech-rag-announcement");
             Check(rag.RegistrationState == "not_specified" && rag.SourceStatus == "needs_verification" && rag.RegistrationDeadline is null && rag.Format == "unknown");
             Check(rag.UniversityIds.Contains("najah") && rag.UniversityIds.Contains("birzeit") && rag.UniversityIds.Contains("bethlehem"));
-            var course = listings.Single(l => l.Id == "campus-najah-python-data-course");
-            Check(course.UniversityIds.Contains("najah") && course.RegistrationState == "not_specified" && course.RegistrationDeadline is null);
+            Check(listings.All(l => l.Id != "campus-najah-python-data-course"));
+            Check(posts.Single(p => p.Id == "campus-najah-python-data-course").DiscoveryState == "archived");
             Check(listings.Any(l => l.Id == "campus-bethlehem-opportunity-lab-2026" && l.UniversityIds.Contains("bethlehem")));
             Check(posts.Any(p => p.Id == "campus-qou-innovation-hub-launch-2026" && p.UniversityIds.Contains("qou")));
             Check(posts.Single(p => p.Id == "campus-ieee-najah-xtreme20-report").Availability == "ended");

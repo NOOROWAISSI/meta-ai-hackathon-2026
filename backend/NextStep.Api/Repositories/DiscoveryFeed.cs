@@ -21,6 +21,7 @@ public sealed class DiscoveryFeed(DiscoveryCatalog catalog, MySqlStateStore stor
         await using var rows = await query.ExecuteReaderAsync(ct);
         while (await rows.ReadAsync(ct)) {
             var item = JsonSerializer.Deserialize<ListingSummary>(rows.GetString(0), Wire.Json)!;
+            if (item.ExtractionMethod == "najah_course_page" && !NajahCourseReader.IsTechTitle(item.Title)) continue;
             var checkedAt = rows.GetDateTime(2);
             var fresh = !rows.IsDBNull(3) && rows.GetString(3) == "checked" && !rows.IsDBNull(4) && rows.GetDateTime(4) == checkedAt && DateTime.UtcNow - checkedAt <= TimeSpan.FromDays(7);
             var current = item with { FirstSeenAt = Instant(rows.GetDateTime(1)), LastCheckedAt = Instant(checkedAt), SourceFreshness = fresh ? "current" : "stale", AvailabilityState = item.AvailabilityState == "cancelled" ? "cancelled" : ContractTime.IsInstant(item.EventEndAt) && DateTimeOffset.Parse(item.EventEndAt!) < DateTimeOffset.UtcNow ? "ended" : "unknown" };
@@ -31,7 +32,7 @@ public sealed class DiscoveryFeed(DiscoveryCatalog catalog, MySqlStateStore stor
                     LastCheckedAt = current.LastCheckedAt,
                     SourceFreshness = current.SourceFreshness
                 };
-            } else items.Add(current);
+            } else items.Add(current.ExtractionMethod == "najah_course_page" ? current with { DiscoveryState = current.AvailabilityState == "ended" || current.RegistrationState == "closed" ? "archived" : fresh && ContractTime.IsInstant(current.AvailabilityCheckedAt) && DateTimeOffset.UtcNow - DateTimeOffset.Parse(current.AvailabilityCheckedAt!) <= TimeSpan.FromDays(7) ? "current" : "needs_recheck" } : current);
         }
         return items.ToArray();
     }

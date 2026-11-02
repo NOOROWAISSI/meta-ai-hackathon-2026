@@ -101,6 +101,7 @@ if (args.Contains("--collect-sources")) {
         if (sources.Length == 0) { Console.Error.WriteLine("Choose a registered source ID. No collection was made."); Environment.ExitCode = 1; return; }
     }
     var collected = await app.Services.GetRequiredService<SourceCollector>().CollectSources(sources, true, CancellationToken.None);
+    if (collected) foreach (var check in (await app.Services.GetRequiredService<DiscoveryFeed>().Status(CancellationToken.None)).Sources.Where(check => sources.Any(source => source.Id == check.SourceId))) Console.WriteLine($"{check.SourceId}: {check.Outcome}; {check.CandidateCount} candidate links.");
     Console.WriteLine(collected ? "Bounded collection sweep finished. Check /api/sources/status for confirmed results; missing details remain unconfirmed." : "Another source collection is active. No second sweep was started; retry after it finishes.");
     return;
 }
