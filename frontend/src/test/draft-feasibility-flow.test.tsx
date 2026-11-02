@@ -123,6 +123,15 @@ beforeEach(() => {
   vi.spyOn(accountApi, "submissionCoverage").mockImplementation(async (_id, id) =>
     report(id ?? null),
   );
+  // P2: the preparation screen reads disclosure status on mount. These flows
+  // run with the disclosure already acknowledged; the gate itself is covered
+  // by disclosure.test.tsx and the backend DisclosureChecks.
+  vi.spyOn(accountApi, "disclosure").mockResolvedValue({
+    currentVersion: 1,
+    acknowledgedVersion: 1,
+    acknowledgedAt: "2026-10-28T00:00:00.000Z",
+    required: false,
+  });
 });
 afterEach(() => {
   cleanup();

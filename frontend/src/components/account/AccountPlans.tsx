@@ -16,8 +16,10 @@ import {
   accountApi,
   apiJson,
   accountDataChanged,
+  AccountApiError,
   type SubmissionCoverageView,
 } from "@/lib/account/api";
+import { DisclosurePanel } from "./DisclosurePanel";
 import type {
   Opportunity,
   Plan,
@@ -225,7 +227,16 @@ export function AccountPreparation({
 }) {
   const Heading = embedded ? "h2" : "h1";
   const auth = useAuth();
+  const { t } = useLocale();
   const query = useQueryClient();
+  const disclosure = useQuery({
+    queryKey: ["account", auth?.user?.id, "disclosure"],
+    queryFn: () => accountApi.disclosure(),
+    enabled: !!auth?.user,
+    retry: false,
+  });
+  const [disclosureNeeded, setDisclosureNeeded] = useState(false);
+  const [acknowledging, setAcknowledging] = useState(false);
   const key = ["account", auth?.user?.id, "preparation", opportunityId];
   const data = useQuery({
     queryKey: key,
@@ -360,13 +371,60 @@ export function AccountPreparation({
         );
       setCandidate({ ...draft, context, baseVersion: version, operationId: crypto.randomUUID() });
     } catch (failure) {
-      if (live.current)
+      if (!live.current) return;
+      // The server enforces the data-sharing disclosure before any provider
+      // call. Show the disclosure itself, not the raw error.
+      if (failure instanceof AccountApiError && failure.code === "disclosure_required")
+        setDisclosureNeeded(true);
+      else
         setError(
           failure instanceof Error ? failure.message : "Generation failed. No plan was accepted.",
         );
     } finally {
       lock.current = false;
       if (live.current) setBusy(false);
+    }
+  }
+  async function acknowledgeAndGenerate() {
+    setAcknowledging(true);
+    try {
+      await accountApi.acknowledgeDisclosure();
+      if (!live.current) return;
+      setDisclosureNeeded(false);
+      void query.invalidateQueries({ queryKey: ["account", auth?.user?.id, "disclosure"] });
+      void generate();
+    } catch {
+      if (live.current)
+        setError(
+          t(
+            "Your acknowledgment could not be saved. Nothing was sent.",
+            "تعذّر حفظ إقرارك. لم يُرسل أي شيء.",
+          ),
+        );
+    } finally {
+      if (live.current) setAcknowledging(false);
+    }
+  }
+  function declineDisclosure() {
+    setDisclosureNeeded(false);
+    setNotice(
+      t("No draft was generated and nothing was sent.", "لم تُنشأ أي مسودة ولم يُرسل أي شيء."),
+    );
+  }
+  async function withdrawDisclosure() {
+    try {
+      await accountApi.withdrawDisclosure();
+      void query.invalidateQueries({ queryKey: ["account", auth?.user?.id, "disclosure"] });
+      setNotice(
+        t(
+          "Your acknowledgment was withdrawn. Generation will ask again before sending anything.",
+          "تم سحب إقرارك. سيطلب الإنشاء الإقرار من جديد قبل إرسال أي شيء.",
+        ),
+      );
+    } catch {
+      setError(
+        t("Your acknowledgment could not be withdrawn.", "تعذّر سحب إقرارك."),
+      );
     }
   }
   async function accept() {
@@ -712,6 +770,13 @@ export function AccountPreparation({
               deadline.
             </p>
           )}
+          {disclosureNeeded && (
+            <DisclosurePanel
+              busy={acknowledging}
+              onAcknowledge={() => void acknowledgeAndGenerate()}
+              onDecline={declineDisclosure}
+            />
+          )}
           <button
             type="button"
             className="detail-primary mt-6"
@@ -727,6 +792,17 @@ export function AccountPreparation({
             {busy && <LoaderCircle className="size-4 animate-spin" aria-hidden />}
             {busy ? "Generating through the backend…" : "Generate preparation draft"}
           </button>
+          {disclosure.data && !disclosure.data.required && (
+            <p className="mt-4 text-sm text-muted-foreground">
+              {t(
+                "Data sharing with Meta AI: acknowledged.",
+                "مشاركة البيانات مع Meta AI: تم الإقرار.",
+              )}{" "}
+              <button type="button" className="underline" onClick={() => void withdrawDisclosure()}>
+                {t("Withdraw acknowledgment", "سحب الإقرار")}
+              </button>
+            </p>
+          )}
         </section>
       )}
       <SubmissionChecklist
