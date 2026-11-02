@@ -43,6 +43,7 @@ builder.Services.AddScoped<PasswordRecoveryService>();
 builder.Services.AddSingleton<DemoStudentSeed>();
 builder.Services.AddSingleton<MySqlStateStore>();
 builder.Services.AddSingleton<DisclosureStore>();
+builder.Services.AddSingleton<EvidenceOptInStore>();
 builder.Services.AddSingleton<IStateStore>(services => services.GetRequiredService<MySqlStateStore>());
 builder.Services.AddScoped<NextStep.Api.Application>();
 builder.Services.AddMetaAiClient(builder.Configuration);
@@ -67,7 +68,7 @@ app.Use(async (http, next) => {
             MySqlException => new ApiError("provider_unavailable", "Application storage is unavailable. The last confirmed data is preserved; retry shortly.", Guid.NewGuid().ToString("N"), true),
             _ => new ApiError("provider_unavailable", "The operation could not be completed. Retry shortly.", Guid.NewGuid().ToString("N"), true)
         };
-        if (!http.Response.HasStarted) { http.Response.StatusCode = failure.Code switch { "invalid_input" => 400, "disclosure_required" => 403, "not_found" => 404, "version_conflict" => 409, "rate_limited" => 429, "timeout" => 504, _ => 503 }; await http.Response.WriteAsJsonAsync(failure, cancellationToken: http.RequestAborted); }
+        if (!http.Response.HasStarted) { http.Response.StatusCode = failure.Code switch { "invalid_input" => 400, "disclosure_required" => 403, "evidence_optin_required" => 403, "not_found" => 404, "version_conflict" => 409, "rate_limited" => 429, "timeout" => 504, _ => 503 }; await http.Response.WriteAsJsonAsync(failure, cancellationToken: http.RequestAborted); }
     }
 });
 app.Use(async (http, next) => {
@@ -87,7 +88,7 @@ app.Use(async (http, next) => {
 app.UseRateLimiter();
 app.UseAuthentication();
 app.MapControllers();
-if (args.Contains("--migrate")) { await app.Services.GetRequiredService<MySqlStateStore>().Migrate(CancellationToken.None); Console.WriteLine("MySQL migrations applied through version 8."); return; }
+if (args.Contains("--migrate")) { await app.Services.GetRequiredService<MySqlStateStore>().Migrate(CancellationToken.None); Console.WriteLine("MySQL migrations applied through version 10."); return; }
 if (args.Contains("--seed-students")) {
     var result = await app.Services.GetRequiredService<DemoStudentSeed>().Run(DemoStudentSeed.Students, CancellationToken.None);
     Console.WriteLine($"Demo students: {result.Created} created, {result.Skipped} already present and unchanged. See backend/DEMO-STUDENTS.md for test sign-in details.");

@@ -77,6 +77,13 @@ internal static class OutboundProjectionChecks
                 ["briefing_note", "experience", "self_report", "accepted_interpretation"]));
             Assert(entries[3]!["text"]!.GetValue<string>() == "system reading");
         });
+        test("evidence clarifications keep their own provenance kind through projection", () => {
+            var context = Context(profile: new([new(ExperienceKinds.EvidenceClarification, "Student-confirmed opportunity experience, not an organizer requirement: built a file tool")], [], []));
+            GenerationPolicy.ValidateInput(context);
+            var payload = OutboundProjection.Build(context);
+            var entries = payload["selfReport"]!["acceptedExperience"]!.AsArray();
+            Assert(entries.Count == 1 && entries[0]!["kind"]!.GetValue<string>() == "evidence_clarification" && entries[0]!["text"]!.GetValue<string>().Contains("built a file tool"));
+        });
         test("outbound payload field allowlist is exact", () => {
             var payload = OutboundProjection.Build(Context());
             var keys = payload.Select(p => p.Key).OrderBy(k => k).ToArray();

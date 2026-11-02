@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MySqlConnector;
 using NextStep.Api;
 using NextStep.Api.Controllers;
+using NextStep.MetaAi;
 
 public sealed class FakeEvidenceIntelligence : IEvidenceIntelligence {
     public bool Invalid; public bool Fail; public int Calls;
@@ -47,6 +48,12 @@ public static class ProfileEvidenceChecks {
     private static async Task Run(Func<Factory, HttpClient, EvidenceView, Task> check) {
         await using var host = new Factory(); using var client = host.CreateClient(); client.DefaultRequestHeaders.Add("X-NextStep-Request", "1");
         (await client.PostAsJsonAsync("/api/auth/register", new RegisterRequest("evidence-" + Guid.NewGuid().ToString("N") + "@example.invalid", "Synthetic-Evidence-Check-2026!", "Temporary evidence check"), Wire.Json)).EnsureSuccessStatusCode();
+        // Combined integration alignment: these checks exercise generation
+        // flows written before the P2 disclosure gate existed. Acknowledge
+        // the plan-generation disclosure once per account so the flows run
+        // under the same rules as production. The gate itself (including
+        // refusal without acknowledgment) is covered by DisclosureChecks.
+        (await client.PostAsync("/api/profile/disclosure/acknowledge", null)).EnsureSuccessStatusCode();
         var profile = (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!;
         try { await check(host, client, (await client.GetFromJsonAsync<EvidenceView>("/api/profile/evidence", Wire.Json))!); }
         finally { await host.Services.GetRequiredService<IStateStore>().Delete(profile.Id["profile-".Length..], CancellationToken.None); }
@@ -56,6 +63,11 @@ public static class ProfileEvidenceChecks {
         result.EnsureSuccessStatusCode(); return (await result.Content.ReadFromJsonAsync<EvidenceView>(Wire.Json))!;
     }
     private static async Task<EvidenceView> Analyze(HttpClient client, EvidenceView view) {
+        // Combined integration alignment: extraction now requires the
+        // per-document opt-in (EvidenceOptInChecks covers refusal without
+        // it). These checks exercise the permitted path, so opt the source
+        // in first, as the UI would after showing the extraction disclosure.
+        (await client.PostAsync("/api/profile/evidence/opt-in/" + view.Workspace.Sources[0].Id, null)).EnsureSuccessStatusCode();
         var result = await client.PostAsJsonAsync("/api/profile/evidence/analyze", new EvidenceAnalysisRequest(view.ProfileVersion, view.Workspace.Version, [view.Workspace.Sources[0].Id], true, "en"), Wire.Json);
         result.EnsureSuccessStatusCode(); return (await result.Content.ReadFromJsonAsync<EvidenceView>(Wire.Json))!;
     }
@@ -147,6 +159,9 @@ public static class ProfileEvidenceChecks {
             view = await Add(client, view);
             var denied = await client.PostAsJsonAsync("/api/profile/evidence/analyze", new EvidenceAnalysisRequest(view.ProfileVersion, view.Workspace.Version, [view.Workspace.Sources[0].Id], false, "en"), Wire.Json);
             Check(denied.StatusCode == HttpStatusCode.BadRequest && host.Evidence.Calls == 0);
+            // Combined: the provider-failure path sits behind the opt-in
+            // gate, so opt the source in before exercising it.
+            (await client.PostAsync("/api/profile/evidence/opt-in/" + view.Workspace.Sources[0].Id, null)).EnsureSuccessStatusCode();
             host.Evidence.Fail = true;
             var failed = await client.PostAsJsonAsync("/api/profile/evidence/analyze", new EvidenceAnalysisRequest(view.ProfileVersion, view.Workspace.Version, [view.Workspace.Sources[0].Id], true, "en"), Wire.Json);
             Check(failed.StatusCode == HttpStatusCode.ServiceUnavailable);
@@ -154,6 +169,9 @@ public static class ProfileEvidenceChecks {
         }));
         test("extraction rejects fabricated quotations without saving a draft", () => Run(async (host, client, view) => {
             view = await Add(client, view); host.Evidence.Invalid = true;
+            // Opt in first so the refusal under test is the quotation
+            // validation, not the opt-in gate.
+            (await client.PostAsync("/api/profile/evidence/opt-in/" + view.Workspace.Sources[0].Id, null)).EnsureSuccessStatusCode();
             var failed = await client.PostAsJsonAsync("/api/profile/evidence/analyze", new EvidenceAnalysisRequest(view.ProfileVersion, view.Workspace.Version, [view.Workspace.Sources[0].Id], true, "en"), Wire.Json);
             Check(!failed.IsSuccessStatusCode && (await client.GetFromJsonAsync<EvidenceView>("/api/profile/evidence", Wire.Json))!.Workspace.Draft is null);
         }));
@@ -184,7 +202,9 @@ public static class ProfileEvidenceChecks {
             Check(saved.Skills.Length == 1 && saved.Skills[0].Id == "old-react" && saved.Skills[0].State == "reported_has");
         }));
         test("late extraction cannot overwrite changed profile or newer sources", () => Run(async (host, client, view) => {
-            view = await Add(client, view); host.Evidence.Entered = new(TaskCreationOptions.RunContinuationsAsynchronously); host.Evidence.Resume = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            view = await Add(client, view);
+            (await client.PostAsync("/api/profile/evidence/opt-in/" + view.Workspace.Sources[0].Id, null)).EnsureSuccessStatusCode();
+            host.Evidence.Entered = new(TaskCreationOptions.RunContinuationsAsynchronously); host.Evidence.Resume = new(TaskCreationOptions.RunContinuationsAsynchronously);
             var pending = client.PostAsJsonAsync("/api/profile/evidence/analyze", new EvidenceAnalysisRequest(view.ProfileVersion, view.Workspace.Version, [view.Workspace.Sources[0].Id], true, "en"), Wire.Json);
             await host.Evidence.Entered.Task.WaitAsync(TimeSpan.FromSeconds(10)); await Add(client, view); host.Evidence.Resume.TrySetResult();
             Check((await pending).StatusCode == HttpStatusCode.Conflict && (await client.GetFromJsonAsync<EvidenceView>("/api/profile/evidence", Wire.Json))!.Workspace.Draft is null);
@@ -251,10 +271,15 @@ public static class ProfileEvidenceChecks {
             (await client.PostAsJsonAsync("/api/profile/evidence/accept", new EvidenceAcceptance(view.Workspace.Draft!.Id, view.ProfileVersion, view.Workspace.Version, [new(0, "React", "")]), Wire.Json)).EnsureSuccessStatusCode();
             Check(await client.GetStringAsync("/api/plans") == before);
             profile = (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!;
-            host.Model.Prefix = "Adapt";
+            // Fixture alignment with the structured action vocabulary: the
+            // regeneration-after-progress scenario maps to the adapt/explore
+            // pair ("Fresh"), not an unmapped prefix.
+            host.Model.Prefix = "Fresh";
             var next = await client.PostAsJsonAsync("/api/opportunities/E01/plan-candidates", new AnalysisRequest(opportunity.SourceRevision, profile, submission, (await done.Content.ReadFromJsonAsync<Plan>(Wire.Json))!), Wire.Json); next.EnsureSuccessStatusCode();
             Check(host.Model.LastContext!.SelfReport.ReportedSkills.Any(s => s.Contains("React")));
-            Check(host.Model.LastContext.SelfReport.AcceptedExperience.Any(s => s.Contains("independent Python file-processing")));
+            // The clarification reaches generation as its own provenance
+            // kind under the combined contract, with its text intact.
+            Check(host.Model.LastContext.SelfReport.AcceptedExperience.Any(e => e.Kind == ExperienceKinds.EvidenceClarification && e.Text.Contains("independent Python file-processing")));
         }));
         test("focused clarification preserves progress context and reaches the next comparison with weekly-hour units", () => Run(async (host, client, view) => {
             var profile = (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!;

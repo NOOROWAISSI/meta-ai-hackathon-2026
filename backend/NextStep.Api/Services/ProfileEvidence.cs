@@ -76,7 +76,7 @@ public sealed class EvidenceRepository(MySqlStateStore store) {
     }
 }
 
-public sealed class ProfileEvidenceService(EvidenceRepository repository, IEvidenceIntelligence intelligence, DiscoveryFeed feed, Catalog catalog) {
+public sealed class ProfileEvidenceService(EvidenceRepository repository, IEvidenceIntelligence intelligence, DiscoveryFeed feed, Catalog catalog, EvidenceOptInStore optIns) {
     private static string Revision(ListingSummary? listing, Opportunity? record) => MySqlStateStore.Hash(JsonSerializer.Serialize(new { listing, record, learningOutline = listing is null ? null : ReviewedLearningOutlines.Get(listing.Id) }, Wire.Json));
     private static ConfirmedFact[] CurrentFacts(StudentProfile profile, EvidenceWorkspace workspace) {
         var adopted = workspace.Confirmed.Where(f => f.Kind switch {
@@ -132,6 +132,11 @@ public sealed class ProfileEvidenceService(EvidenceRepository repository, IEvide
             Input.Require(selected.Sum(x => x.Chunks.Sum(c => c.Text.Length)) <= 60000, "Select fewer sources for this analysis (maximum 60,000 characters).");
             return selected;
         }, ct);
+        // Combined integration gate: every selected source needs its own
+        // server-recorded extraction opt-in before any document text leaves
+        // for the provider. The plan-generation disclosure acknowledgment
+        // does not satisfy this, and this opt-in does not satisfy that one.
+        foreach (var source in sources) EvidenceOptIn.RequireCurrent(await optIns.Get(owner, source.Id, ct), source.Title);
         var output = await intelligence.Extract(sources, request.Language, ct);
         Validate(output, sources);
         return await repository.Transaction(owner, (s, e) => {

@@ -83,10 +83,26 @@ public sealed class MySqlStateStore(IConfiguration configuration) : IStateStore
         await using var command = new MySqlCommand("DELETE FROM anonymous_sessions WHERE owner_id=@owner", connection);
         command.Parameters.AddWithValue("@owner", owner); await command.ExecuteNonQueryAsync(ct);
     }
+    // Object-level schema health (combined integration): a ledger row in
+    // schema_migrations cannot prove a table exists, because independent
+    // branches historically claimed the same version for different tables.
+    // Health therefore verifies the actual objects the combined build needs:
+    // every required table, the critical columns other code reads by name,
+    // and every named foreign key. Any missing object reports unhealthy.
+    private static readonly string[] RequiredTables = ["account_sessions", "accounts", "announcement_extractions", "anonymous_sessions", "campus_activities", "campus_follows", "disclosure_acks", "discovered_listings", "evidence_import_optins", "intake_candidates", "password_recovery", "profile_evidence", "schema_migrations", "source_pages", "source_runs", "user_state"];
+    private static readonly (string Table, string Column)[] RequiredColumns = [("user_state", "payload"), ("user_state", "revision"), ("disclosure_acks", "version"), ("disclosure_acks", "acknowledged_at"), ("profile_evidence", "payload"), ("evidence_import_optins", "opted_in_at"), ("schema_migrations", "version")];
+    private static readonly string[] RequiredForeignKeys = ["fk_account_owner", "fk_account_session", "fk_campus_follow_session", "fk_disclosure_owner", "fk_evidence_optin_session", "fk_profile_evidence_session", "fk_recovery_account", "fk_user_state_session"];
     public async Task<bool> Healthy(CancellationToken ct)
     {
         await using var connection = await Open(ct);
-        await using var command = new MySqlCommand("SELECT COUNT(*) FROM schema_migrations WHERE version=8", connection);
-        return Convert.ToInt32(await command.ExecuteScalarAsync(ct)) == 1;
+        await using var tables = new MySqlCommand("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN (" + string.Join(",", RequiredTables.Select((_, i) => "@t" + i)) + ")", connection);
+        for (var i = 0; i < RequiredTables.Length; i++) tables.Parameters.AddWithValue("@t" + i, RequiredTables[i]);
+        if (Convert.ToInt32(await tables.ExecuteScalarAsync(ct)) != RequiredTables.Length) return false;
+        await using var columns = new MySqlCommand("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND (table_name, column_name) IN (" + string.Join(",", RequiredColumns.Select((_, i) => $"(@ct{i}, @cc{i})")) + ")", connection);
+        for (var i = 0; i < RequiredColumns.Length; i++) { columns.Parameters.AddWithValue("@ct" + i, RequiredColumns[i].Table); columns.Parameters.AddWithValue("@cc" + i, RequiredColumns[i].Column); }
+        if (Convert.ToInt32(await columns.ExecuteScalarAsync(ct)) != RequiredColumns.Length) return false;
+        await using var keys = new MySqlCommand("SELECT COUNT(*) FROM information_schema.table_constraints WHERE constraint_schema = DATABASE() AND constraint_type = 'FOREIGN KEY' AND constraint_name IN (" + string.Join(",", RequiredForeignKeys.Select((_, i) => "@k" + i)) + ")", connection);
+        for (var i = 0; i < RequiredForeignKeys.Length; i++) keys.Parameters.AddWithValue("@k" + i, RequiredForeignKeys[i]);
+        return Convert.ToInt32(await keys.ExecuteScalarAsync(ct)) == RequiredForeignKeys.Length;
     }
 }

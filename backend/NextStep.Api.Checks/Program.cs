@@ -764,6 +764,9 @@ PreparationSelectionChecks.Register(Test);
 Test("saving and removing a preparation choice preserves an existing accepted plan", async () => {
     await using var host = new Factory(); using var client = host.CreateClient(); client.DefaultRequestHeaders.Add("X-NextStep-Request", "1");
     var registered = await client.PostAsJsonAsync("/api/auth/register", new RegisterRequest("selection-plan-" + Guid.NewGuid().ToString("N") + "@example.test", "Synthetic-password-42!"), Wire.Json); registered.EnsureSuccessStatusCode();
+    // Combined alignment: this check accepts a plan, which now sits behind
+    // the P2 disclosure gate; acknowledge first (gate covered elsewhere).
+    (await client.PostAsync("/api/profile/disclosure/acknowledge", null)).EnsureSuccessStatusCode();
     var account = (await registered.Content.ReadFromJsonAsync<AccountView>(Wire.Json))!;
     var profile = (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!; owners.Add(profile.Id["profile-".Length..]);
     var changed = profile with { AvailableHoursPerWeek = Known(5), Goals = [new("goal-test", "Prepare a prototype walkthrough")], EntrantType = KnownText("individual"), Enrollment = KnownText("higher_education") };
@@ -854,6 +857,7 @@ Test("stale-profile progress preserves accepted context and never adopts new cap
 });
 PersonalBriefingChecks.Register(Test);
 ProfileEvidenceChecks.Register(Test);
+EvidenceOptInChecks.Register(Test);
 var passed = 0;
 try {
     foreach (var test in cases) {
