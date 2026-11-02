@@ -74,6 +74,16 @@ Test("profile and accepted plan data is isolated between anonymous sessions", as
     Assert((await second.Client.GetFromJsonAsync<Plan[]>("/api/plans", Wire.Json))!.Length == 0);
     Assert((await second.Client.PutAsJsonAsync("/api/profile", new ProfileUpdate(0, first.Profile), Wire.Json)).StatusCode == HttpStatusCode.Conflict);
 });
+Test("a modified task cannot inherit another structured task's display proof", async () => {
+    await using var host = new Factory(); var localStore = host.Services.GetRequiredService<IStateStore>(); var data = await Ready(host);
+    var (plan, _) = await Accepted(data.Client, data.Profile, data.Submission, data.Opportunity);
+    var owner = data.Profile.Id["profile-".Length..]; const string claim = "You qualify to participate and are approved for entry.";
+    await localStore.Change(owner, state => { var current = state.Plans["E01"]; var tasks = current.Tasks.ToArray(); tasks[0] = tasks[0] with { Deliverable = claim }; state.Plans["E01"] = current with { Tasks = tasks, Warnings = [claim] }; return true; }, CancellationToken.None);
+    var body = await data.Client.GetStringAsync("/api/plans/E01");
+    Assert(!body.Contains(claim)); var projected = JsonSerializer.Deserialize<Plan>(body, Wire.Json)!;
+    Assert(projected.Warnings.Contains(PlanDisplay.HistoricalNotice) && projected.Tasks[0].Title == "Historical task 1");
+    Assert(projected.Tasks[1].Title == plan.Tasks[1].Title);
+});
 Test("analysis separates lanes, keeps incomplete coverage unknown, and exposes source conflicts", async () => {
     var data = await Ready();
     var response = await data.Client.PostAsJsonAsync("/api/opportunities/E01/analysis", Request(data.Profile, data.Submission, data.Opportunity), Wire.Json);
@@ -98,6 +108,97 @@ Test("candidate preview does not commit a plan; acceptance is explicit and idemp
     var plan = (await first.Content.ReadFromJsonAsync<Plan>(Wire.Json))!;
     Assert((await retry.Content.ReadFromJsonAsync<Plan>(Wire.Json))!.Version == plan.Version && plan.Tasks.Length == 2 && plan.Feasibility == "untimed");
     Assert(plan.TaskOrder.SequenceEqual(plan.Tasks.Select(t => t.Id)) && plan.Budget.DeadlineInstant is null);
+});
+Test("persisted legacy verdict is rejected on every acceptance attempt without changing confirmed work", async () => {
+    await using var host = new Factory(); var localStore = host.Services.GetRequiredService<IStateStore>();
+    var data = await Ready(host); var (original, _) = await Accepted(data.Client, data.Profile, data.Submission, data.Opportunity);
+    var progress = await data.Client.PatchAsJsonAsync($"/api/plans/E01/tasks/{original.Tasks[0].Id}", new TaskUpdate(original.Version, "done", Guid.NewGuid().ToString("N"), ["https://example.org/artifact"]), Wire.Json);
+    progress.EnsureSuccessStatusCode(); var confirmed = (await progress.Content.ReadFromJsonAsync<Plan>(Wire.Json))!;
+    var owner = data.Profile.Id["profile-".Length..]; var candidateId = Guid.NewGuid().ToString("N");
+    var verdict = "You qualify to participate and are approved for entry.";
+    await localStore.Change(owner, state => {
+        var legacy = new StoredCandidate(candidateId, "E01", confirmed.Context, confirmed.Version, state.Profile.Goals,
+            new([new(verdict, new("goal", state.Profile.Goals[0].Id), "should", verdict, verdict, 1, [])], verdict), DateTimeOffset.UtcNow.AddMinutes(15));
+        var oldJson = JsonSerializer.SerializeToNode(legacy, Wire.Json)!.AsObject(); oldJson.Remove("renderingProof");
+        state.Candidates[candidateId] = oldJson.Deserialize<StoredCandidate>(Wire.Json)!;
+        return true;
+    }, CancellationToken.None);
+    var request = new AcceptPlan(candidateId, confirmed.Version, Guid.NewGuid().ToString("N"));
+    for (var i = 0; i < 2; i++) {
+        var rejected = await data.Client.PostAsJsonAsync("/api/plans/E01/accept", request, Wire.Json);
+        Assert(rejected.StatusCode == HttpStatusCode.Conflict && (await rejected.Content.ReadAsStringAsync()).Contains("regenerated"));
+    }
+    var reloaded = (await data.Client.GetFromJsonAsync<Plan>("/api/plans/E01", Wire.Json))!;
+    Assert(JsonSerializer.Serialize(reloaded, Wire.Json) == JsonSerializer.Serialize(confirmed, Wire.Json));
+    Assert(JsonSerializer.Serialize(await data.Client.GetFromJsonAsync<SubmissionState>("/api/submissions/E01", Wire.Json), Wire.Json) == JsonSerializer.Serialize(data.Submission, Wire.Json));
+});
+Test("structured provenance survives MySQL reload and rejects output replacement", async () => {
+    await using var host = new Factory(); var localStore = host.Services.GetRequiredService<IStateStore>();
+    var data = await Ready(host); var owner = data.Profile.Id["profile-".Length..];
+    var generated = await data.Client.PostAsJsonAsync("/api/opportunities/E01/plan-candidates", Request(data.Profile, data.Submission, data.Opportunity), Wire.Json); generated.EnsureSuccessStatusCode();
+    var id = generated.Headers.GetValues("X-Candidate-Id").Single();
+    var saved = await localStore.Read(owner, state => state.Candidates[id], CancellationToken.None);
+    Assert(saved.RenderingProof is not null && PlanActionRenderer.Matches(saved.Output, saved.RenderingProof));
+    await localStore.Change(owner, state => { var c = state.Candidates[id]; state.Candidates[id] = c with { Output = c.Output with { Explanation = "You qualify to participate and are approved for entry." } }; return true; }, CancellationToken.None);
+    Assert((await data.Client.PostAsJsonAsync("/api/plans/E01/accept", new AcceptPlan(id, null, Guid.NewGuid().ToString("N")), Wire.Json)).StatusCode == HttpStatusCode.Conflict);
+    await localStore.Change(owner, state => { state.Candidates[id] = saved; return true; }, CancellationToken.None);
+    var accept = new AcceptPlan(id, null, Guid.NewGuid().ToString("N"));
+    var accepted = await data.Client.PostAsJsonAsync("/api/plans/E01/accept", accept, Wire.Json); accepted.EnsureSuccessStatusCode();
+    var plan = (await accepted.Content.ReadFromJsonAsync<Plan>(Wire.Json))!;
+    Assert(plan.Tasks.Length == 2 && !JsonSerializer.Serialize(plan, Wire.Json).Contains("approved for entry"));
+    var retry = await data.Client.PostAsJsonAsync("/api/plans/E01/accept", accept, Wire.Json); retry.EnsureSuccessStatusCode();
+    Assert((await retry.Content.ReadFromJsonAsync<Plan>(Wire.Json))!.Version == plan.Version);
+});
+Test("arbitrary model DTO cannot obtain renderer provenance", async () => {
+    await using var host = new Factory(); var data = await Ready(host); host.Model.Arbitrary = true;
+    var response = await data.Client.PostAsJsonAsync("/api/opportunities/E01/plan-candidates", Request(data.Profile, data.Submission, data.Opportunity), Wire.Json);
+    Assert(response.StatusCode == HttpStatusCode.ServiceUnavailable);
+    Assert((await data.Client.GetFromJsonAsync<Plan[]>("/api/plans", Wire.Json))!.Length == 0);
+});
+Test("historical plan text stays private across reads, replay, progress and regeneration", async () => {
+    foreach (var claim in new[] { "You qualify to participate and are approved for entry.", "Your participation has been authorized and your place is guaranteed.", "أنت مؤهل للمشاركة وتمت الموافقة على دخولك." }) {
+        await using var host = new Factory(); var localStore = host.Services.GetRequiredService<IStateStore>(); var data = await Ready(host);
+        var generated = await data.Client.PostAsJsonAsync("/api/opportunities/E01/plan-candidates", Request(data.Profile, data.Submission, data.Opportunity), Wire.Json); generated.EnsureSuccessStatusCode();
+        var candidateId = generated.Headers.GetValues("X-Candidate-Id").Single(); var accept = new AcceptPlan(candidateId, null, Guid.NewGuid().ToString("N"));
+        var accepted = await data.Client.PostAsJsonAsync("/api/plans/E01/accept", accept, Wire.Json); accepted.EnsureSuccessStatusCode();
+        var original = (await accepted.Content.ReadFromJsonAsync<Plan>(Wire.Json))!;
+        Assert(original.Tasks[0].Title.StartsWith("Step 1:"));
+        var artifact = "https://example.invalid/my-artifact";
+        var started = await data.Client.PatchAsJsonAsync($"/api/plans/E01/tasks/{original.Tasks[0].Id}", new TaskUpdate(original.Version, "in_progress", Guid.NewGuid().ToString("N"), [artifact]), Wire.Json); started.EnsureSuccessStatusCode();
+        var owner = data.Profile.Id["profile-".Length..];
+        await localStore.Change(owner, state => {
+            var plan = state.Plans["E01"]; var tasks = plan.Tasks.Select(t => t with { Title = claim, Deliverable = claim, CompletionCriteria = claim }).ToArray();
+            state.Plans["E01"] = plan with { Tasks = tasks, Warnings = [claim] }; state.PlanRenderings.Remove("E01"); return true;
+        }, CancellationToken.None);
+        async Task<string> Safe(HttpResponseMessage response) {
+            response.EnsureSuccessStatusCode(); var body = await response.Content.ReadAsStringAsync();
+            Assert(!body.Contains(claim) && !body.Contains(JsonSerializer.Serialize(claim, Wire.Json)[1..^1]) && body.Contains("Historical plan")); return body;
+        }
+        var shown = JsonSerializer.Deserialize<Plan>(await Safe(await data.Client.GetAsync("/api/plans/E01")), Wire.Json)!;
+        Assert(shown.Id == original.Id && shown.Version == original.Version + 1 && shown.Tasks[0].Id == original.Tasks[0].Id && shown.Tasks[0].Status == "in_progress" && shown.Tasks[0].ArtifactUrls.SequenceEqual(new[] { artifact }));
+        Assert(shown.Tasks[0].EstimatedHours == original.Tasks[0].EstimatedHours && shown.Tasks[0].RemainingEstimatedHours == original.Tasks[0].RemainingEstimatedHours);
+        await Safe(await data.Client.GetAsync("/api/plans")); await Safe(await data.Client.GetAsync("/api/data/export"));
+        await Safe(await data.Client.PostAsJsonAsync("/api/plans/E01/accept", accept, Wire.Json));
+        var update = new TaskUpdate(shown.Version, "done", Guid.NewGuid().ToString("N"));
+        var progressed = JsonSerializer.Deserialize<Plan>(await Safe(await data.Client.PatchAsJsonAsync($"/api/plans/E01/tasks/{shown.Tasks[0].Id}", update, Wire.Json)), Wire.Json)!;
+        await Safe(await data.Client.PatchAsJsonAsync($"/api/plans/E01/tasks/{shown.Tasks[0].Id}", update, Wire.Json));
+        Assert(progressed.Tasks[0].Status == "done" && progressed.Tasks[0].ArtifactUrls.Single() == artifact);
+        var reloaded = JsonSerializer.Deserialize<Plan>(await Safe(await data.Client.GetAsync("/api/plans/E01")), Wire.Json)!;
+        Assert(reloaded.Version == progressed.Version && reloaded.Tasks[0].Status == "done");
+        var raw = await localStore.Read(owner, state => state.Plans["E01"], CancellationToken.None);
+        Assert(raw.Tasks[0].Title == claim && raw.Tasks[0].Deliverable == claim && raw.Tasks[0].CompletionCriteria == claim && raw.Warnings.Single() == claim);
+        Assert(JsonSerializer.Serialize(await data.Client.GetFromJsonAsync<SubmissionState>("/api/submissions/E01", Wire.Json), Wire.Json) == JsonSerializer.Serialize(data.Submission, Wire.Json));
+        host.Model.Prefix = "Fresh";
+        var regeneration = await data.Client.PostAsJsonAsync("/api/opportunities/E01/plan-candidates", Request(data.Profile, data.Submission, data.Opportunity, reloaded), Wire.Json); regeneration.EnsureSuccessStatusCode();
+        var nextId = regeneration.Headers.GetValues("X-Candidate-Id").Single();
+        var regenerated = JsonSerializer.Deserialize<Plan>(await Safe(await data.Client.PostAsJsonAsync("/api/plans/E01/accept", new AcceptPlan(nextId, reloaded.Version, Guid.NewGuid().ToString("N")), Wire.Json)), Wire.Json)!;
+        Assert(regenerated.Tasks.Any(t => t.Id == shown.Tasks[0].Id && t.Status == "done" && t.ArtifactUrls.Single() == artifact));
+        Assert(regenerated.Tasks.Any(t => t.Title.StartsWith("Step 1:")));
+        var archived = await localStore.Read(owner, state => state.HistoricalPlans["E01"], CancellationToken.None);
+        Assert(archived.Tasks[0].Title == claim && archived.Warnings.Single() == claim && archived.Tasks[0].Status == "done");
+        await Safe(await data.Client.GetAsync("/api/plans/E01")); await Safe(await data.Client.GetAsync("/api/data/export"));
+        Assert(JsonSerializer.Serialize(await data.Client.GetFromJsonAsync<SubmissionState>("/api/submissions/E01", Wire.Json), Wire.Json) == JsonSerializer.Serialize(data.Submission, Wire.Json));
+    }
 });
 Test("Done keeps original effort and submission facts; confirmed progress reads back", async () => {
     var data = await Ready(); var (plan, _) = await Accepted(data.Client, data.Profile, data.Submission, data.Opportunity);
@@ -350,6 +451,51 @@ Test("reviewed real resource descriptors reach the provider using the same IDs e
     var context = host.Model.LastContext!;
     Assert(context.ReviewedResourceIds.Count > 0 && context.ReviewedResources.Count == context.ReviewedResourceIds.Count);
     Assert(context.ReviewedResources.All(resource => resources.Any(record => record.Id == resource.Id && record.Title == resource.Title)));
+});
+
+Test("video metadata is bound to the reviewed source and video task progress is not submission evidence", async () => {
+    await using var host = new Factory(); var data = await Ready(host); host.Model.VideoPlan = true;
+    var opportunity = (await data.Client.GetFromJsonAsync<Opportunity>("/api/opportunities/E02", Wire.Json))!;
+    var rule = opportunity.Requirements.Single(r => r.Id == "E02-s-video"); var reviewed = Catalog.ReviewedDeliverable(opportunity, rule);
+    Assert(reviewed is { Type: "video" } && reviewed.RequiredActions.SequenceEqual(new[] { "record", "deliver" }) && reviewed.EvidenceIds.SequenceEqual(new[] { "ev-gai-video" }));
+    Assert(Catalog.ReviewedDeliverable(opportunity with { SourceRevision = "stale" }, rule) is null);
+    Assert(Catalog.ReviewedDeliverable(opportunity with { InformationFreshness = "stale" }, rule) is null);
+    Assert(Catalog.ReviewedDeliverable(opportunity, rule with { SourceEvidenceIds = ["other"] }) is null);
+    var submission = (await data.Client.GetFromJsonAsync<SubmissionState>("/api/submissions/E02", Wire.Json))!;
+    var draft = await data.Client.PostAsJsonAsync("/api/opportunities/E02/plan-candidates", new AnalysisRequest(opportunity.SourceRevision, data.Profile, submission), Wire.Json); draft.EnsureSuccessStatusCode();
+    Assert(host.Model.LastContext!.ReviewedRequirements.Single(r => r.Id == rule.Id).Deliverable == reviewed || JsonSerializer.Serialize(host.Model.LastContext.ReviewedRequirements.Single(r => r.Id == rule.Id).Deliverable, Wire.Json) == JsonSerializer.Serialize(reviewed, Wire.Json));
+    var candidate = (await draft.Content.ReadFromJsonAsync<PlanCandidateOutput>(Wire.Json))!;
+    Assert(candidate.Tasks[0].Title.Contains("Record") && candidate.Tasks[0].Title.Contains("video") && candidate.Explanation.Contains("coverage remains unresolved"));
+    var id = draft.Headers.GetValues("X-Candidate-Id").Single();
+    var accepted = await data.Client.PostAsJsonAsync("/api/plans/E02/accept", new AcceptPlan(id, null, Guid.NewGuid().ToString("N")), Wire.Json); accepted.EnsureSuccessStatusCode();
+    var plan = (await accepted.Content.ReadFromJsonAsync<Plan>(Wire.Json))!;
+    var progress = await data.Client.PatchAsJsonAsync($"/api/plans/E02/tasks/{plan.Tasks[0].Id}", new TaskUpdate(plan.Version, "done", Guid.NewGuid().ToString("N")), Wire.Json); progress.EnsureSuccessStatusCode();
+    var updated = (await progress.Content.ReadFromJsonAsync<Plan>(Wire.Json))!;
+    Assert(updated.Tasks[0].Status == "done" && updated.Tasks[0].Title.Contains("Record"));
+    Assert(JsonSerializer.Serialize(await data.Client.GetFromJsonAsync<SubmissionState>("/api/submissions/E02", Wire.Json), Wire.Json) == JsonSerializer.Serialize(submission, Wire.Json));
+    var again = await data.Client.PostAsJsonAsync("/api/opportunities/E02/plan-candidates", new AnalysisRequest(opportunity.SourceRevision, data.Profile, submission, updated), Wire.Json);
+    Assert(again.StatusCode == HttpStatusCode.ServiceUnavailable && host.Model.LastContext!.ExistingTasks.Any(t => t.Id == updated.Tasks[0].Id && t.ActionCode == "record_video"));
+    Assert((await data.Client.GetFromJsonAsync<Plan>("/api/plans/E02", Wire.Json))!.Tasks[0].Status == "done");
+});
+Test("application capacity snapshot produces safe fallback for overloaded unstaged work", async () => {
+    await using var host = new Factory(); var data = await Ready(host);
+    var changed = await data.Client.PutAsJsonAsync("/api/profile", new ProfileUpdate(data.Profile.Version, data.Profile with { AvailableHoursPerWeek = Known(0.1) }), Wire.Json); changed.EnsureSuccessStatusCode();
+    var profile = (await changed.Content.ReadFromJsonAsync<StudentProfile>(Wire.Json))!;
+    var uncertain = await data.Client.PostAsJsonAsync("/api/opportunities/E01/plan-candidates", Request(profile, data.Submission, data.Opportunity), Wire.Json); uncertain.EnsureSuccessStatusCode();
+    var untimed = (await uncertain.Content.ReadFromJsonAsync<PlanCandidateOutput>(Wire.Json))!;
+    Assert(host.Model.LastContext!.AvailableCapacityHours is null && !untimed.Explanation.Contains("exceeds reported capacity"));
+    var opportunity = (await data.Client.GetFromJsonAsync<Opportunity>("/api/opportunities/E02", Wire.Json))!;
+    var submission = (await data.Client.GetFromJsonAsync<SubmissionState>("/api/submissions/E02", Wire.Json))!;
+    var draft = await data.Client.PostAsJsonAsync("/api/opportunities/E02/plan-candidates", Request(profile, submission, opportunity), Wire.Json); draft.EnsureSuccessStatusCode();
+    var candidate = (await draft.Content.ReadFromJsonAsync<PlanCandidateOutput>(Wire.Json))!;
+    Assert(host.Model.LastContext!.AvailableCapacityHours is { } hours && hours < 3 && candidate.Tasks.Sum(t => t.EstimatedHours) == 3);
+    Assert(candidate.Explanation.Contains("exceeds reported capacity") && candidate.Explanation.Contains("fallback critical path") && candidate.Explanation.Contains("not newly added tasks"));
+    var id = draft.Headers.GetValues("X-Candidate-Id").Single();
+    var accepted = await data.Client.PostAsJsonAsync("/api/plans/E02/accept", new AcceptPlan(id, null, Guid.NewGuid().ToString("N")), Wire.Json); accepted.EnsureSuccessStatusCode();
+    var plan = (await accepted.Content.ReadFromJsonAsync<Plan>(Wire.Json))!;
+    Assert(plan.Feasibility == "infeasible" && plan.Tasks.Sum(t => t.EstimatedHours) == 3 && plan.Warnings.Any(w => w.Contains("fallback critical path")));
+    var reloaded = (await data.Client.GetFromJsonAsync<Plan>("/api/plans/E02", Wire.Json))!;
+    Assert(reloaded.Tasks.Select(t => t.Title).SequenceEqual(plan.Tasks.Select(t => t.Title)) && reloaded.Warnings.Any(w => w.Contains("fallback critical path")));
 });
 
 Test("submission reconciliation keeps partial criteria outstanding without claiming failure or completeness", async () => {

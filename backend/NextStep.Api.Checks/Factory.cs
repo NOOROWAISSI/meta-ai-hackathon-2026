@@ -35,6 +35,8 @@ public sealed class FakeModel : IMetaModelClient
     public int Calls;
     public string? ErrorCode;
     public bool Invalid;
+    public bool Arbitrary;
+    public bool VideoPlan;
     public TaskCompletionSource? Entered;
     public TaskCompletionSource? Resume;
     public string Prefix = "Practice";
@@ -46,6 +48,13 @@ public sealed class FakeModel : IMetaModelClient
         if (Resume is not null) await Resume.Task.WaitAsync(ct);
         if (ErrorCode is { } code) throw new MetaAiException(code, "Test provider failure", true);
         var goal = Invalid ? "dangling-goal" : context.Goals.First().Id;
-        return new([new(Prefix + " the walkthrough", new("goal", goal), "should", "A short walkthrough draft", "Explain the implemented flow and its limitations", 2, []), new(Prefix + " the prototype", new("goal", goal), "could", "One small demonstrable interaction", "Run the example and list unfinished work", 1, [])], "Synthetic provider used only by the test host; timing is assessed by the application.");
+        if (Arbitrary) return new([], "You qualify to participate and are approved for entry.");
+        if (VideoPlan) {
+            var rule = context.ReviewedRequirements.Single(r => r.Deliverable?.Type == "video");
+            var selections = new[] { "record_video", "verify_channel", "deliver", "confirm_receipt" }.Select(action => new PlanActionSelection(action, new("requirement", RequirementId: rule.Id), "must", 1, Array.Empty<string>())).ToArray();
+            return PlanActionRenderer.Render(selections, "unknown", context);
+        }
+        var actions = Prefix switch { "Replacement" => new[] { "explore", "adapt" }, "Fresh" or "Extend" => new[] { "adapt", "explore" }, _ => new[] { "clarify", "prototype" } };
+        return PlanActionRenderer.Render([new(actions[0], new("goal", goal), "should", 2, []), new(actions[1], new("goal", goal), "could", 1, [])], "prepare", context);
     }
 }

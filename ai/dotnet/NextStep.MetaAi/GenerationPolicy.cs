@@ -27,6 +27,8 @@ public static class GenerationPolicy
         if (input.AvailableHoursPerWeek is { } hours && (!double.IsFinite(hours) || hours < 0 || hours > 168)) InvalidInput();
         if (input.AvailableHoursPerWeek == 0)
             throw new MetaAiException("invalid_input", "No preparation capacity is reported.");
+        if (input.RetainedEffortHours is { } retained && (!double.IsFinite(retained) || retained < 0 || retained > 16800)) InvalidInput();
+        if (input.AvailableCapacityHours is { } capacity && (!double.IsFinite(capacity) || capacity < 0 || input.AvailableHoursPerWeek is null || input.ReviewedSubmissionDeadline is null)) InvalidInput();
         if (input.Goals.Count + input.ReviewedRequirements.Count == 0 || input.Goals.Count > 30 ||
             input.ReviewedRequirements.Count > 50 || input.ReviewedResourceIds.Count > 200 ||
             input.ReviewedResources.Count > 50 || input.ExistingTasks.Count > 100) InvalidInput();
@@ -43,8 +45,21 @@ public static class GenerationPolicy
             input.ExistingTasks.Select(t => t.Id).Distinct(StringComparer.Ordinal).Count() != input.ExistingTasks.Count) InvalidInput();
         if (input.Goals.Select(g => g.Id).Distinct(StringComparer.Ordinal).Count() != input.Goals.Count ||
             input.ReviewedRequirements.Select(r => r.Id).Distinct(StringComparer.Ordinal).Count() != input.ReviewedRequirements.Count) InvalidInput();
+        ValidateReviewedMetadata(input);
         foreach (var facts in new[] { input.SelfReport.AcceptedExperience, input.SelfReport.ReportedSkills, input.SelfReport.Constraints })
             if (facts is null || facts.Count > 30 || facts.Any(s => !Text(s, 1000))) InvalidInput();
+    }
+
+    public static void ValidateReviewedMetadata(PlanGenerationContext input)
+    {
+        foreach (var rule in input.ReviewedRequirements.Where(r => r.Deliverable is not null)) {
+            var d = rule.Deliverable!;
+            if (rule.Lane != "submission" || d.Type != "video" || d.SourceRevision != input.SourceRevision ||
+                d.RequiredActions is null || d.RequiredActions.Count == 0 || d.RequiredActions.Any(a => a is not ("record" or "deliver" or "confirm_receipt")) ||
+                d.RequiredActions.Distinct(StringComparer.Ordinal).Count() != d.RequiredActions.Count ||
+                d.EvidenceIds is null || d.EvidenceIds.Count == 0 || d.EvidenceIds.Any(e => !Id(e)) ||
+                d.EvidenceIds.Distinct(StringComparer.Ordinal).Count() != d.EvidenceIds.Count) InvalidInput();
+        }
     }
 
     public static void ValidateCandidate(PlanCandidateOutput candidate, PlanGenerationContext input)

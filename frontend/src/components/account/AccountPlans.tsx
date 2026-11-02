@@ -515,13 +515,13 @@ export function AccountPreparation({
               total={tasks.length}
               remainingHours={plan.budget.remainingEffortHours}
             />
+            <ul className="mt-5 list-disc space-y-2 ps-5 text-sm text-muted-foreground">
+              {plan.warnings.map((warning, index) => (
+                <li key={index}>{warning}</li>
+              ))}
+            </ul>
             <details className="mt-5 text-sm">
               <summary className="cursor-pointer">Plan context and limitations</summary>
-              <ul className="mt-3 list-disc space-y-2 ps-5 text-muted-foreground">
-                {plan.warnings.map((warning, index) => (
-                  <li key={index}>{warning}</li>
-                ))}
-              </ul>
               <p className="mt-3">
                 Plan version {plan.version}. Budget evaluated{" "}
                 {new Date(plan.budget.evaluatedAt).toLocaleString()}.

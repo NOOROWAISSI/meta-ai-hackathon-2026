@@ -56,7 +56,7 @@ foreach (bool? applies in new bool?[] { false, null })
     });
 Test("preparation advice is allowed", async () =>
 {
-    using var h = new FakeHandler((_, _, _) => Task.FromResult(Reply(TaskJson(target: new("requirement", RequirementId: "req")))));
+    using var h = new FakeHandler((_, _, _) => Task.FromResult(Reply(TaskJson(target: new("requirement", RequirementId: "req"), action: "prepare_requirement"))));
     using var http = new HttpClient(h);
     await Client(http).GenerateCandidateAsync(Context() with { ReviewedRequirements = [new("req", "Practice", "preparation", true, false)] });
 });
@@ -166,7 +166,7 @@ Test("closed deadline rejected before send", async () =>
     await Error("invalid_input", () => Client(http).GenerateCandidateAsync(Context() with { ReviewedSubmissionDeadline = DateTimeOffset.UtcNow.AddDays(-1) })); Assert(h.Count == 0);
 });
 foreach (var status in new[] { "done", "in_progress" })
-    Reject("exact-title guard for " + status, TaskJson(), context: Context() with { ExistingTasks = [new("old", " practice demo ", status, new("goal", "goal-demo"))] });
+    Reject("exact-title guard for " + status, TaskJson(), context: Context() with { ExistingTasks = [new("old", " step 1: clarify open questions ", status, new("goal", "goal-demo"))] });
 Test("existing records remain unchanged", async () =>
 {
     var old = new ExistingPlanTask("old", "Other completed work", "done", new("goal", "goal-demo"));
@@ -186,27 +186,28 @@ Reject("zero effort rejected", TaskJson(hours: 0));
 Reject("negative effort rejected", TaskJson(hours: -1));
 Reject("effort above per-task bound rejected", TaskJson(hours: 169));
 Reject("nonfinite effort rejected", TaskJson().Replace("\"estimatedHours\":2", "\"estimatedHours\":1e999"));
-Reject("duplicate task titles rejected", "{\"tasks\":[" + TaskObject() + "," + TaskObject() + "],\"explanation\":\"Advice\"}");
+Reject("duplicate task actions and target rejected", "{\"tasks\":[" + TaskObject() + "," + TaskObject() + "],\"reason\":\"prepare\"}");
 Reject("malformed JSON rejected", "{bad");
 Reject("truncated JSON rejected", "{\"tasks\":[");
-Reject("missing field rejected", "{\"tasks\":[{\"title\":\"bad\"}],\"explanation\":\"Advice\"}");
-Reject("unexpected field rejected", TaskJson().Replace("\"title\":", "\"id\":\"model-id\",\"title\":"));
+Reject("missing field rejected", TaskJson().Replace("\"priority\":\"should\",", ""));
+Reject("unexpected field rejected", TaskJson().Replace("\"action\":", "\"id\":\"model-id\",\"action\":"));
 Reject("null target rejected", TaskJson().Replace("{\"kind\":\"goal\",\"goalId\":\"goal-demo\"}", "null"));
-Reject("duplicate root property rejected", TaskJson().Replace("\"explanation\":", "\"explanation\":\"First\",\"explanation\":"));
-Reject("escaped duplicate nested property rejected", TaskJson().Replace("\"title\":", "\"ti\\u0074le\":\"First\",\"title\":"));
+Reject("duplicate root property rejected", TaskJson().Replace("\"reason\":", "\"reason\":\"prepare\",\"reason\":"));
+Reject("escaped duplicate nested property rejected", TaskJson().Replace("\"action\":", "\"act\\u0069on\":\"explore\",\"action\":"));
 Reject("URL rejected", TaskJson(deliverable: "Read https://unapproved.invalid"));
 Reject("unsupported eligibility claim rejected", TaskJson(deliverable: "You are eligible"));
 Reject("unsupported achievement claim rejected", TaskJson(deliverable: "You have won a prize"));
 Reject("generated date rejected", TaskJson(deliverable: "Submit on 2027-03-02"));
 Test("unknown deadline language remains allowed", async () =>
 {
-    using var h = new FakeHandler((_, _, _) => Task.FromResult(Reply(TaskJson(deliverable: "The deadline is unknown; record the open timing question."))));
-    using var http = new HttpClient(h); await Client(http).GenerateCandidateAsync(Context());
+    using var h = new FakeHandler((_, _, _) => Task.FromResult(Reply(TaskJson(reason: "unknown"))));
+    using var http = new HttpClient(h); var result = await Client(http).GenerateCandidateAsync(Context());
+    Assert(result.Explanation.Contains("unknown") && !result.Explanation.Contains("deadline is"));
 });
-Test("empty candidate allowed without inventing work", async () =>
+Test("empty candidate rejected without a supported no-work reason", async () =>
 {
-    using var h = new FakeHandler((_, _, _) => Task.FromResult(Reply("{\"tasks\":[],\"explanation\":\"No new task proposed for the supplied goal.\"}"))); using var http = new HttpClient(h);
-    Assert((await Client(http).GenerateCandidateAsync(Context())).Tasks.Count == 0);
+    using var h = new FakeHandler((_, _, _) => Task.FromResult(Reply("{\"tasks\":[],\"reason\":\"unknown\"}"))); using var http = new HttpClient(h);
+    await Error("invalid_model_output", () => Client(http).GenerateCandidateAsync(Context()));
 });
 foreach (var finish in new[] { "length", "tool_calls", "content_filter" })
     Test("reject finish_reason " + finish, async () =>
@@ -403,7 +404,8 @@ EvaluationReport Report(MetaAiOptions? options = null) => new(2, Provenance(opti
 Sync("evaluation JSON envelope preserves scenario results and UTC provenance", () => {
     var report = Report();
     using var doc = JsonDocument.Parse(report.ToJson());
-    Keys(doc.RootElement, "schemaVersion", "provenance", "results");
+    Keys(doc.RootElement, "schemaVersion", "provenance", "results", "mode");
+    Assert(doc.RootElement.GetProperty("mode").GetString() == "live");
     Assert(doc.RootElement.GetProperty("schemaVersion").GetInt32() == 2);
     var provenance = doc.RootElement.GetProperty("provenance");
     Keys(provenance, "executedAtUtc", "gitCommitSha", "relevantSourceHasUncommittedChanges",
@@ -512,6 +514,151 @@ Test("quality instructions require full mandatory actions and honest infeasible 
 NextStep.MetaAi.Checks.QualityRegressionChecks.Register(Sync);
 NextStep.MetaAi.Checks.SubmissionCoverageChecks.Register(Sync);
 
+// Structured response regression tests exercise the production decoder through an in-memory provider.
+var validSelection = "{\"tasks\":[{\"action\":\"clarify\",\"target\":{\"kind\":\"goal\",\"goalId\":\"goal-demo\"},\"priority\":\"should\",\"estimatedHours\":1,\"resourceIds\":[]}],\"reason\":\"unknown\"}";
+Test("structured provider output renders safe guidance and preserves public DTO", async () => {
+    using var h = new FakeHandler((_, _, _) => Task.FromResult(Reply(validSelection))); using var http = new HttpClient(h);
+    var result = await Client(http).GenerateCandidateAsync(Context());
+    Assert(result.Tasks.Count == 1 && result.Tasks[0].Title.Contains("Clarify") && result.Tasks[0].EstimatedHours == 1);
+    Assert(result.Explanation.Contains("unknown") && !result.Explanation.Contains("approved"));
+});
+foreach (var unsafeText in new[] { "You qualify to participate and are approved for entry.", "Your application has been accepted.", "The organizers have approved your submission.", "Participation is guaranteed.", "You're cleared to enter.", "تم قبول مشاركتك في المسابقة.", "تستوفي جميع شروط المشاركة." }) {
+    foreach (var field in new[] { "title", "deliverable", "completionCriteria" }) {
+        var root = System.Text.Json.Nodes.JsonNode.Parse(validSelection)!.AsObject(); root["tasks"]![0]![field] = unsafeText;
+        Reject("structured decoder rejects unapproved " + field + " " + unsafeText, root.ToJsonString());
+    }
+    var asAction = System.Text.Json.Nodes.JsonNode.Parse(validSelection)!.AsObject(); asAction["tasks"]![0]!["action"] = unsafeText;
+    Reject("structured decoder rejects verdict as action " + unsafeText, asAction.ToJsonString());
+    var asReason = System.Text.Json.Nodes.JsonNode.Parse(validSelection)!.AsObject(); asReason["reason"] = unsafeText;
+    Reject("structured decoder rejects verdict as reason " + unsafeText, asReason.ToJsonString());
+    var withExplanation = System.Text.Json.Nodes.JsonNode.Parse(validSelection)!.AsObject(); withExplanation["explanation"] = unsafeText;
+    Reject("structured decoder rejects free explanation " + unsafeText, withExplanation.ToJsonString());
+    var oldEmpty = JsonSerializer.Serialize(new { tasks = Array.Empty<object>(), explanation = unsafeText });
+    Reject("structured decoder rejects legacy empty verdict " + unsafeText, oldEmpty);
+}
+Reject("structured decoder rejects unknown action", validSelection.Replace("clarify", "invented"));
+Reject("structured decoder rejects unknown reason", validSelection.Replace("unknown", "invented"));
+Reject("structured decoder rejects application-only capacity reason", validSelection.Replace("unknown", "capacity_path"));
+Reject("structured decoder rejects unknown goal", validSelection.Replace("goal-demo", "foreign-goal"));
+Reject("structured decoder rejects delivery targeting goal", validSelection.Replace("clarify", "deliver"));
+Reject("structured preparation guidance rejects goal target", validSelection.Replace("clarify", "prepare_requirement"));
+Reject("structured preparation guidance rejects submission target", TaskJson(target: new("requirement", RequirementId: "req"), action: "prepare_requirement"), context: Context() with { ReviewedRequirements = [new("req", "Submit a video", "submission", true, true)] });
+Reject("structured preparation guidance cannot be mandatory", TaskJson(target: new("requirement", RequirementId: "req"), action: "prepare_requirement", priority: "must"), context: Context() with { ReviewedRequirements = [new("req", "Review preparation guidance", "preparation", true, false)] });
+Reject("structured decoder rejects unsupported resource", validSelection.Replace("\"resourceIds\":[]", "\"resourceIds\":[\"invented\"]"));
+foreach (var action in new[] { "clarify", "explore", "prototype", "adapt", "prepare_artifact", "verify_channel", "deliver", "confirm_receipt" }) {
+    Test("structured supported action " + action, async () => {
+        var requirementAction = action is "prepare_artifact" or "verify_channel" or "deliver" or "confirm_receipt";
+        var target = requirementAction ? new TaskTarget("requirement", RequirementId: "req") : new TaskTarget("goal", "goal-demo");
+        var json = JsonSerializer.Serialize(new { tasks = new[] { new { action, target, priority = requirementAction ? "must" : "should", estimatedHours = 1, resourceIds = Array.Empty<string>() } }, reason = "prepare" }, ContractJson.CreateOptions());
+        using var h = new FakeHandler((_, _, _) => Task.FromResult(Reply(json))); using var http = new HttpClient(h);
+        var context = Context() with { ReviewedRequirements = [new("req", "Record and submit a video", "submission", true, true)] };
+        var result = await Client(http).GenerateCandidateAsync(context);
+        Assert(result.Tasks.Count == 1 && result.Tasks[0].EstimatedHours == 1 && !string.IsNullOrWhiteSpace(result.Tasks[0].CompletionCriteria));
+    });
+}
+Reject("structured decoder rejects empty candidate without established no-work reason", "{\"tasks\":[],\"reason\":\"unknown\"}");
+Test("structured delivery selections always show unresolved mandatory coverage", async () => {
+    var json = "{\"tasks\":[{\"action\":\"deliver\",\"target\":{\"kind\":\"requirement\",\"requirementId\":\"req\"},\"priority\":\"must\",\"estimatedHours\":1,\"resourceIds\":[]}],\"reason\":\"prepare\"}";
+    using var h = new FakeHandler((_, _, _) => Task.FromResult(Reply(json))); using var http = new HttpClient(h);
+    var context = Context() with { ReviewedRequirements = [new("req", "Record and submit a video", "submission", true, true)] };
+    var result = await Client(http).GenerateCandidateAsync(context);
+    Assert(result.Explanation.Contains("coverage remains unresolved") && result.Tasks[0].CompletionCriteria.Contains("does not establish submission"));
+});
+
+Test("staged beginner path preserves estimates and gives ordered critical path without a feasibility promise", async () => {
+    var actions = new[] { "define_outcome", "build_component", "integrate_flow", "test_flow" };
+    var hours = new[] { 1.5, 3d, 3d, 1.5 };
+    var selections = actions.Select((action, i) => new PlanActionSelection(action, new("goal", "goal-demo"), "should", hours[i], [])).ToArray();
+    var context = Context() with { AvailableHoursPerWeek = 2, ReviewedSubmissionDeadline = DateTimeOffset.UtcNow.AddDays(14), AvailableCapacityHours = 4 };
+    var json = JsonSerializer.Serialize(new { tasks = selections, reason = "scope" }, ContractJson.CreateOptions());
+    using var h = new FakeHandler((_, _, _) => Task.FromResult(Reply(json))); using var http = new HttpClient(h);
+    var output = await Client(http).GenerateCandidateAsync(context);
+    var budget = PreparationBudget.Evaluate(2, context.ReviewedSubmissionDeadline, DateTimeOffset.UtcNow, output, []);
+    Assert(output.Tasks.Select(t => t.EstimatedHours).SequenceEqual(hours) && budget.RemainingEffortHours == 9 && budget.Feasibility == "infeasible");
+    Assert(output.Explanation.Contains("exceeds reported capacity") && output.Explanation.Contains("critical path") && output.Explanation.Contains("step 1:") && output.Explanation.Contains("step 4:") && output.Explanation.Contains("does not establish"));
+    Assert(output.Tasks[0].Title.Contains("outcome") && output.Tasks[1].Title.Contains("component") && output.Tasks[2].Title.Contains("flow") && output.Tasks[3].Title.Contains("Test"));
+});
+Test("overloaded unstaged candidate gets application fallback without changed work or model prose", async () => {
+    var context = Context() with { AvailableHoursPerWeek = 2, ReviewedSubmissionDeadline = DateTimeOffset.UtcNow.AddDays(14), RetainedEffortHours = 3, AvailableCapacityHours = 4 };
+    using var h = new FakeHandler(async (_, request, ct) => {
+        using var body = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(ct));
+        using var prompt = JsonDocument.Parse(body.RootElement.GetProperty("messages")[1].GetProperty("content").GetString()!);
+        Assert(!prompt.RootElement.TryGetProperty("availableCapacityHours", out var unusedCapacity) && !prompt.RootElement.TryGetProperty("retainedEffortHours", out var unusedRetained));
+        return Reply(TaskJson(hours: 2));
+    }); using var http = new HttpClient(h);
+    var output = await Client(http).GenerateCandidateAsync(context);
+    Assert(output.Tasks.Single().EstimatedHours == 2 && output.Explanation.Contains("exceeds reported capacity") && output.Explanation.Contains("fallback critical path") && output.Explanation.Contains("not newly added tasks"));
+    Assert(PlanActionRenderer.ProofFor(output, context)?.Reason == "capacity_path");
+});
+Test("unknown capacity does not claim overload or produce capacity fallback", async () => {
+    var context = Context() with { AvailableHoursPerWeek = null, ReviewedSubmissionDeadline = null, RetainedEffortHours = 3 };
+    using var h = new FakeHandler((_, _, _) => Task.FromResult(Reply(TaskJson(hours: 9)))); using var http = new HttpClient(h);
+    var output = await Client(http).GenerateCandidateAsync(context);
+    Assert(!output.Explanation.Contains("exceeds reported capacity") && !output.Explanation.Contains("fallback critical path"));
+});
+Test("known deadline alone does not establish capacity when build timing is unknown", async () => {
+    var context = Context() with { AvailableHoursPerWeek = 2, ReviewedSubmissionDeadline = DateTimeOffset.UtcNow.AddDays(14), AvailableCapacityHours = null };
+    using var h = new FakeHandler((_, _, _) => Task.FromResult(Reply(TaskJson(hours: 9)))); using var http = new HttpClient(h);
+    var output = await Client(http).GenerateCandidateAsync(context);
+    Assert(!output.Explanation.Contains("exceeds reported capacity"));
+});
+Test("zero available capacity still receives fallback for a very small positive estimate", async () => {
+    var context = Context() with { AvailableHoursPerWeek = 2, ReviewedSubmissionDeadline = DateTimeOffset.UtcNow.AddDays(14), AvailableCapacityHours = 0 };
+    using var h = new FakeHandler((_, _, _) => Task.FromResult(Reply(TaskJson(hours: 0.01)))); using var http = new HttpClient(h);
+    var output = await Client(http).GenerateCandidateAsync(context);
+    Assert(output.Tasks.Single().EstimatedHours == 0.01 && output.Explanation.Contains("fallback critical path"));
+});
+Test("phase 3 scope rendering proof remains valid for legacy structured actions", () => {
+    var selections = new[] { new PlanActionSelection("explore", new("goal", "goal-demo"), "should", 2, []), new PlanActionSelection("prototype", new("goal", "goal-demo"), "should", 7, []) };
+    var old = new PlanCandidateOutput([
+        new("Step 1: Explore preparation approaches", new("goal", "goal-demo"), "should", "Outline possible approaches for the selected goal.", "Record options and what remains unknown about each.", 2, []),
+        new("Step 2: Prototype a small component", new("goal", "goal-demo"), "should", "Prepare a small prototype for the selected goal.", "Review the prototype and note remaining limitations.", 7, [])
+    ], "Review the smallest useful scope and dependency order. Defer optional work and reassess effort against your available time.");
+    Assert(PlanActionRenderer.MatchesForDisplay(old, new(selections, "scope", Context())));
+    return Task.CompletedTask;
+});
+Test("recording action requires reviewed source-backed video metadata and keeps evidence separate", async () => {
+    var metadata = new ReviewedDeliverable("video", ["record", "deliver"], "revision-1", ["reviewed-video"]);
+    var context = Context() with { ReviewedRequirements = [new("req", "Record and submit a demonstration video", "submission", true, true, metadata)] };
+    var selections = new[] { "record_video", "verify_channel", "deliver", "confirm_receipt" }.Select(action => new PlanActionSelection(action, new("requirement", RequirementId: "req"), "must", 1, [])).ToArray();
+    var json = JsonSerializer.Serialize(new { tasks = selections, reason = "unknown" }, ContractJson.CreateOptions());
+    using var h = new FakeHandler((_, _, _) => Task.FromResult(Reply(json))); using var http = new HttpClient(h);
+    var output = await Client(http).GenerateCandidateAsync(context);
+    Assert(output.Tasks[0].Title.Contains("video") && output.Tasks[0].Title.Contains("Record"));
+    Assert(output.Tasks[1].Title.Contains("Verify") && output.Tasks[2].Title.Contains("verifying") && output.Tasks[3].Title.Contains("confirmation"));
+    Assert(output.Tasks[2].CompletionCriteria.Contains("does not establish submission") && output.Explanation.Contains("coverage remains unresolved"));
+    Assert(!JsonSerializer.Serialize(output).Contains("portal", StringComparison.OrdinalIgnoreCase));
+});
+foreach (var pair in new[] { ("integrate_flow", "define_outcome"), ("test_flow", "build_component"), ("build_component", "build_component") }) {
+    var selections = new[] { pair.Item1, pair.Item2 }.Select(action => new PlanActionSelection(action, new("goal", "goal-demo"), "should", 1, [])).ToArray();
+    Reject("structured rejects duplicate or out of order stage " + pair, JsonSerializer.Serialize(new { tasks = selections, reason = "scope" }, ContractJson.CreateOptions()));
+}
+Reject("structured video recording requires metadata", TaskJson(target: new("requirement", RequirementId: "req"), action: "record_video", priority: "must"), context: Context() with { ReviewedRequirements = [new("req", "Record video", "submission", true, true)] });
+Reject("structured video recording requires reviewed record action", TaskJson(target: new("requirement", RequirementId: "req"), action: "record_video", priority: "must"), context: Context() with { ReviewedRequirements = [new("req", "Video", "submission", true, true, new("video", ["deliver"], "revision-1", ["ev"]))] });
+Reject("structured goal stage cannot target a requirement", TaskJson(target: new("requirement", RequirementId: "req"), action: "build_component", priority: "should"), context: Context() with { ReviewedRequirements = [new("req", "Video", "submission", true, true, new("video", ["record", "deliver"], "revision-1", ["ev"]))] });
+Test("reviewed video steps reject delivery before channel verification when both are selected", async () => {
+    var context = Context() with { ReviewedRequirements = [new("req", "Record and submit video", "submission", true, true, new("video", ["record", "deliver"], "revision-1", ["ev"]))] };
+    var selections = new[] { "record_video", "deliver", "verify_channel" }.Select(a => new PlanActionSelection(a, new("requirement", RequirementId: "req"), "must", 1, [])).ToArray();
+    var json = JsonSerializer.Serialize(new { tasks = selections, reason = "unknown" }, ContractJson.CreateOptions());
+    using var h = new FakeHandler((_, _, _) => Task.FromResult(Reply(json))); using var http = new HttpClient(h);
+    await Error("invalid_model_output", () => Client(http).GenerateCandidateAsync(context));
+});
+Reject("structured rejects retained proven action even when title differs", TaskJson(action: "build_component"), context: Context() with { ExistingTasks = [new("retained", "Earlier component", "done", new("goal", "goal-demo"), "build_component")] });
+foreach (var metadata in new[] {
+    new ReviewedDeliverable("video", ["record"], "stale", ["ev"]),
+    new ReviewedDeliverable("video", ["record"], "revision-1", []),
+    new ReviewedDeliverable("video", ["unknown"], "revision-1", ["ev"]),
+    new ReviewedDeliverable("video", ["record", "record"], "revision-1", ["ev"]),
+    new ReviewedDeliverable("video", ["record"], "revision-1", ["ev", "ev"]),
+    new ReviewedDeliverable("audio", ["record"], "revision-1", ["ev"])
+}) {
+    var context = Context() with { ReviewedRequirements = [new("req", "Record a video", "submission", true, true, metadata)] };
+    Test("malformed reviewed metadata rejected " + JsonSerializer.Serialize(metadata), async () => {
+        using var h = new FakeHandler((_, _, _) => throw new Exception("Provider must not be called")); using var http = new HttpClient(h);
+        await Error("invalid_input", () => Client(http).GenerateCandidateAsync(context)); Assert(h.Count == 0);
+    });
+}
+
 var passed = 0; var failed = 0;
 foreach (var item in cases)
 {
@@ -528,9 +675,14 @@ static MetaAiOptions Small() { var o = Settings(); o.MaxResponseBytes = 1024; re
 static MetaModelClient Client(HttpClient http, MetaAiOptions? o = null) { http.Timeout = Timeout.InfiniteTimeSpan; return new(http, Options.Create(o ?? Settings())); }
 static CandidateTask TaskValue(double hours = 2, TaskTarget? target = null, string priority = "should", string[]? resources = null, string deliverable = "A walkthrough draft") =>
     new("Practice demo", target ?? new("goal", "goal-demo"), priority, deliverable, "Demonstrate the main flow", hours, resources ?? []);
-static string TaskObject() => JsonSerializer.Serialize(TaskValue(), ContractJson.CreateOptions());
-static string TaskJson(double hours = 2, TaskTarget? target = null, string priority = "should", string[]? resources = null, string deliverable = "A walkthrough draft") =>
-    JsonSerializer.Serialize(new PlanCandidateOutput([TaskValue(hours, target, priority, resources, deliverable)], "Goal advice; timing assessed by the application."), ContractJson.CreateOptions());
+static string TaskObject() => JsonSerializer.Serialize(new { action = "clarify", target = new TaskTarget("goal", "goal-demo"), priority = "should", estimatedHours = 2, resourceIds = Array.Empty<string>() }, ContractJson.CreateOptions());
+static string TaskJson(double hours = 2, TaskTarget? target = null, string priority = "should", string[]? resources = null, string deliverable = "A walkthrough draft", string? action = null, string reason = "prepare")
+{
+    target ??= new("goal", "goal-demo");
+    var task = new Dictionary<string, object> { ["action"] = action ?? (target.Kind == "requirement" ? "prepare_artifact" : "clarify"), ["target"] = target, ["priority"] = priority, ["estimatedHours"] = hours, ["resourceIds"] = resources ?? [] };
+    if (deliverable != "A walkthrough draft") task["deliverable"] = deliverable;
+    return JsonSerializer.Serialize(new { tasks = new[] { task }, reason }, ContractJson.CreateOptions());
+}
 static HttpResponseMessage Raw(string value) => new(HttpStatusCode.OK) { Content = new StringContent(value, Encoding.UTF8, "application/json") };
 static HttpResponseMessage Reply(string json, string finish = "stop") => Raw(JsonSerializer.Serialize(new { choices = new[] { new { finish_reason = finish, message = new { role = "assistant", content = json } } } }));
 static async Task<MetaAiException> Error(string code, Func<Task> run)

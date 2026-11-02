@@ -18,8 +18,12 @@ public sealed record PlanGoal(string Id, string Statement);
 // Server-only projection: current reviewed evidence AND evaluated applicability.
 // Unresolved (null) or false Applies is rejected. Never bind this from browser input.
 public sealed record ReviewedRequirement(string Id, string Statement, string Lane,
-    bool? Applies, bool IsMandatory);
-public sealed record ExistingPlanTask(string Id, string Title, string Status, TaskTarget Target);
+    bool? Applies, bool IsMandatory,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ReviewedDeliverable? Deliverable = null);
+public sealed record ReviewedDeliverable(string Type, IReadOnlyList<string> RequiredActions,
+    string SourceRevision, IReadOnlyList<string> EvidenceIds);
+public sealed record ExistingPlanTask(string Id, string Title, string Status, TaskTarget Target,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? ActionCode = null);
 public sealed record PlanningProfile(IReadOnlyList<string> AcceptedExperience,
     IReadOnlyList<string> ReportedSkills, IReadOnlyList<string> Constraints);
 
@@ -39,6 +43,10 @@ public sealed record PlanGenerationContext(string OpportunityId, string Opportun
     // Optional for existing callers. Without descriptive metadata, the generator
     // cannot reference a resource even if its ID is present in ReviewedResourceIds.
     public IReadOnlyList<ReviewedResourceInfo> ReviewedResources { get; init; } = [];
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public double? RetainedEffortHours { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public double? AvailableCapacityHours { get; init; }
 }
 public interface IMetaModelClient
 {

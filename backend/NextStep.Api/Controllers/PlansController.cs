@@ -8,9 +8,9 @@ public sealed class PlansController(Application service, IStateStore store) : Co
 {
     private string Owner => (string)HttpContext.Items["owner"]!;
     [HttpGet]
-    public async Task<IActionResult> Get(CancellationToken ct) => Ok(await store.Read(Owner, state => state.Plans.Values.ToArray(), ct));
+    public async Task<IActionResult> Get(CancellationToken ct) => Ok(await store.Read(Owner, state => state.Plans.Select(pair => PlanDisplay.Project(state, pair.Key, pair.Value)!).ToArray(), ct));
     [HttpGet("{id}")]
-    public async Task<IActionResult> Get(string id, CancellationToken ct) => Ok(await store.Read(Owner, state => state.Plans.GetValueOrDefault(id) ?? throw new ApiFault("not_found", "No accepted plan exists for this opportunity."), ct));
+    public async Task<IActionResult> Get(string id, CancellationToken ct) => Ok(await store.Read(Owner, state => PlanDisplay.Project(state, id, state.Plans.GetValueOrDefault(id)) ?? throw new ApiFault("not_found", "No accepted plan exists for this opportunity."), ct));
     [HttpPost("{id}/accept")]
     public async Task<IActionResult> Accept(string id, AcceptPlan request, CancellationToken ct) => Ok(await service.Accept(Owner, id, request, ct));
     [HttpPatch("{id}/tasks/{taskId}")]
