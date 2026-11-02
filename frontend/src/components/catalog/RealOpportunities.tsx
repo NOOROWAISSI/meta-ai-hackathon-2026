@@ -22,6 +22,7 @@ import { useLocale } from "@/components/LocaleProvider";
 import { formatContractInstant } from "@/lib/contract/time";
 import { SourceFreshness } from "./SourceFreshness";
 import { PalestineNetwork } from "./PalestineNetwork";
+import { CampusPosts } from "./CampusPosts";
 import { isCatalogTranslationEnabled, translateCatalog } from "@/lib/catalog/translation";
 import {
   PreferenceActions,
@@ -202,6 +203,7 @@ export function RealOpportunities() {
           )}
         </p>
         <PalestineNetwork selected={university} onSelect={setUniversity} />
+        <CampusPosts university={university} />
         <div className="glass rounded-3xl p-5">
           <div className="grid gap-4 sm:grid-cols-[1fr_230px]">
             <div>

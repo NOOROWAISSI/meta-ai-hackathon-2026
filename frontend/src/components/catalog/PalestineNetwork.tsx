@@ -87,7 +87,7 @@ export function PalestineNetwork({
           </strong>
           <span className="text-sm text-muted-foreground">
             {institutions.length} {t("universities", "جامعة")} · {organizations.length}{" "}
-            {t("documented student groups", "جمعيات طلابية موثّقة")}
+            {t("groups & chapters", "جمعيات وفروع مرصودة")}
           </span>
         </span>
         <span className="text-sm text-primary">
@@ -285,6 +285,30 @@ export function PalestineNetwork({
                           >
                             {language === "ar" ? o.arabicName : o.name}
                           </a>
+                          {o.referenceKind &&
+                            !["institutional_reference", "program_reference"].includes(
+                              o.referenceKind,
+                            ) && (
+                              <span className="text-xs text-muted-foreground">
+                                {o.referenceKind === "organization_self_report"
+                                  ? t("Organization's own page", "صفحة الجهة نفسها")
+                                  : t(
+                                      "Partner / public republication reference",
+                                      "مرجع شريك أو إعادة نشر عامة",
+                                    )}
+                              </span>
+                            )}
+                          {o.socialLinks?.map((link) => (
+                            <a
+                              key={link.url}
+                              href={link.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex min-h-11 items-center rounded-lg border border-primary/20 px-2 text-xs text-primary"
+                            >
+                              {link.channel}
+                            </a>
+                          ))}
                           {o.channel === "instagram" && (
                             <span className="text-xs text-muted-foreground">
                               {t("Social source · manual review", "مصدر اجتماعي · مراجعة يدوية")}
