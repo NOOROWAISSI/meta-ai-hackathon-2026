@@ -109,3 +109,12 @@ CREATE TABLE IF NOT EXISTS campus_follows (
   PRIMARY KEY(owner_id,university_id),
   CONSTRAINT fk_campus_follow_session FOREIGN KEY(owner_id) REFERENCES anonymous_sessions(owner_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS campus_activities (
+  id VARCHAR(100) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+  source_id VARCHAR(100) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  payload JSON NOT NULL,
+  first_seen_at DATETIME(6) NOT NULL,
+  checked_at DATETIME(6) NOT NULL,
+  INDEX ix_campus_activity_source(source_id)
+) ENGINE=InnoDB;
+INSERT IGNORE INTO schema_migrations(version) VALUES (8);

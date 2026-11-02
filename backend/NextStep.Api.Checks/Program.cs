@@ -609,6 +609,7 @@ Test("Google callback rejects unverified email and never automatically links a p
 
 SourceCollectionChecks.Register(Test);
 PalestineNetworkChecks.Register(Test);
+CampusActivityChecks.Register(Test);
 Test("preparation navigation uses a planning record rather than an event ID prefix", () => {
     var record = new Catalog().Get("E01") with { Id = "new-university-hackathon" };
     var listing = new DiscoveryCatalog(new Catalog()).Listings().Single(item => item.Id == "E01") with { Id = record.Id };

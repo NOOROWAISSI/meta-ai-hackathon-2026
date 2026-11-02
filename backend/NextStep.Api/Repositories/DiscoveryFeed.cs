@@ -10,12 +10,12 @@ public sealed record CollectionStatus(bool Enabled, int IntervalHours, string? L
     public SourceCheck[] Sources { get; init; } = [];
     public AnnouncementCollectionStatus? MetaExtraction { get; init; }
 }
-public sealed class DiscoveryFeed(DiscoveryCatalog catalog, MySqlStateStore store, IConfiguration configuration)
+public sealed class DiscoveryFeed(DiscoveryCatalog catalog, MySqlStateStore store, IConfiguration configuration, CampusActivityFeed activityFeed)
 {
     private static string Instant(DateTime value) => new DateTimeOffset(DateTime.SpecifyKind(value, DateTimeKind.Utc)).ToString("O");
     public async Task<ListingSummary[]> Listings(CancellationToken ct)
     {
-        var items = catalog.Listings().ToList();
+        var items = catalog.Listings().Concat(await activityFeed.Opportunities(ct)).DistinctBy(p => p.Id).ToList();
         await using var db = await store.Open(ct);
         await using var query = new MySqlCommand("SELECT d.payload,d.first_seen_at,d.checked_at,p.result,p.checked_at FROM discovered_listings d LEFT JOIN source_pages p ON p.url_hash=d.page_hash ORDER BY d.first_seen_at DESC,d.id", db);
         await using var rows = await query.ExecuteReaderAsync(ct);

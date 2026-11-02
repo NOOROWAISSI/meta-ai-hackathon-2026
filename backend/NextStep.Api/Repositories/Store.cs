@@ -86,7 +86,7 @@ public sealed class MySqlStateStore(IConfiguration configuration) : IStateStore
     public async Task<bool> Healthy(CancellationToken ct)
     {
         await using var connection = await Open(ct);
-        await using var command = new MySqlCommand("SELECT COUNT(*) FROM schema_migrations WHERE version=7", connection);
+        await using var command = new MySqlCommand("SELECT COUNT(*) FROM schema_migrations WHERE version=8", connection);
         return Convert.ToInt32(await command.ExecuteScalarAsync(ct)) == 1;
     }
 }

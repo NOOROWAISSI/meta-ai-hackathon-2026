@@ -5,7 +5,7 @@ using MySqlConnector;
 namespace NextStep.Api;
 
 /// <summary>Bounded official-source discovery, shared by the scheduler and explicit CLI runs.</summary>
-public sealed class SourceCollector(DiscoveryCatalog catalog, MySqlStateStore store, IOfficialPageReader pages, DiscoveryFeed feed, IConfiguration configuration, ILogger<SourceCollector> logger, AnnouncementIntake announcements)
+public sealed class SourceCollector(DiscoveryCatalog catalog, MySqlStateStore store, IOfficialPageReader pages, DiscoveryFeed feed, IConfiguration configuration, ILogger<SourceCollector> logger, AnnouncementIntake announcements, CampusActivityFeed activityFeed)
 {
     private static readonly Regex Links = new("<a\\b[^>]*href\\s*=\\s*[\"'](?<url>[^\"']+)[\"'][^>]*>(?<text>.*?)</a>", RegexOptions.IgnoreCase | RegexOptions.Singleline, TimeSpan.FromSeconds(1));
     private static readonly Regex Tags = new("<[^>]+>", RegexOptions.Singleline, TimeSpan.FromSeconds(1));
@@ -49,6 +49,7 @@ public sealed class SourceCollector(DiscoveryCatalog catalog, MySqlStateStore st
     private async Task Capture(SourceRegistration source, Uri page, SourcePage result, CancellationToken ct)
     {
         ListingSummary[] listings = [];
+        if (result.Html is not null) await activityFeed.Store(source, GdgCampusReader.Read(result.Html, page, source), ct);
         if (result.Html is not null) try {
                 listings = StructuredOpportunityReader.Read(result.Html, page, source).Concat(GoogleCourseCatalogReader.Read(result.Html, page, source)).DistinctBy(item => item.OfficialUrl).ToArray();
                 if (listings.Length == 0 && page.AbsoluteUri != new Uri(source.Url).AbsoluteUri) listings = await announcements.Read(source, page, result.Html, ct);

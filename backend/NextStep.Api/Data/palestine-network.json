@@ -1,40 +1,741 @@
 {
-  "reviewedAt": "2026-11-01T20:00:00Z",
+  "reviewedAt": "2026-11-02T01:18:07.639Z",
   "referenceUrl": "https://www.mohe.pna.ps/Higher-Education/Institutions/Universities",
   "institutions": [
-    {"id":"alazhar","name":"Al-Azhar University Gaza","arabicName":"جامعة الأزهر","url":"https://www.alazhar.edu.ps/arabic/index.asp","referenceUrl":"https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"},
-    {"id":"iug","name":"Islamic University of Gaza","arabicName":"الجامعة الإسلامية بغزة","url":"https://www.iugaza.edu.ps/","referenceUrl":"https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"},
-    {"id":"alaqsa","name":"Al-Aqsa University","arabicName":"جامعة الأقصى","url":"https://www.alaqsa.edu.ps/","referenceUrl":"https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"},
-    {"id":"gaza","name":"Gaza University","arabicName":"جامعة غزة","url":"https://www.gu.edu.ps/","referenceUrl":"https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"},
-    {"id":"up","name":"University of Palestine","arabicName":"جامعة فلسطين","url":"https://up.edu.ps/","referenceUrl":"https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"},
-    {"id":"palestine-ahliya","name":"Palestine Ahliya University","arabicName":"جامعة فلسطين الأهلية","url":"https://www.paluniv.edu.ps/","referenceUrl":"https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"},
-    {"id":"hebron","name":"Hebron University","arabicName":"جامعة الخليل","url":"https://www.hebron.edu/","referenceUrl":"https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"},
-    {"id":"ppu","name":"Palestine Polytechnic University","arabicName":"جامعة بوليتكنك فلسطين","url":"https://www.ppu.edu/ar","referenceUrl":"https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"},
-    {"id":"bethlehem","name":"Bethlehem University","arabicName":"جامعة بيت لحم","url":"https://www.bethlehem.edu/","referenceUrl":"https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"},
-    {"id":"alquds","name":"Al-Quds University","arabicName":"جامعة القدس","url":"https://www.alquds.edu/en/","referenceUrl":"https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"},
-    {"id":"qou","name":"Al-Quds Open University","arabicName":"جامعة القدس المفتوحة","url":"https://www.qou.edu/","referenceUrl":"https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"},
-    {"id":"aou","name":"Arab Open University Palestine","arabicName":"الجامعة العربية المفتوحة - فلسطين","url":"https://www.aou.edu.ps/Pages/default.aspx","referenceUrl":"https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"},
-    {"id":"birzeit","name":"Birzeit University","arabicName":"جامعة بيرزيت","url":"https://www.birzeit.edu/","referenceUrl":"https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"},
-    {"id":"najah","name":"An-Najah National University","arabicName":"جامعة النجاح الوطنية","url":"https://www.najah.edu/","referenceUrl":"https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"},
-    {"id":"ptuk","name":"Palestine Technical University Kadoorie","arabicName":"جامعة فلسطين التقنية خضوري","url":"https://www.ptuk.edu.ps/","referenceUrl":"https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"},
-    {"id":"aaup","name":"Arab American University","arabicName":"الجامعة العربية الأمريكية","url":"https://www.aaup.edu/","referenceUrl":"https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"},
-    {"id":"istiqlal","name":"Al-Istiqlal University","arabicName":"جامعة الاستقلال","url":"https://www.pass.ps/","referenceUrl":"https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"},
-    {"id":"israa","name":"Israa University Palestine","arabicName":"جامعة الإسراء","url":"https://israa.edu.ps/ar","referenceUrl":"https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"},
-    {"id":"zaytoonah","name":"Al-Zaytoonah University for Science and Technology","arabicName":"جامعة الزيتونة للعلوم والتكنولوجيا","url":"https://zust.edu.ps/","referenceUrl":"https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"},
-    {"id":"dar-al-kalima","name":"Dar al-Kalima University","arabicName":"جامعة دار الكلمة للفنون والثقافة","url":"https://www.daralkalima.edu.ps/","referenceUrl":"https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"},
-    {"id":"nablus-vte","name":"Nablus University for Vocational and Technical Education","arabicName":"جامعة نابلس للتعليم المهني والتقني","url":"https://nu-vte.edu.ps/","referenceUrl":"https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"}
+    {
+      "id": "alazhar",
+      "name": "Al-Azhar University Gaza",
+      "arabicName": "جامعة الأزهر",
+      "url": "https://www.alazhar.edu.ps/arabic/index.asp",
+      "referenceUrl": "https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"
+    },
+    {
+      "id": "iug",
+      "name": "Islamic University of Gaza",
+      "arabicName": "الجامعة الإسلامية بغزة",
+      "url": "https://www.iugaza.edu.ps/",
+      "referenceUrl": "https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"
+    },
+    {
+      "id": "alaqsa",
+      "name": "Al-Aqsa University",
+      "arabicName": "جامعة الأقصى",
+      "url": "https://www.alaqsa.edu.ps/",
+      "referenceUrl": "https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"
+    },
+    {
+      "id": "gaza",
+      "name": "Gaza University",
+      "arabicName": "جامعة غزة",
+      "url": "https://www.gu.edu.ps/",
+      "referenceUrl": "https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"
+    },
+    {
+      "id": "up",
+      "name": "University of Palestine",
+      "arabicName": "جامعة فلسطين",
+      "url": "https://up.edu.ps/",
+      "referenceUrl": "https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"
+    },
+    {
+      "id": "palestine-ahliya",
+      "name": "Palestine Ahliya University",
+      "arabicName": "جامعة فلسطين الأهلية",
+      "url": "https://www.paluniv.edu.ps/",
+      "referenceUrl": "https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"
+    },
+    {
+      "id": "hebron",
+      "name": "Hebron University",
+      "arabicName": "جامعة الخليل",
+      "url": "https://www.hebron.edu/",
+      "referenceUrl": "https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"
+    },
+    {
+      "id": "ppu",
+      "name": "Palestine Polytechnic University",
+      "arabicName": "جامعة بوليتكنك فلسطين",
+      "url": "https://www.ppu.edu/ar",
+      "referenceUrl": "https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"
+    },
+    {
+      "id": "bethlehem",
+      "name": "Bethlehem University",
+      "arabicName": "جامعة بيت لحم",
+      "url": "https://www.bethlehem.edu/",
+      "referenceUrl": "https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"
+    },
+    {
+      "id": "alquds",
+      "name": "Al-Quds University",
+      "arabicName": "جامعة القدس",
+      "url": "https://www.alquds.edu/en/",
+      "referenceUrl": "https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"
+    },
+    {
+      "id": "qou",
+      "name": "Al-Quds Open University",
+      "arabicName": "جامعة القدس المفتوحة",
+      "url": "https://www.qou.edu/",
+      "referenceUrl": "https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"
+    },
+    {
+      "id": "aou",
+      "name": "Arab Open University Palestine",
+      "arabicName": "الجامعة العربية المفتوحة - فلسطين",
+      "url": "https://www.aou.edu.ps/Pages/default.aspx",
+      "referenceUrl": "https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"
+    },
+    {
+      "id": "birzeit",
+      "name": "Birzeit University",
+      "arabicName": "جامعة بيرزيت",
+      "url": "https://www.birzeit.edu/",
+      "referenceUrl": "https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"
+    },
+    {
+      "id": "najah",
+      "name": "An-Najah National University",
+      "arabicName": "جامعة النجاح الوطنية",
+      "url": "https://www.najah.edu/",
+      "referenceUrl": "https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"
+    },
+    {
+      "id": "ptuk",
+      "name": "Palestine Technical University Kadoorie",
+      "arabicName": "جامعة فلسطين التقنية خضوري",
+      "url": "https://www.ptuk.edu.ps/",
+      "referenceUrl": "https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"
+    },
+    {
+      "id": "aaup",
+      "name": "Arab American University",
+      "arabicName": "الجامعة العربية الأمريكية",
+      "url": "https://www.aaup.edu/",
+      "referenceUrl": "https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"
+    },
+    {
+      "id": "istiqlal",
+      "name": "Al-Istiqlal University",
+      "arabicName": "جامعة الاستقلال",
+      "url": "https://www.pass.ps/",
+      "referenceUrl": "https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"
+    },
+    {
+      "id": "israa",
+      "name": "Israa University Palestine",
+      "arabicName": "جامعة الإسراء",
+      "url": "https://israa.edu.ps/ar",
+      "referenceUrl": "https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"
+    },
+    {
+      "id": "zaytoonah",
+      "name": "Al-Zaytoonah University for Science and Technology",
+      "arabicName": "جامعة الزيتونة للعلوم والتكنولوجيا",
+      "url": "https://zust.edu.ps/",
+      "referenceUrl": "https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"
+    },
+    {
+      "id": "dar-al-kalima",
+      "name": "Dar al-Kalima University",
+      "arabicName": "جامعة دار الكلمة للفنون والثقافة",
+      "url": "https://www.daralkalima.edu.ps/",
+      "referenceUrl": "https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"
+    },
+    {
+      "id": "nablus-vte",
+      "name": "Nablus University for Vocational and Technical Education",
+      "arabicName": "جامعة نابلس للتعليم المهني والتقني",
+      "url": "https://nu-vte.edu.ps/",
+      "referenceUrl": "https://www.mohe.pna.ps/Higher-Education/Institutions/Universities"
+    }
   ],
   "organizations": [
-    {"id":"ieee-najah","universityId":"najah","name":"IEEE An-Najah Student Branch","arabicName":"IEEE جامعة النجاح","family":"IEEE","url":"https://eng.najah.edu/en/students/student-societies/ieee-najah-student-branch/","referenceUrl":"https://eng.najah.edu/en/students/student-societies/ieee-najah-student-branch/","collectionUrl":"https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/news-activities/","channel":"official_website"},
-    {"id":"ewb-najah","universityId":"najah","name":"Engineers Without Borders An-Najah","arabicName":"مهندسون بلا حدود - النجاح","family":"EWB","url":"https://www.instagram.com/ewb.nnu/","referenceUrl":"https://eng.najah.edu/en/students/student-societies/engineers-without-borders/","collectionUrl":"https://www.instagram.com/ewb.nnu/","channel":"instagram"},
-    {"id":"ieee-birzeit","universityId":"birzeit","name":"IEEE Birzeit Student Branch","arabicName":"IEEE جامعة بيرزيت","family":"IEEE","url":"https://www.birzeit.edu/en/news/birzeit-university-students-achieve-first-and-third-places-national-ieee-contest","referenceUrl":"https://www.birzeit.edu/en/news/birzeit-university-students-achieve-first-and-third-places-national-ieee-contest","collectionUrl":"https://www.birzeit.edu/en/news","channel":"official_website"},
-    {"id":"ieee-aaup","universityId":"aaup","name":"IEEE Arab American University","arabicName":"IEEE الجامعة العربية الأمريكية","family":"IEEE","url":"https://www.aaup.edu/ar/taxonomy/term/331","referenceUrl":"https://www.aaup.edu/ar/taxonomy/term/331?page=1","collectionUrl":"https://www.aaup.edu/ar/taxonomy/term/331","channel":"official_website"},
-    {"id":"ieee-ppu","universityId":"ppu","name":"IEEE Palestine Polytechnic Student Branch","arabicName":"IEEE بوليتكنك فلسطين","family":"IEEE","url":"https://ieee.ppu.edu/","referenceUrl":"https://staffairs.ppu.edu/en/clubs","collectionUrl":"https://ieee.ppu.edu/","channel":"official_website"},
-    {"id":"ieee-alquds","universityId":"alquds","name":"IEEE Al-Quds University Student Branch","arabicName":"IEEE جامعة القدس","family":"IEEE","url":"https://www.alquds.edu/en/faculties-at-al-quds/engineering-en/","referenceUrl":"https://events.vtools.ieee.org/m/483333","collectionUrl":"https://www.alquds.edu/ar/category/news-ar/student-activities-ar/","channel":"official_website"},
-    {"id":"ieee-iug","universityId":"iug","name":"IEEE Islamic University of Gaza Student Branch","arabicName":"IEEE الجامعة الإسلامية بغزة","family":"IEEE","url":"https://eng.iugaza.edu.ps/en/p1357/","referenceUrl":"https://www.iugaza.edu.ps/p34869/","collectionUrl":"https://www.iugaza.edu.ps/","channel":"official_website"},
-    {"id":"gdg-najah","universityId":"najah","name":"Google Developers Group Nablus — An-Najah reference","arabicName":"مجموعة مطوري جوجل نابلس — مرجع جامعة النجاح","family":"GDG","url":"https://eng.najah.edu/en/students/student-societies/google-developers-group/","referenceUrl":"https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/students-clubs/","collectionUrl":"https://eng.najah.edu/en/students/student-societies/google-developers-group/","channel":"official_website"},
-    {"id":"microsoft-najah","universityId":"najah","name":"Microsoft .NET Club An-Najah","arabicName":"نادي مايكروسوفت دوت نت - النجاح","family":"Microsoft","url":"https://eng.najah.edu/en/students/student-societies/microsoft-net-club/","referenceUrl":"https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/students-clubs/","collectionUrl":"https://eng.najah.edu/en/students/student-societies/microsoft-net-club/","channel":"official_website"},
-    {"id":"gdg-ppu","universityId":"ppu","name":"Google Developer Student Club PPU","arabicName":"نادي مطوري جوجل - بوليتكنك فلسطين","family":"GDG","url":"https://staffairs.ppu.edu/en/clubs","referenceUrl":"https://staffairs.ppu.edu/en/clubs","collectionUrl":"https://staffairs.ppu.edu/en/clubs","channel":"official_website"},
-    {"id":"ieee-pau","universityId":"palestine-ahliya","name":"IEEE Palestine Ahliya University Student Branch","arabicName":"IEEE جامعة فلسطين الأهلية","family":"IEEE","url":"https://events.vtools.ieee.org/m/483624","referenceUrl":"https://events.vtools.ieee.org/m/483624","collectionUrl":"https://www.paluniv.edu.ps/","channel":"official_website"}
+    {
+      "id": "ieee-najah",
+      "universityId": "najah",
+      "name": "IEEE An-Najah Student Branch",
+      "arabicName": "IEEE جامعة النجاح",
+      "family": "IEEE",
+      "url": "https://eng.najah.edu/en/students/student-societies/ieee-najah-student-branch/",
+      "referenceUrl": "https://eng.najah.edu/en/students/student-societies/ieee-najah-student-branch/",
+      "collectionUrl": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/news-activities/",
+      "channel": "official_website"
+    },
+    {
+      "id": "ewb-najah",
+      "universityId": "najah",
+      "name": "Engineers Without Borders An-Najah",
+      "arabicName": "مهندسون بلا حدود - النجاح",
+      "family": "EWB",
+      "url": "https://www.instagram.com/ewb.nnu/",
+      "referenceUrl": "https://eng.najah.edu/en/students/student-societies/engineers-without-borders/",
+      "collectionUrl": "https://www.instagram.com/ewb.nnu/",
+      "channel": "instagram",
+      "socialLinks": [
+        {
+          "channel": "instagram",
+          "url": "https://www.instagram.com/ewb.nnu/"
+        },
+        {
+          "channel": "facebook",
+          "url": "https://www.facebook.com/ewbnajah"
+        }
+      ]
+    },
+    {
+      "id": "ieee-birzeit",
+      "universityId": "birzeit",
+      "name": "IEEE Birzeit Student Branch",
+      "arabicName": "IEEE جامعة بيرزيت",
+      "family": "IEEE",
+      "url": "https://www.birzeit.edu/en/news/birzeit-university-students-achieve-first-and-third-places-national-ieee-contest",
+      "referenceUrl": "https://www.birzeit.edu/en/news/birzeit-university-students-achieve-first-and-third-places-national-ieee-contest",
+      "collectionUrl": "https://www.birzeit.edu/en/news",
+      "channel": "official_website"
+    },
+    {
+      "id": "ieee-aaup",
+      "universityId": "aaup",
+      "name": "IEEE Arab American University",
+      "arabicName": "IEEE الجامعة العربية الأمريكية",
+      "family": "IEEE",
+      "url": "https://www.aaup.edu/ar/taxonomy/term/331",
+      "referenceUrl": "https://www.aaup.edu/ar/taxonomy/term/331?page=1",
+      "collectionUrl": "https://www.aaup.edu/ar/taxonomy/term/331",
+      "channel": "official_website"
+    },
+    {
+      "id": "ieee-ppu",
+      "universityId": "ppu",
+      "name": "IEEE Palestine Polytechnic Student Branch",
+      "arabicName": "IEEE بوليتكنك فلسطين",
+      "family": "IEEE",
+      "url": "https://ieee.ppu.edu/",
+      "referenceUrl": "https://staffairs.ppu.edu/en/clubs",
+      "collectionUrl": "https://ieee.ppu.edu/",
+      "channel": "official_website"
+    },
+    {
+      "id": "ieee-alquds",
+      "universityId": "alquds",
+      "name": "IEEE Al-Quds University Student Branch",
+      "arabicName": "IEEE جامعة القدس",
+      "family": "IEEE",
+      "url": "https://www.alquds.edu/en/faculties-at-al-quds/engineering-en/",
+      "referenceUrl": "https://events.vtools.ieee.org/m/483333",
+      "collectionUrl": "https://www.alquds.edu/ar/category/news-ar/student-activities-ar/",
+      "channel": "official_website"
+    },
+    {
+      "id": "ieee-iug",
+      "universityId": "iug",
+      "name": "IEEE Islamic University of Gaza Student Branch",
+      "arabicName": "IEEE الجامعة الإسلامية بغزة",
+      "family": "IEEE",
+      "url": "https://eng.iugaza.edu.ps/en/p1357/",
+      "referenceUrl": "https://www.iugaza.edu.ps/p34869/",
+      "collectionUrl": "https://www.iugaza.edu.ps/",
+      "channel": "official_website"
+    },
+    {
+      "id": "gdg-najah",
+      "universityId": "najah",
+      "name": "Google Developers Group Nablus — An-Najah reference",
+      "arabicName": "مجموعة مطوري جوجل نابلس — مرجع جامعة النجاح",
+      "family": "GDG",
+      "url": "https://eng.najah.edu/en/students/student-societies/google-developers-group/",
+      "referenceUrl": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/students-clubs/",
+      "collectionUrl": "https://eng.najah.edu/en/students/student-societies/google-developers-group/",
+      "channel": "official_website"
+    },
+    {
+      "id": "microsoft-najah",
+      "universityId": "najah",
+      "name": "Microsoft .NET Club An-Najah",
+      "arabicName": "نادي مايكروسوفت دوت نت - النجاح",
+      "family": "Microsoft",
+      "url": "https://eng.najah.edu/en/students/student-societies/microsoft-net-club/",
+      "referenceUrl": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/students-clubs/",
+      "collectionUrl": "https://eng.najah.edu/en/students/student-societies/microsoft-net-club/",
+      "channel": "official_website"
+    },
+    {
+      "id": "gdg-ppu",
+      "universityId": "ppu",
+      "name": "Google Developer Student Club PPU",
+      "arabicName": "نادي مطوري جوجل - بوليتكنك فلسطين",
+      "family": "GDG",
+      "url": "https://staffairs.ppu.edu/en/clubs",
+      "referenceUrl": "https://staffairs.ppu.edu/en/clubs",
+      "collectionUrl": "https://staffairs.ppu.edu/en/clubs",
+      "channel": "official_website",
+      "socialLinks": [
+        {
+          "channel": "linkedin",
+          "url": "https://www.linkedin.com/company/dscppu"
+        }
+      ]
+    },
+    {
+      "id": "ieee-pau",
+      "universityId": "palestine-ahliya",
+      "name": "IEEE Palestine Ahliya University Student Branch",
+      "arabicName": "IEEE جامعة فلسطين الأهلية",
+      "family": "IEEE",
+      "url": "https://events.vtools.ieee.org/m/483624",
+      "referenceUrl": "https://events.vtools.ieee.org/m/483624",
+      "collectionUrl": "https://www.paluniv.edu.ps/",
+      "channel": "official_website"
+    },
+    {
+      "id": "gdg-birzeit",
+      "universityId": "birzeit",
+      "name": "GDG on Campus Birzeit University",
+      "arabicName": "جوجل للمطورين — جامعة بيرزيت",
+      "family": "GDG",
+      "url": "https://gdg.community.dev/gdg-on-campus-birzeit-university-birzeit-palestine/",
+      "referenceUrl": "https://gdg.community.dev/gdg-on-campus-birzeit-university-birzeit-palestine/",
+      "collectionUrl": "https://gdg.community.dev/gdg-on-campus-birzeit-university-birzeit-palestine/",
+      "channel": "official_website",
+      "referenceKind": "program_reference",
+      "socialLinks": [
+        {
+          "channel": "instagram",
+          "url": "https://www.instagram.com/gdgbzu/"
+        },
+        {
+          "channel": "facebook",
+          "url": "https://www.facebook.com/gdgbzu"
+        },
+        {
+          "channel": "linkedin",
+          "url": "https://www.linkedin.com/company/gdg-birzeit-university"
+        }
+      ]
+    },
+    {
+      "id": "gdg-alaqsa",
+      "universityId": "alaqsa",
+      "name": "GDG on Campus Al-Aqsa University",
+      "arabicName": "جوجل للمطورين — جامعة الأقصى",
+      "family": "GDG",
+      "url": "https://gdg.community.dev/gdg-on-campus-al-aqsa-university-gaza-state-of-palestine/",
+      "referenceUrl": "https://gdg.community.dev/events/details/google-gdg-on-campus-al-aqsa-university-gaza-state-of-palestine-presents-info-session/",
+      "collectionUrl": "https://gdg.community.dev/gdg-on-campus-al-aqsa-university-gaza-state-of-palestine/",
+      "channel": "official_website",
+      "referenceKind": "program_reference",
+      "socialLinks": [
+        {
+          "channel": "instagram",
+          "url": "https://www.instagram.com/gdgocaqsa/"
+        },
+        {
+          "channel": "facebook",
+          "url": "https://www.facebook.com/gdgocaqsa"
+        }
+      ]
+    },
+    {
+      "id": "gdsc-alazhar",
+      "universityId": "alazhar",
+      "name": "GDSC Al-Azhar University — Gaza",
+      "arabicName": "جوجل للمطورين — جامعة الأزهر غزة",
+      "family": "GDG",
+      "url": "https://www.linkedin.com/company/gdsc-aug/",
+      "referenceUrl": "https://ps.linkedin.com/company/gdsc-aug",
+      "collectionUrl": "https://www.linkedin.com/company/gdsc-aug/",
+      "channel": "linkedin",
+      "referenceKind": "organization_self_report"
+    },
+    {
+      "id": "gdsc-najah",
+      "universityId": "najah",
+      "name": "GDSC An-Najah National University",
+      "arabicName": "نادي جوجل للطلبة المطورين — النجاح",
+      "family": "GDG",
+      "url": "https://www.linkedin.com/company/gdscnajah",
+      "referenceUrl": "https://www.linkedin.com/company/gdscnajah",
+      "collectionUrl": "https://www.linkedin.com/company/gdscnajah",
+      "channel": "linkedin",
+      "referenceKind": "organization_self_report"
+    },
+    {
+      "id": "ieee-bethlehem",
+      "universityId": "bethlehem",
+      "name": "IEEE Bethlehem University Student Branch",
+      "arabicName": "IEEE جامعة بيت لحم",
+      "family": "IEEE",
+      "url": "https://www.bethlehem.edu/2026/02/16/ieee-student-branch-first-elections/",
+      "referenceUrl": "https://events.vtools.ieee.org/m/509175",
+      "collectionUrl": "https://www.bethlehem.edu/2026/02/16/ieee-student-branch-first-elections/",
+      "channel": "official_website",
+      "socialLinks": [
+        {
+          "channel": "linkedin",
+          "url": "https://ps.linkedin.com/in/ieee-bu-student-branch-13b5002a6"
+        }
+      ]
+    },
+    {
+      "id": "cse-ptuk",
+      "universityId": "ptuk",
+      "name": "CSE Club — Palestine Technical University Kadoorie",
+      "arabicName": "نادي هندسة الحاسوب — خضوري",
+      "family": "CSE",
+      "url": "https://cseptuk.com/",
+      "referenceUrl": "https://cseptuk.com/about/",
+      "collectionUrl": "https://cseptuk.com/",
+      "channel": "official_website",
+      "referenceKind": "organization_self_report",
+      "socialLinks": [
+        {
+          "channel": "linkedin",
+          "url": "https://www.linkedin.com/company/cseclub1"
+        }
+      ]
+    },
+    {
+      "id": "cse-birzeit",
+      "universityId": "birzeit",
+      "name": "CSE Club — Birzeit University",
+      "arabicName": "نادي هندسة الحاسوب والكهرباء والطاقة — بيرزيت",
+      "family": "CSE",
+      "url": "https://www.linkedin.com/company/csebzu",
+      "referenceUrl": "https://www.linkedin.com/company/csebzu",
+      "collectionUrl": "https://www.linkedin.com/company/csebzu",
+      "channel": "linkedin",
+      "referenceKind": "organization_self_report"
+    },
+    {
+      "id": "cs-birzeit",
+      "universityId": "birzeit",
+      "name": "Computer Science Community — Birzeit",
+      "arabicName": "مجتمع علم الحاسوب — بيرزيت",
+      "family": "Computing",
+      "url": "https://www.linkedin.com/company/computer-science-community-bzu",
+      "referenceUrl": "https://ps.linkedin.com/company/computer-science-community-bzu",
+      "collectionUrl": "https://www.linkedin.com/company/computer-science-community-bzu",
+      "channel": "linkedin",
+      "referenceKind": "organization_self_report"
+    },
+    {
+      "id": "acm-w-birzeit",
+      "universityId": "birzeit",
+      "name": "ACM-W Birzeit Student Chapter",
+      "arabicName": "ACM-W — جامعة بيرزيت",
+      "family": "ACM-W",
+      "url": "https://www.birzeit.edu/en/news/female-entrepreneurs-trailblazers-speak-out-about-their-contributions-shaping-tech-sector",
+      "referenceUrl": "https://www.birzeit.edu/en/news/female-entrepreneurs-trailblazers-speak-out-about-their-contributions-shaping-tech-sector",
+      "collectionUrl": "https://www.birzeit.edu/en/news/female-entrepreneurs-trailblazers-speak-out-about-their-contributions-shaping-tech-sector",
+      "channel": "official_website"
+    },
+    {
+      "id": "tech-bethlehem",
+      "universityId": "bethlehem",
+      "name": "Tech Club — Bethlehem University",
+      "arabicName": "النادي التقني — جامعة بيت لحم",
+      "family": "Technology",
+      "url": "https://www.bethlehem.edu/2022/03/19/visit-ieee-bzu-palestine-techno-park/",
+      "referenceUrl": "https://www.bethlehem.edu/2022/03/19/visit-ieee-bzu-palestine-techno-park/",
+      "collectionUrl": "https://www.bethlehem.edu/2022/03/19/visit-ieee-bzu-palestine-techno-park/",
+      "channel": "official_website"
+    },
+    {
+      "id": "code-ppu",
+      "universityId": "ppu",
+      "name": "Code Club — Palestine Polytechnic University",
+      "arabicName": "نادي البرمجة — بوليتكنك فلسطين",
+      "family": "Computing",
+      "url": "https://staffairs.ppu.edu/en/clubs",
+      "referenceUrl": "https://staffairs.ppu.edu/en/clubs",
+      "collectionUrl": "https://staffairs.ppu.edu/en/clubs",
+      "channel": "official_website"
+    },
+    {
+      "id": "asce-ppu",
+      "universityId": "ppu",
+      "name": "ASCE — Palestine Polytechnic University",
+      "arabicName": "الجمعية الأمريكية للمهندسين المدنيين — بوليتكنك",
+      "family": "ASCE",
+      "url": "https://staffairs.ppu.edu/en/clubs",
+      "referenceUrl": "https://staffairs.ppu.edu/en/clubs",
+      "collectionUrl": "https://staffairs.ppu.edu/en/clubs",
+      "channel": "official_website"
+    },
+    {
+      "id": "imeche-ppu",
+      "universityId": "ppu",
+      "name": "IMechE PPU Student Chapter",
+      "arabicName": "جمعية المهندسين الميكانيكيين — بوليتكنك",
+      "family": "IMechE",
+      "url": "https://staffairs.ppu.edu/en/clubs",
+      "referenceUrl": "https://staffairs.ppu.edu/en/clubs",
+      "collectionUrl": "https://staffairs.ppu.edu/en/clubs",
+      "channel": "official_website"
+    },
+    {
+      "id": "ain-najah",
+      "universityId": "najah",
+      "name": "Arab Innovation Network — An-Najah",
+      "arabicName": "شبكة الابتكار العربية — النجاح",
+      "family": "AIN",
+      "url": "https://eng.najah.edu/en/students/student-societies/arab-innovation-network-ain/",
+      "referenceUrl": "https://eng.najah.edu/en/students/student-societies/arab-innovation-network-ain/",
+      "collectionUrl": "https://eng.najah.edu/en/students/student-societies/arab-innovation-network-ain/",
+      "channel": "official_website"
+    },
+    {
+      "id": "asce-najah",
+      "universityId": "najah",
+      "name": "ASCE An-Najah Student Chapter",
+      "arabicName": "الجمعية الأمريكية للمهندسين المدنيين — النجاح",
+      "family": "ASCE",
+      "url": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/students-clubs/",
+      "referenceUrl": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/students-clubs/",
+      "collectionUrl": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/students-clubs/",
+      "channel": "official_website"
+    },
+    {
+      "id": "imeche-najah",
+      "universityId": "najah",
+      "name": "IMechE An-Najah Student Chapter",
+      "arabicName": "جمعية المهندسين الميكانيكيين — النجاح",
+      "family": "IMechE",
+      "url": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/students-clubs/",
+      "referenceUrl": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/students-clubs/",
+      "collectionUrl": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/students-clubs/",
+      "channel": "official_website"
+    },
+    {
+      "id": "aee-najah",
+      "universityId": "najah",
+      "name": "Association of Energy Engineers — An-Najah",
+      "arabicName": "جمعية مهندسي الطاقة — النجاح",
+      "family": "AEE",
+      "url": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/students-clubs/",
+      "referenceUrl": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/students-clubs/",
+      "collectionUrl": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/students-clubs/",
+      "channel": "official_website"
+    },
+    {
+      "id": "open-source-najah",
+      "universityId": "najah",
+      "name": "Open Source Community — An-Najah",
+      "arabicName": "مجتمع المصادر المفتوحة — النجاح",
+      "family": "Open source",
+      "url": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/students-clubs/",
+      "referenceUrl": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/students-clubs/",
+      "collectionUrl": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/students-clubs/",
+      "channel": "official_website"
+    },
+    {
+      "id": "ieee-cs-birzeit",
+      "universityId": "birzeit",
+      "name": "IEEE Computer Society — Birzeit",
+      "arabicName": "مجتمع الحاسوب IEEE — بيرزيت",
+      "family": "IEEE CS",
+      "url": "https://www.facebook.com/355654031195591",
+      "referenceUrl": "https://www.findglocal.com/PS/Ramallah/355654031195591/IEEE---Birzeit-University-Student-Branch",
+      "collectionUrl": "https://www.facebook.com/355654031195591",
+      "channel": "facebook",
+      "referenceKind": "public_republication"
+    },
+    {
+      "id": "ieee-ras-birzeit",
+      "universityId": "birzeit",
+      "name": "IEEE Robotics & Automation — Birzeit",
+      "arabicName": "مجتمع الروبوتات والأتمتة IEEE — بيرزيت",
+      "family": "IEEE RAS",
+      "url": "https://www.facebook.com/355654031195591",
+      "referenceUrl": "https://www.findglocal.com/PS/Ramallah/355654031195591/IEEE---Birzeit-University-Student-Branch",
+      "collectionUrl": "https://www.facebook.com/355654031195591",
+      "channel": "facebook",
+      "referenceKind": "public_republication"
+    },
+    {
+      "id": "ieee-cs-bethlehem",
+      "universityId": "bethlehem",
+      "name": "IEEE Computer Society — Bethlehem",
+      "arabicName": "IEEE مجتمع الحاسوب — بيت لحم",
+      "family": "IEEE CS",
+      "url": "https://events.vtools.ieee.org/m/509175",
+      "referenceUrl": "https://events.vtools.ieee.org/m/509175",
+      "collectionUrl": "https://events.vtools.ieee.org/m/509175",
+      "channel": "official_website"
+    },
+    {
+      "id": "ieee-pes-bethlehem",
+      "universityId": "bethlehem",
+      "name": "IEEE Power & Energy Society — Bethlehem",
+      "arabicName": "IEEE مجتمع الطاقة — بيت لحم",
+      "family": "IEEE PES",
+      "url": "https://events.vtools.ieee.org/m/509175",
+      "referenceUrl": "https://events.vtools.ieee.org/m/509175",
+      "collectionUrl": "https://events.vtools.ieee.org/m/509175",
+      "channel": "official_website"
+    },
+    {
+      "id": "ieee-wie-bethlehem",
+      "universityId": "bethlehem",
+      "name": "IEEE Women in Engineering — Bethlehem",
+      "arabicName": "IEEE المرأة في الهندسة — بيت لحم",
+      "family": "IEEE WIE",
+      "url": "https://events.vtools.ieee.org/m/509175",
+      "referenceUrl": "https://events.vtools.ieee.org/m/509175",
+      "collectionUrl": "https://events.vtools.ieee.org/m/509175",
+      "channel": "official_website"
+    },
+    {
+      "id": "ieee-cs-najah",
+      "universityId": "najah",
+      "name": "IEEE Computer Society — An-Najah",
+      "arabicName": "IEEE مجتمع الحاسوب — النجاح",
+      "family": "IEEE CS",
+      "url": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/news-activities/2022/10/04/organizing-introductory-exhibition-on-ieee-an-najah-student-branch/",
+      "referenceUrl": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/news-activities/2022/10/04/organizing-introductory-exhibition-on-ieee-an-najah-student-branch/",
+      "collectionUrl": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/news-activities/2022/10/04/organizing-introductory-exhibition-on-ieee-an-najah-student-branch/",
+      "channel": "official_website"
+    },
+    {
+      "id": "ieee-ras-najah",
+      "universityId": "najah",
+      "name": "IEEE Robotics & Automation — An-Najah",
+      "arabicName": "IEEE الروبوتات والأتمتة — النجاح",
+      "family": "IEEE RAS",
+      "url": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/news-activities/2022/10/04/organizing-introductory-exhibition-on-ieee-an-najah-student-branch/",
+      "referenceUrl": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/news-activities/2022/10/04/organizing-introductory-exhibition-on-ieee-an-najah-student-branch/",
+      "collectionUrl": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/news-activities/2022/10/04/organizing-introductory-exhibition-on-ieee-an-najah-student-branch/",
+      "channel": "official_website"
+    },
+    {
+      "id": "ieee-wie-najah",
+      "universityId": "najah",
+      "name": "IEEE Women in Engineering — An-Najah",
+      "arabicName": "IEEE المرأة في الهندسة — النجاح",
+      "family": "IEEE WIE",
+      "url": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/news-activities/2022/10/04/organizing-introductory-exhibition-on-ieee-an-najah-student-branch/",
+      "referenceUrl": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/news-activities/2022/10/04/organizing-introductory-exhibition-on-ieee-an-najah-student-branch/",
+      "collectionUrl": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/news-activities/2022/10/04/organizing-introductory-exhibition-on-ieee-an-najah-student-branch/",
+      "channel": "official_website"
+    },
+    {
+      "id": "ieee-ias-najah",
+      "universityId": "najah",
+      "name": "IEEE Industry Applications — An-Najah",
+      "arabicName": "IEEE التطبيقات الصناعية — النجاح",
+      "family": "IEEE IAS",
+      "url": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/news-activities/2022/10/04/organizing-introductory-exhibition-on-ieee-an-najah-student-branch/",
+      "referenceUrl": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/news-activities/2022/10/04/organizing-introductory-exhibition-on-ieee-an-najah-student-branch/",
+      "collectionUrl": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/news-activities/2022/10/04/organizing-introductory-exhibition-on-ieee-an-najah-student-branch/",
+      "channel": "official_website"
+    },
+    {
+      "id": "ieee-pes-najah",
+      "universityId": "najah",
+      "name": "IEEE Power & Energy — An-Najah",
+      "arabicName": "IEEE الطاقة — النجاح",
+      "family": "IEEE PES",
+      "url": "https://www.linkedin.com/company/ieee-an-najah-student-branch",
+      "referenceUrl": "https://www.najah.edu/en/about/history-and-traditions/campus-life/deanship-student-affairs/students-clubs/",
+      "collectionUrl": "https://www.linkedin.com/company/ieee-an-najah-student-branch",
+      "channel": "linkedin"
+    },
+    {
+      "id": "ieee-comsoc-najah",
+      "universityId": "najah",
+      "name": "IEEE Communications Society — An-Najah",
+      "arabicName": "IEEE الاتصالات — النجاح",
+      "family": "IEEE ComSoc",
+      "url": "https://www.najah.edu/ar/about/history-and-traditions/campus-life/deanship-student-affairs/news-activities/2026/05/11/jm-y-ieee-tnzm-wrsh-mtkhss-hwl-ntrnt-lshy-lt-zyz-mhrt-ltlb-ltqny/",
+      "referenceUrl": "https://www.najah.edu/ar/about/history-and-traditions/campus-life/deanship-student-affairs/news-activities/2026/05/11/jm-y-ieee-tnzm-wrsh-mtkhss-hwl-ntrnt-lshy-lt-zyz-mhrt-ltlb-ltqny/",
+      "collectionUrl": "https://www.najah.edu/ar/about/history-and-traditions/campus-life/deanship-student-affairs/news-activities/2026/05/11/jm-y-ieee-tnzm-wrsh-mtkhss-hwl-ntrnt-lshy-lt-zyz-mhrt-ltlb-ltqny/",
+      "channel": "official_website"
+    },
+    {
+      "id": "ieee-embs-aaup",
+      "universityId": "aaup",
+      "name": "IEEE Engineering in Medicine & Biology — AAUP",
+      "arabicName": "IEEE الهندسة في الطب والأحياء — العربية الأمريكية",
+      "family": "IEEE EMBS",
+      "url": "https://www.aaup.edu/ieee",
+      "referenceUrl": "https://www.aaup.edu/ieee",
+      "collectionUrl": "https://www.aaup.edu/ieee",
+      "channel": "official_website"
+    },
+    {
+      "id": "ieee-cs-aaup",
+      "universityId": "aaup",
+      "name": "IEEE Computer Society — AAUP",
+      "arabicName": "IEEE مجتمع الحاسوب — العربية الأمريكية",
+      "family": "IEEE CS",
+      "url": "https://www.aaup.edu/ieee",
+      "referenceUrl": "https://www.aaup.edu/ieee",
+      "collectionUrl": "https://www.aaup.edu/ieee",
+      "channel": "official_website"
+    },
+    {
+      "id": "ieee-ras-aaup",
+      "universityId": "aaup",
+      "name": "IEEE Robotics & Automation — AAUP",
+      "arabicName": "IEEE الروبوتات والأتمتة — العربية الأمريكية",
+      "family": "IEEE RAS",
+      "url": "https://www.aaup.edu/ieee",
+      "referenceUrl": "https://www.aaup.edu/ieee",
+      "collectionUrl": "https://www.aaup.edu/ieee",
+      "channel": "official_website"
+    },
+    {
+      "id": "ieee-aess-ppu",
+      "universityId": "ppu",
+      "name": "IEEE AESS — Palestine Polytechnic",
+      "arabicName": "IEEE الأنظمة الفضائية والإلكترونية — بوليتكنك",
+      "family": "IEEE AESS",
+      "url": "https://ieee-aess.org/activities/chapters",
+      "referenceUrl": "https://ieee-aess.org/activities/chapters",
+      "collectionUrl": "https://ieee-aess.org/activities/chapters",
+      "channel": "official_website"
+    },
+    {
+      "id": "ieee-pes-ppu",
+      "universityId": "ppu",
+      "name": "IEEE Power & Energy — PPU",
+      "arabicName": "IEEE الطاقة — بوليتكنك فلسطين",
+      "family": "IEEE PES",
+      "url": "https://events.vtools.ieee.org/m/516014",
+      "referenceUrl": "https://events.vtools.ieee.org/m/516014",
+      "collectionUrl": "https://events.vtools.ieee.org/m/516014",
+      "channel": "official_website",
+      "socialLinks": [
+        {
+          "channel": "linkedin",
+          "url": "https://www.linkedin.com/showcase/ieee-ppu-power-and-energy-society-chapter/"
+        }
+      ]
+    },
+    {
+      "id": "it-community-hebron",
+      "universityId": "hebron",
+      "name": "IT Community — Hebron University",
+      "arabicName": "مجتمع تكنولوجيا المعلومات — جامعة الخليل",
+      "family": "Computing",
+      "url": "https://www.linkedin.com/in/it-community-hebron-university-9a511438b",
+      "referenceUrl": "https://www.linkedin.com/company/binxtech",
+      "collectionUrl": "https://www.linkedin.com/in/it-community-hebron-university-9a511438b",
+      "channel": "linkedin",
+      "referenceKind": "partner_reference"
+    },
+    {
+      "id": "ieee-aaup-ramallah",
+      "universityId": "aaup",
+      "name": "IEEE AAUP Ramallah Student Branch",
+      "arabicName": "IEEE العربية الأمريكية — رام الله",
+      "family": "IEEE",
+      "url": "https://www.linkedin.com/company/binxtech",
+      "referenceUrl": "https://www.linkedin.com/company/binxtech",
+      "collectionUrl": "https://www.linkedin.com/company/binxtech",
+      "channel": "linkedin",
+      "referenceKind": "partner_reference"
+    }
   ]
 }

@@ -18,7 +18,9 @@ public static class PalestineNetworkChecks {
             Check(network.Institutions.Length == 21 && network.Institutions.DistinctBy(u => u.Id).Count() == 21);
             Check(network.Organizations.All(o => network.Institutions.Any(u => u.Id == o.UniversityId) && new Uri(o.ReferenceUrl).Scheme == "https"));
             Check(network.Organizations.Any(o => o.Id == "ewb-najah" && o.Channel == "instagram"));
-            Check(!network.Organizations.Any(o => o.UniversityId == "alazhar"));
+            Check(!network.Organizations.Any(o => o.UniversityId == "alazhar" && o.Family == "IEEE"));
+            Check(network.Organizations.Any(o => o.Id == "gdg-birzeit" && o.SocialLinks.Any(s => s.Url == "https://www.instagram.com/gdgbzu/")));
+            Check(network.Organizations.Any(o => o.Id == "gdg-alaqsa"));
             var sources = (await client.GetFromJsonAsync<SourceRegistration[]>("/api/sources", Wire.Json))!;
             Check(sources.Single(s => s.Id == "campus-ewb-najah").Collection == "manual_review");
         });
