@@ -131,6 +131,37 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+it("shows the historical-plan notice and projected task details without opening a disclosure", async () => {
+  const notice =
+    "Historical plan: earlier task descriptions have not been verified. Regenerate the plan and review the draft before accepting it.";
+  const safePlan: Plan = {
+    ...fixture.plan,
+    context,
+    tasks: [
+      {
+        ...fixture.plan.tasks[0]!,
+        title: "Historical task 1",
+        deliverable: "The earlier description has not been verified.",
+        completionCriteria: "Review this task before relying on its description.",
+      },
+    ],
+    warnings: [notice],
+  } as Plan;
+  vi.mocked(accountApi.plans).mockResolvedValue([safePlan]);
+  render(
+    <QueryClientProvider client={query}>
+      <AccountPreparation opportunityId="E01" />
+    </QueryClientProvider>,
+  );
+  expect(await screen.findByText(notice)).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Historical task 1" })).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "View task" }));
+  expect(
+    await screen.findByText("Review this task before relying on its description."),
+  ).toBeVisible();
+  expect(screen.queryByText(/approved for entry/i)).toBeNull();
+});
+
 async function showDraft() {
   render(
     <QueryClientProvider client={query}>

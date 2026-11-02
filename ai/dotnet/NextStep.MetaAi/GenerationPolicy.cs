@@ -27,6 +27,8 @@ public static class GenerationPolicy
         if (input.AvailableHoursPerWeek is { } hours && (!double.IsFinite(hours) || hours < 0 || hours > 168)) InvalidInput();
         if (input.AvailableHoursPerWeek == 0)
             throw new MetaAiException("invalid_input", "No preparation capacity is reported.");
+        if (input.RetainedEffortHours is { } retained && (!double.IsFinite(retained) || retained < 0 || retained > 16800)) InvalidInput();
+        if (input.AvailableCapacityHours is { } capacity && (!double.IsFinite(capacity) || capacity < 0 || input.AvailableHoursPerWeek is null || input.ReviewedSubmissionDeadline is null)) InvalidInput();
         if (input.Goals.Count + input.ReviewedRequirements.Count == 0 || input.Goals.Count > 30 ||
             input.ReviewedRequirements.Count > 50 || input.ReviewedResourceIds.Count > 200 ||
             input.ReviewedResources.Count > 50 || input.ExistingTasks.Count > 100) InvalidInput();
@@ -43,8 +45,21 @@ public static class GenerationPolicy
             input.ExistingTasks.Select(t => t.Id).Distinct(StringComparer.Ordinal).Count() != input.ExistingTasks.Count) InvalidInput();
         if (input.Goals.Select(g => g.Id).Distinct(StringComparer.Ordinal).Count() != input.Goals.Count ||
             input.ReviewedRequirements.Select(r => r.Id).Distinct(StringComparer.Ordinal).Count() != input.ReviewedRequirements.Count) InvalidInput();
+        ValidateReviewedMetadata(input);
         foreach (var facts in new[] { input.SelfReport.AcceptedExperience, input.SelfReport.ReportedSkills, input.SelfReport.Constraints })
             if (facts is null || facts.Count > 30 || facts.Any(s => !Text(s, 1000))) InvalidInput();
+    }
+
+    public static void ValidateReviewedMetadata(PlanGenerationContext input)
+    {
+        foreach (var rule in input.ReviewedRequirements.Where(r => r.Deliverable is not null)) {
+            var d = rule.Deliverable!;
+            if (rule.Lane != "submission" || d.Type != "video" || d.SourceRevision != input.SourceRevision ||
+                d.RequiredActions is null || d.RequiredActions.Count == 0 || d.RequiredActions.Any(a => a is not ("record" or "deliver" or "confirm_receipt")) ||
+                d.RequiredActions.Distinct(StringComparer.Ordinal).Count() != d.RequiredActions.Count ||
+                d.EvidenceIds is null || d.EvidenceIds.Count == 0 || d.EvidenceIds.Any(e => !Id(e)) ||
+                d.EvidenceIds.Distinct(StringComparer.Ordinal).Count() != d.EvidenceIds.Count) InvalidInput();
+        }
     }
 
     public static void ValidateCandidate(PlanCandidateOutput candidate, PlanGenerationContext input)
@@ -54,8 +69,17 @@ public static class GenerationPolicy
         var rules = input.ReviewedRequirements.ToDictionary(r => r.Id, StringComparer.Ordinal);
         // IDs alone convey no relevance. Only entries with reviewed metadata may be selected.
         var resources = input.ReviewedResources.Select(r => r.Id).ToHashSet(StringComparer.Ordinal);
-        var seen = input.ExistingTasks.Where(t => t.Status is "done" or "in_progress")
-            .Select(t => t.Title.Trim()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        // Duplicate identity is the trusted action code plus the target.
+        // Rendered titles are templates with step numbers, so a title is
+        // never identity for a structured task: the same action on a
+        // different goal or requirement is new work, and renumbering must
+        // not rescue a repeat. Titles remain the conservative fallback only
+        // where either side has no trusted action (legacy retained tasks,
+        // unrendered candidate output).
+        var retained = input.ExistingTasks.Where(t => t.Status is "done" or "in_progress").ToArray();
+        var identities = new HashSet<(string, string?, string?)>();
+        var trustedTitles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var untrustedTitles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var task in candidate.Tasks)
         {
             if (task is null || !Guidance(task.Title, 200) || !Guidance(task.Deliverable, 1000) ||
@@ -65,7 +89,24 @@ public static class GenerationPolicy
                 task.ResourceIds is null || task.ResourceIds.Count > 10 ||
                 task.ResourceIds.Distinct(StringComparer.Ordinal).Count() != task.ResourceIds.Count ||
                 task.ResourceIds.Any(r => !Id(r) || !resources.Contains(r))) InvalidOutput();
-            if (!seen.Add(task.Title.Trim())) InvalidOutput(); // Exact-title guard only.
+            var title = task.Title.Trim();
+            if (task.Action is { } action)
+            {
+                if (!identities.Add((action, task.Target.GoalId, task.Target.RequirementId))) InvalidOutput();
+                if (untrustedTitles.Contains(title)) InvalidOutput();
+                trustedTitles.Add(title);
+            }
+            else
+            {
+                if (untrustedTitles.Contains(title) || trustedTitles.Contains(title)) InvalidOutput();
+                untrustedTitles.Add(title);
+            }
+            foreach (var old in retained)
+            {
+                if (task.Action is { } newAction && old.ActionCode is { } oldAction)
+                { if (oldAction == newAction && old.Target == task.Target) InvalidOutput(); }
+                else if (string.Equals(old.Title.Trim(), title, StringComparison.OrdinalIgnoreCase)) InvalidOutput();
+            }
             var target = task.Target;
             var valid = target.Kind switch
             {

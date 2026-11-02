@@ -23,6 +23,12 @@ internal static class QualityRegressionChecks
             var options = EvaluationOptions.Parse(["--live", "--list", "--scenario", ids[0]], ids);
             Check(options.List && options.ScenarioIds.Count == 1);
         });
+        test("offline fixture replay cannot be combined with live requests", () => {
+            Check(EvaluationOptions.Parse(["--offline-fixtures", "--scenario", ids[0]], ids).OfflineFixtures);
+            var rejected = false;
+            try { EvaluationOptions.Parse(["--offline-fixtures", "--live"], ids); } catch (ArgumentException) { rejected = true; }
+            Check(rejected);
+        });
         foreach (var args in new[] { new[] { "--scenario" }, new[] { "--scenario", "unknown" },
             new[] { "--live", "--scenario", ids[0], "--scenario", "bad" }, new[] { "--scenario", "--live" },
             new[] { "--scenario=" + ids[0] }, new[] { "--typo" } })

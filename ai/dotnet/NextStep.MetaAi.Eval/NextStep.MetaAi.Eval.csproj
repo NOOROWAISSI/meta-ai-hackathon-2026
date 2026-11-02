@@ -18,5 +18,6 @@
     <EmbeddedResource Include="**/*.cs;*.csproj" Exclude="bin/**;obj/**">
       <LogicalName>evaluation-source/NextStep.MetaAi.Eval/%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="Fixtures/structured-scenarios.json" LogicalName="evaluation-source/NextStep.MetaAi.Eval/Fixtures/structured-scenarios.json" />
   </ItemGroup>
 </Project>

@@ -9,7 +9,14 @@ public static class ContractJson
 }
 public sealed record PlanCandidateOutput(IReadOnlyList<CandidateTask> Tasks, string Explanation);
 public sealed record CandidateTask(string Title, TaskTarget Target, string Priority,
-    string Deliverable, string CompletionCriteria, double EstimatedHours, IReadOnlyList<string> ResourceIds);
+    string Deliverable, string CompletionCriteria, double EstimatedHours, IReadOnlyList<string> ResourceIds)
+{
+    // Trusted renderer action code for this task, set only by
+    // PlanActionRenderer. Never serialized: wire contracts are unchanged.
+    // Null means the task carries no trusted structured identity, and
+    // duplicate checks must fall back to conservative title comparison.
+    [JsonIgnore] public string? Action { get; init; }
+}
 public sealed record TaskTarget(string Kind,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? GoalId = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? RequirementId = null);
@@ -18,8 +25,12 @@ public sealed record PlanGoal(string Id, string Statement);
 // Server-only projection: current reviewed evidence AND evaluated applicability.
 // Unresolved (null) or false Applies is rejected. Never bind this from browser input.
 public sealed record ReviewedRequirement(string Id, string Statement, string Lane,
-    bool? Applies, bool IsMandatory);
-public sealed record ExistingPlanTask(string Id, string Title, string Status, TaskTarget Target);
+    bool? Applies, bool IsMandatory,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ReviewedDeliverable? Deliverable = null);
+public sealed record ReviewedDeliverable(string Type, IReadOnlyList<string> RequiredActions,
+    string SourceRevision, IReadOnlyList<string> EvidenceIds);
+public sealed record ExistingPlanTask(string Id, string Title, string Status, TaskTarget Target,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? ActionCode = null);
 public sealed record PlanningProfile(IReadOnlyList<string> AcceptedExperience,
     IReadOnlyList<string> ReportedSkills, IReadOnlyList<string> Constraints);
 
@@ -39,6 +50,10 @@ public sealed record PlanGenerationContext(string OpportunityId, string Opportun
     // Optional for existing callers. Without descriptive metadata, the generator
     // cannot reference a resource even if its ID is present in ReviewedResourceIds.
     public IReadOnlyList<ReviewedResourceInfo> ReviewedResources { get; init; } = [];
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public double? RetainedEffortHours { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public double? AvailableCapacityHours { get; init; }
 }
 public interface IMetaModelClient
 {

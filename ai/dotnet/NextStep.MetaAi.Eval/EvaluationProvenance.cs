@@ -42,9 +42,12 @@ internal sealed record EvaluationProvenance(DateTimeOffset ExecutedAtUtc, string
             catch (IOException) { }
             catch (UnauthorizedAccessException) { }
         }
+        var scenarioSources = new Dictionary<string, byte[]> { [ScenarioPath] = sources[ScenarioPath] };
+        const string fixturePath = "ai/dotnet/NextStep.MetaAi.Eval/Fixtures/structured-scenarios.json";
+        if (sources.TryGetValue(fixturePath, out var fixture)) scenarioSources[fixturePath] = fixture;
         return new(executedAt.ToUniversalTime(), commit, dirty, matches, Fingerprint(sources),
             Fingerprint(new Dictionary<string, byte[]> { [PromptPath] = sources[PromptPath] }),
-            ScenarioSetVersion, Fingerprint(new Dictionary<string, byte[]> { [ScenarioPath] = sources[ScenarioPath] }),
+            ScenarioSetVersion, Fingerprint(scenarioSources),
             new(options.Model, options.AttemptTimeoutSeconds, options.OverallTimeoutSeconds,
                 options.MaxRetries, options.MaxRetryDelaySeconds, options.MaxResponseBytes));
     }
