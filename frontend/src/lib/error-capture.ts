@@ -16,42 +16,48 @@ function record(error: unknown) {
 // Production logs are different: stack traces, cause chains, and URL query
 // parameters (which can carry candidate and session identifiers) must not be
 // written to the log pipeline. In production this returns only each error's
-// name, its message with query strings stripped, and its HTTP status, which
-// is enough to triage without leaking request context. Local development
+// allowlisted name, a generic diagnostic and its HTTP status. Arbitrary
+// messages/objects can contain profile text or credentials. Local development
 // keeps the full detail above.
 const CAUSE_DEPTH_LIMIT = 5;
 const DESCRIPTION_LENGTH_LIMIT = 8_000;
 
 function isProduction(): boolean {
-  return typeof process !== "undefined" && process.env?.["NODE_ENV"] === "production";
+  return (
+    import.meta.env?.PROD === true ||
+    (typeof process !== "undefined" && process.env?.["NODE_ENV"] === "production")
+  );
 }
 
-function stripQueryStrings(text: string): string {
-  return text.replace(/(https?:\/\/[^\s?#]+)\?[^\s]*/g, "$1");
-}
+const SAFE_ERROR_NAMES = new Set([
+  "Error",
+  "TypeError",
+  "RangeError",
+  "ReferenceError",
+  "SyntaxError",
+  "URIError",
+  "EvalError",
+  "AggregateError",
+  "AccountApiError",
+  "HTTPError",
+  "HttpError",
+]);
 
 export function describeError(error: unknown): string {
-  const production = isProduction();
+  if (isProduction()) {
+    const name = error instanceof Error && SAFE_ERROR_NAMES.has(error.name) ? error.name : "Error";
+    return `${name}: Application request failed${error instanceof Error ? describeStatus(error) : ""}`;
+  }
   const parts: string[] = [];
   let current: unknown = error;
   for (let depth = 0; depth < CAUSE_DEPTH_LIMIT && current != null; depth++) {
     if (!(current instanceof Error)) {
-      parts.push(
-        production
-          ? stripQueryStrings(typeof current === "string" ? current : safeStringify(current))
-          : typeof current === "string"
-            ? current
-            : safeStringify(current),
-      );
+      parts.push(typeof current === "string" ? current : safeStringify(current));
       break;
     }
     const label = depth === 0 ? "" : "caused by: ";
     const status = describeStatus(current);
-    parts.push(
-      production
-        ? `${label}${current.name}: ${stripQueryStrings(current.message)}${status}`
-        : `${label}${current.stack ?? `${current.name}: ${current.message}`}${status}`,
-    );
+    parts.push(`${label}${current.stack ?? `${current.name}: ${current.message}`}${status}`);
     current = current.cause;
   }
   return parts.join("\n").slice(0, DESCRIPTION_LENGTH_LIMIT);
@@ -60,7 +66,9 @@ export function describeError(error: unknown): string {
 function describeStatus(error: Error): string {
   const { status, statusCode } = error as { status?: unknown; statusCode?: unknown };
   const value = status ?? statusCode;
-  return typeof value === "number" ? ` (status ${value})` : "";
+  return typeof value === "number" && Number.isInteger(value) && value >= 100 && value <= 599
+    ? ` (status ${value})`
+    : "";
 }
 
 function safeStringify(value: unknown): string {
@@ -80,6 +88,10 @@ function isErrorLike(value: unknown): value is Error {
 // recorded for consumeLastCapturedError and expanded before serialization.
 const originalConsoleError = console.error.bind(console);
 console.error = (...args: unknown[]) => {
+  if (isProduction()) {
+    originalConsoleError(...args.map(describeError));
+    return;
+  }
   const expanded = args.map((arg) => {
     if (!isErrorLike(arg)) return arg;
     record(arg);
