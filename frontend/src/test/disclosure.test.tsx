@@ -26,6 +26,9 @@ it("disclosure names the provider, what is sent, and what stays, and decline sen
   expect(screen.getByText("Your available hours per week")).toBeVisible();
   expect(screen.getByText(/are never sent/)).toBeVisible();
   expect(screen.getByText(/You can withdraw this acknowledgment at any time/)).toBeVisible();
+  expect(
+    screen.getByText(/it does not delete information already sent in earlier generations/),
+  ).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Not now" }));
   expect(onDecline).toHaveBeenCalledTimes(1);
   expect(onAcknowledge).not.toHaveBeenCalled();

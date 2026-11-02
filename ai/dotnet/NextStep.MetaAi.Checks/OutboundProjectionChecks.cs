@@ -46,6 +46,21 @@ internal static class OutboundProjectionChecks
             var text = payload["selfReport"]!["acceptedExperience"]![0]!["text"]!.GetValue<string>();
             Assert(text.Length == OutboundProjection.FreeTextBudget);
         });
+        test("goal statements keep a usable floor before experience text is considered", () => {
+            var goals = Enumerable.Range(1, 5).Select(i => new PlanGoal("goal-" + i, new string('g', 2000))).ToArray();
+            var payload = OutboundProjection.Build(Context(goals: goals,
+                profile: new([new(ExperienceKinds.Experience, new string('e', 5000))], [], [])));
+            var statements = payload["goals"]!.AsArray().Select(g => g!["statement"]!.GetValue<string>()).ToArray();
+            Assert(statements.Length == 5 && statements.All(s => s.Length >= OutboundProjection.GoalFloor));
+            Assert(FreeTextTotal(payload) == OutboundProjection.FreeTextBudget);
+            Assert(payload["selfReport"]!["acceptedExperience"]!.AsArray().Count == 0);
+        });
+        test("goal floors plus constraints over budget are rejected instead of sending unusable goals", () => {
+            var goals = Enumerable.Range(1, 100).Select(i => new PlanGoal("goal-" + i, new string('g', 200))).ToArray();
+            var context = Context(goals: goals);
+            try { OutboundProjection.Build(context); throw new Exception("Expected invalid_input"); }
+            catch (MetaAiException error) { Assert(error.Error.Code == "invalid_input"); }
+        });
         test("constraints over budget are rejected instead of silently cut", () => {
             var context = Context(profile: new([], [], [new string('c', 5000), new string('d', 4000)]));
             try { OutboundProjection.Build(context); throw new Exception("Expected invalid_input"); }

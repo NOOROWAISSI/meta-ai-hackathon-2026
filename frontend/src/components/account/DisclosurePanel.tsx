@@ -30,8 +30,8 @@ export function DisclosurePanel({
     ["Your available hours per week", "ساعاتك المتاحة أسبوعيًا"],
     ["Your current plan tasks", "مهام خطتك الحالية"],
     [
-      "The opportunity's published requirements and reviewed resource titles",
-      "المتطلبات المنشورة للفرصة وعناوين الموارد المراجعة",
+      "The opportunity's published requirements and reviewed resources",
+      "المتطلبات المنشورة للفرصة والموارد المراجعة",
     ],
   ];
   return (
@@ -63,8 +63,8 @@ export function DisclosurePanel({
       </p>
       <p className="mt-3 text-sm leading-7 text-muted-foreground">
         {t(
-          "You can decline. If you decline, no draft is generated and nothing is sent. You can withdraw this acknowledgment at any time from this page, and generation will stop until you acknowledge again.",
-          "يمكنك الرفض. إذا رفضت، لن تُنشأ أي مسودة ولن يُرسل أي شيء. ويمكنك سحب هذا الإقرار في أي وقت من هذه الصفحة، وسيتوقف الإنشاء حتى تقرّ من جديد.",
+          "You can decline. If you decline, no draft is generated and nothing is sent. You can withdraw this acknowledgment at any time from this page, and generation will stop until you acknowledge again. Withdrawing stops future sharing; it does not delete information already sent in earlier generations.",
+          "يمكنك الرفض. إذا رفضت، لن تُنشأ أي مسودة ولن يُرسل أي شيء. ويمكنك سحب هذا الإقرار في أي وقت من هذه الصفحة، وسيتوقف الإنشاء حتى تقرّ من جديد. يوقف السحب المشاركة المستقبلية؛ ولا يحذف المعلومات التي أُرسلت بالفعل في عمليات إنشاء سابقة.",
         )}
       </p>
       <div className="mt-5 flex flex-wrap gap-3">

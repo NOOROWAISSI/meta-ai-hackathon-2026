@@ -16,10 +16,15 @@ namespace NextStep.MetaAi;
 //   is capped at FreeTextBudget characters in total, reduced deterministically
 //   in priority order: constraints are preserved in full first, then goal
 //   statements, then experience entries. Constraints are never cut silently:
-//   if they alone exceed the budget, the request is rejected instead.
+//   if they alone exceed the budget, the request is rejected instead. Goal
+//   statements are never reduced to nothing either: every goal keeps a
+//   GoalFloor-character floor before any experience text is considered, and
+//   if the constraints plus the goal floors alone exceed the budget, the
+//   request is rejected rather than sending unusable goals.
 public static class OutboundProjection
 {
     public const int FreeTextBudget = 8000;
+    public const int GoalFloor = 120;
     private static readonly JsonSerializerOptions Json = ContractJson.CreateOptions();
 
     public static JsonObject Build(PlanGenerationContext input)
@@ -28,14 +33,25 @@ public static class OutboundProjection
         if (constraintsTotal > FreeTextBudget)
             throw new MetaAiException("invalid_input",
                 "Reported constraints exceed the outbound text budget. Shorten the constraints before generating.");
+        var goalFloors = input.Goals.Sum(g => Math.Min(g.Statement.Length, GoalFloor));
+        if (constraintsTotal + goalFloors > FreeTextBudget)
+            throw new MetaAiException("invalid_input",
+                "Reported goals and constraints exceed the outbound text budget. Shorten them before generating.");
         var remaining = FreeTextBudget - constraintsTotal;
 
-        var goals = new JsonArray();
-        foreach (var goal in input.Goals)
+        // Pass 1 reserves each goal's floor; pass 2 completes statements in
+        // order with what remains. Experience text only sees the leftover.
+        var statements = input.Goals.Select(g => g.Statement[..Math.Min(g.Statement.Length, GoalFloor)]).ToArray();
+        remaining -= goalFloors;
+        for (var i = 0; i < statements.Length && remaining > 0; i++)
         {
-            var statement = Take(goal.Statement, ref remaining);
-            goals.Add(new JsonObject { ["id"] = goal.Id, ["statement"] = statement });
+            var full = input.Goals[i].Statement;
+            var extra = Math.Min(full.Length - statements[i].Length, remaining);
+            if (extra > 0) { statements[i] += full[statements[i].Length..(statements[i].Length + extra)]; remaining -= extra; }
         }
+        var goals = new JsonArray();
+        for (var i = 0; i < statements.Length; i++)
+            goals.Add(new JsonObject { ["id"] = input.Goals[i].Id, ["statement"] = statements[i] });
 
         var experience = new JsonArray();
         foreach (var entry in input.SelfReport.AcceptedExperience)
@@ -111,12 +127,4 @@ public static class OutboundProjection
         };
     }
 
-    private static string Take(string text, ref int remaining)
-    {
-        if (remaining <= 0) return "";
-        if (text.Length <= remaining) { remaining -= text.Length; return text; }
-        var taken = text[..remaining];
-        remaining = 0;
-        return taken;
-    }
 }
