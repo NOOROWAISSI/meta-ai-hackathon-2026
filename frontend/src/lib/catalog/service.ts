@@ -4,7 +4,7 @@ import type { Opportunity } from "@/lib/contract/types";
 
 const listingSchema = z.object({
   id: z.string(),
-  kind: z.enum(["hackathon", "course", "competition", "workshop"]),
+  kind: z.enum(["hackathon", "course", "competition", "workshop", "training"]),
   title: z.string(),
   organizer: z.string(),
   format: z.enum(["online", "in_person", "hybrid", "unknown"]),
@@ -25,6 +25,9 @@ const listingSchema = z.object({
   eventEndAt: z.string().refine(isContractInstant).nullable().optional(),
   availabilityState: z.enum(["unknown", "ended", "cancelled"]).optional(),
   sourceFreshness: z.enum(["not_checked", "current", "stale"]).optional(),
+  universityId: z.string().nullable().optional(),
+  organizationId: z.string().nullable().optional(),
+  extractionMethod: z.string().optional(),
 });
 /** Discovery-only extension; courses never inherit hackathon eligibility rules. */
 export type ListingSummary = Pick<
@@ -41,13 +44,15 @@ const sourceSchema = z.object({
   collection: z.enum(["manual_review", "public_html"]),
   verificationUrl: z.string().url().nullable(),
   note: z.string(),
+  universityId: z.string().nullable().optional(),
+  organizationId: z.string().nullable().optional(),
 });
 export type SourceRegistration = z.infer<typeof sourceSchema>;
 const accessBase = z.object({
   opportunityId: z.string(),
   title: z.string(),
   organizer: z.string(),
-  kind: z.enum(["hackathon", "course", "competition", "workshop"]),
+  kind: z.enum(["hackathon", "course", "competition", "workshop", "training"]),
   officialUrl: z.string().url(),
   reviewNeeds: z.array(
     z.enum(["participation_rules", "submission_requirements", "source_evidence"]),
@@ -67,7 +72,7 @@ const preparationAccessSchema = z.discriminatedUnion("state", [
   accessBase.extend({
     state: z.literal("unsupported_kind"),
     planningOpportunityId: z.null(),
-    kind: z.enum(["course", "competition", "workshop"]),
+    kind: z.enum(["course", "competition", "workshop", "training"]),
   }),
 ]);
 export type PreparationAccess = z.infer<typeof preparationAccessSchema>;
@@ -86,6 +91,30 @@ async function get(path: string) {
   return response.json() as Promise<unknown>;
 }
 export const realCatalogService = {
+  async network() {
+    const institution = z.object({
+      id: z.string(),
+      name: z.string(),
+      arabicName: z.string(),
+      url: z.string().url(),
+      referenceUrl: z.string().url(),
+    });
+    return z
+      .object({
+        reviewedAt: z.string().refine(isContractInstant),
+        referenceUrl: z.string().url(),
+        institutions: z.array(institution),
+        organizations: z.array(
+          institution.extend({
+            universityId: z.string(),
+            family: z.string(),
+            collectionUrl: z.string().url(),
+            channel: z.enum(["official_website", "instagram"]),
+          }),
+        ),
+      })
+      .parse(await get("/api/sources/network"));
+  },
   async preparationAccess(id: string): Promise<PreparationAccess> {
     const access = preparationAccessSchema.parse(
       await get(`/api/opportunities/${encodeURIComponent(id)}/preparation-access`),
@@ -111,6 +140,16 @@ export const realCatalogService = {
         lastAttemptAt: z.string().refine(isContractInstant).nullable(),
         pendingReviewCount: z.number().int().nonnegative(),
         automaticallyDiscoveredCount: z.number().int().nonnegative(),
+        metaExtraction: z
+          .object({
+            enabled: z.boolean(),
+            dailyRequestLimit: z.number().int().nonnegative(),
+            requestsToday: z.number().int().nonnegative(),
+            extractedCount: z.number().int().nonnegative(),
+            failedCount: z.number().int().nonnegative(),
+          })
+          .nullable()
+          .optional(),
         sources: z
           .array(
             z.object({

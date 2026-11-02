@@ -21,6 +21,7 @@ import { realCatalogService, type ListingSummary } from "@/lib/catalog/service";
 import { useLocale } from "@/components/LocaleProvider";
 import { formatContractInstant } from "@/lib/contract/time";
 import { SourceFreshness } from "./SourceFreshness";
+import { PalestineNetwork } from "./PalestineNetwork";
 import { isCatalogTranslationEnabled, translateCatalog } from "@/lib/catalog/translation";
 import {
   PreferenceActions,
@@ -33,6 +34,7 @@ const kinds = [
   { value: "hackathon", label: "Hackathons", icon: Trophy },
   { value: "competition", label: "Competitions", icon: GraduationCap },
   { value: "workshop", label: "Workshops", icon: GraduationCap },
+  { value: "training", label: "Training", icon: GraduationCap },
 ] as const;
 export function RealOpportunities() {
   const { language, t } = useLocale();
@@ -40,6 +42,7 @@ export function RealOpportunities() {
   const [query, setQuery] = useVisitState("real.query", "");
   const [kind, setKind] = useVisitState<string>("real.kind", "all");
   const [scope, setScope] = useVisitState("real.scope", "all");
+  const [university, setUniversity] = useVisitState("real.university", "all");
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const catalog = useQuery({
     queryKey: ["real-listings"],
@@ -79,6 +82,7 @@ export function RealOpportunities() {
       !preferences.data?.some((p) => p.opportunityId === item.id && p.notInterested) &&
       (kind === "all" || item.kind === kind) &&
       (scope === "all" || item.scope === scope) &&
+      (university === "all" || item.universityId === university) &&
       `${item.title} ${item.organizer} ${item.topics.join(" ")}`
         .toLowerCase()
         .includes(query.trim().toLowerCase()),
@@ -197,6 +201,7 @@ export function RealOpportunities() {
             "معلومات من مصادر حقيقية؛ التسجيل وإمكانية الوصول وشروط المشاركة تُراجع بشكل منفصل. قد تظهر الإعلانات المستخرجة آليًا قبل المراجعة البشرية، وتُوسم بأنها بحاجة للتحقق.",
           )}
         </p>
+        <PalestineNetwork selected={university} onSelect={setUniversity} />
         <div className="glass rounded-3xl p-5">
           <div className="grid gap-4 sm:grid-cols-[1fr_230px]">
             <div>
@@ -253,6 +258,7 @@ export function RealOpportunities() {
                     hackathon: "هاكاثونات",
                     competition: "مسابقات",
                     workshop: "ورش عمل",
+                    training: "تدريبات",
                   }[item.value],
                 )}
               </button>
@@ -324,6 +330,7 @@ export function RealOpportunities() {
                     onClick={() => {
                       setKind("all");
                       setScope("all");
+                      setUniversity("all");
                       setQuery("");
                     }}
                   >
@@ -364,8 +371,8 @@ export function RealOpportunities() {
                                 hackathon: "هاكاثون",
                                 competition: "مسابقة",
                                 workshop: "ورشة عمل",
-                              }[item.kind as "course" | "hackathon" | "competition" | "workshop"] ??
-                                item.kind,
+                                training: "تدريب",
+                              }[item.kind] ?? item.kind,
                             )}
                           </span>
                           <span className="text-xs text-muted-foreground">
