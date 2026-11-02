@@ -47,6 +47,11 @@ public sealed class Application(IStateStore store, Catalog catalog, IMetaModelCl
         var entries = new List<ExperienceEntry>();
         var note = BriefingStartingPoints.PlanningNote(opportunity, profile);
         if (!string.IsNullOrWhiteSpace(note)) entries.Add(new(ExperienceKinds.BriefingNote, note));
+        // Combined integration: PR #29's planning clarifications keep their
+        // own provenance kind. They are answers the student confirmed during
+        // evidence review for this opportunity, not free-form self-report.
+        entries.AddRange(ProfileEvidenceService.PlanningClarifications(profile, opportunity.Id)
+            .Select(text => new ExperienceEntry(ExperienceKinds.EvidenceClarification, text)));
         entries.AddRange(profile.ProjectExperience.Select(e => new ExperienceEntry(ExperienceKinds.Experience, e.Description)));
         entries.AddRange(profile.AcceptedInterpretations.Select(e => new ExperienceEntry(ExperienceKinds.AcceptedInterpretation, e.Text)));
         if (!string.IsNullOrWhiteSpace(profile.Background)) entries.Add(new(ExperienceKinds.SelfReport, profile.Background));

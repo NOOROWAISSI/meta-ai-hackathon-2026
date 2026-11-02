@@ -43,7 +43,8 @@ public static class ExperienceKinds
     public const string Experience = "experience";
     public const string SelfReport = "self_report";
     public const string AcceptedInterpretation = "accepted_interpretation";
-    public static bool Valid(string? kind) => kind is BriefingNote or Experience or SelfReport or AcceptedInterpretation;
+    public const string EvidenceClarification = "evidence_clarification";
+    public static bool Valid(string? kind) => kind is BriefingNote or Experience or SelfReport or AcceptedInterpretation or EvidenceClarification;
 }
 public sealed record PlanningProfile(IReadOnlyList<ExperienceEntry> AcceptedExperience,
     IReadOnlyList<string> ReportedSkills, IReadOnlyList<string> Constraints);

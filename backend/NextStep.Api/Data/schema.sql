@@ -87,10 +87,23 @@ CREATE TABLE IF NOT EXISTS discovered_listings (
   INDEX ix_discovered_source(source_id)
 ) ENGINE=InnoDB;
 INSERT IGNORE INTO schema_migrations(version) VALUES (5);
+-- Version 6: profile_evidence (PR #29). In the combined schema, version 6
+-- has exactly this one meaning; disclosure_acks lives at version 9 below.
+CREATE TABLE IF NOT EXISTS profile_evidence (
+  owner_id CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+  payload JSON NOT NULL,
+  CONSTRAINT fk_profile_evidence_session FOREIGN KEY(owner_id) REFERENCES anonymous_sessions(owner_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+INSERT IGNORE INTO schema_migrations(version) VALUES (6);
+-- Version 9: disclosure_acks (P2). The standalone P2 branch recorded this
+-- table at version 6; the combined schema reserves 9 so version 6 keeps its
+-- single PR #29 meaning. The table definition is identical, and CREATE TABLE
+-- IF NOT EXISTS makes databases already carrying the P2 table converge
+-- without touching their rows or their existing version 6 record.
 CREATE TABLE IF NOT EXISTS disclosure_acks (
   owner_id CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
   version INT NOT NULL,
   acknowledged_at VARCHAR(40) NOT NULL,
   CONSTRAINT fk_disclosure_owner FOREIGN KEY (owner_id) REFERENCES anonymous_sessions(owner_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
-INSERT IGNORE INTO schema_migrations(version) VALUES (6);
+INSERT IGNORE INTO schema_migrations(version) VALUES (9);

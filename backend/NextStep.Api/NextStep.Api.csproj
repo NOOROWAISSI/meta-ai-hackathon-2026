@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup><TargetFramework>net8.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><LangVersion>12</LangVersion><UserSecretsId>nextstep-local-backend</UserSecretsId></PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="PdfPig" Version="0.1.16" />
     <ProjectReference Include="../../ai/dotnet/NextStep.MetaAi/NextStep.MetaAi.csproj" />
     <PackageReference Include="MySqlConnector" Version="2.6.2" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.33" />
