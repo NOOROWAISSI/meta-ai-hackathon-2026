@@ -40,7 +40,12 @@ export function DisclosurePanel({
       aria-labelledby={headingId}
       className="mt-6 rounded-2xl border border-border bg-background/60 p-5"
     >
-      <h3 id={headingId} ref={headingRef} tabIndex={-1} className="flex items-center gap-2 text-lg font-bold outline-none">
+      <h3
+        id={headingId}
+        ref={headingRef}
+        tabIndex={-1}
+        className="flex items-center gap-2 text-lg font-bold outline-none"
+      >
         <ShieldCheck className="size-5 shrink-0" aria-hidden />
         {t("How your information is used to generate a draft", "كيف تُستخدم معلوماتك لإنشاء مسودة")}
       </h3>
@@ -57,8 +62,8 @@ export function DisclosurePanel({
       </ul>
       <p className="mt-3 text-sm leading-7 text-muted-foreground">
         {t(
-          "Your name, email address, age, enrollment status, where you live, and team details are never sent. They are used only on this server to check requirements. Resource links are not sent either.",
-          "لا تُرسل أبدًا اسمك أو بريدك الإلكتروني أو عمرك أو حالة التحاقك أو مكان إقامتك أو تفاصيل فريقك. تُستخدم هذه المعلومات فقط على هذا الخادم للتحقق من المتطلبات. ولا تُرسل روابط الموارد أيضًا.",
+          "The separate profile fields for your name, email, age, enrollment, residence and team are not selected for this request. Catalog resource link fields are excluded too. However, the goals, background, project descriptions and constraints you entered are shared text and may contain personal information. Review that text and remove anything you do not want to share before continuing.",
+          "حقول الاسم والبريد والعمر والالتحاق والإقامة والفريق المنفصلة لا تُختار لهذا الطلب، وكذلك حقول روابط الموارد في الكتالوج. لكن نصوص الأهداف والخلفية ووصف المشاريع والقيود التي كتبتها تُشارك، وقد تحتوي معلومات شخصية. راجع هذه النصوص واحذف ما لا تريد مشاركته قبل المتابعة.",
         )}
       </p>
       <p className="mt-3 text-sm leading-7 text-muted-foreground">
