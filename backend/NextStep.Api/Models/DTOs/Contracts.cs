@@ -56,8 +56,10 @@ public sealed record AcceptPlan(string CandidateId, int? ExpectedPlanVersion, st
 public sealed record TaskUpdate(int ExpectedVersion, string Status, string OperationId, string[]? ArtifactUrls = null);
 
 // Application storage envelope, never a competing public contract or model DTO.
-public sealed record StoredCandidate(string Id, string OpportunityId, AssessmentContext Context, int? BaseVersion, PlanGoal[] Goals, PlanCandidateOutput Output, DateTimeOffset ExpiresAt);
+public sealed record StoredCandidate(string Id, string OpportunityId, AssessmentContext Context, int? BaseVersion, PlanGoal[] Goals, PlanCandidateOutput Output, DateTimeOffset ExpiresAt, RenderedPlanProof? RenderingProof = null);
 public sealed record Receipt(string Fingerprint, string OpportunityId);
+public sealed record PlanRenderingBatch(PlanCandidateOutput Output, RenderedPlanProof Proof, string[] TaskIds);
+public sealed record PlanRendering(string PlanId, PlanRenderingBatch[] Batches, bool Untimed, bool HasUnrepresentedRequirements, bool SourceCoverageIncomplete);
 public sealed class UserState
 {
     public int SchemaVersion { get; set; } = 1;
@@ -66,6 +68,8 @@ public sealed class UserState
     public Dictionary<string, string> SavedAt { get; set; } = [];
     public Dictionary<string, SubmissionState> Submissions { get; set; } = [];
     public Dictionary<string, Plan> Plans { get; set; } = [];
+    public Dictionary<string, PlanRendering> PlanRenderings { get; set; } = [];
+    public Dictionary<string, Plan> HistoricalPlans { get; set; } = [];
     public Dictionary<string, StoredCandidate> Candidates { get; set; } = [];
     public Dictionary<string, Receipt> Receipts { get; set; } = [];
     public Dictionary<string, OpportunityPreference> Preferences { get; set; } = [];

@@ -21,6 +21,14 @@ public sealed class Catalog
     public Opportunity Get(string id) => Wire.Copy(_events.FirstOrDefault(o => o.Id == id) ?? throw new ApiFault("not_found", "This opportunity is unavailable."));
     public Opportunity[] All() => Wire.Copy(_events);
     public static bool Reviewed(Opportunity o, Rule rule) => o.InformationFreshness != "stale" && rule.SourceStatus == "reviewed" && rule.SourceEvidenceIds.Length > 0 && rule.SourceEvidenceIds.All(id => o.SourceEvidence.Any(e => e.Id == id && e.Status == "reviewed" && !string.IsNullOrWhiteSpace(e.Passage) && Input.Url(e.SourceUrl) && ContractTime.IsInstant(e.CheckedAt)));
+    public static NextStep.MetaAi.ReviewedDeliverable? ReviewedDeliverable(Opportunity o, Rule rule)
+    {
+        if (o.Id != "E02" || o.SourceRevision != "source-fixtures-v0.2-reviewed-2026-10-31-E02-a52835aa9759" ||
+            rule.Id != "E02-s-video" || rule.Lane != "submission" || !rule.IsMandatory || !Reviewed(o, rule) ||
+            !rule.SourceEvidenceIds.SequenceEqual(["ev-gai-video"]) ||
+            !rule.Claims.Any(c => c.EvidenceIds.Contains("ev-gai-video", StringComparer.Ordinal))) return null;
+        return new("video", ["record", "deliver"], o.SourceRevision, ["ev-gai-video"]);
+    }
     public static DateTimeOffset? Instant(Opportunity opportunity, string kind)
     {
         var events = opportunity.TimelineEvents.Where(t => t.Kind == kind).ToArray();
