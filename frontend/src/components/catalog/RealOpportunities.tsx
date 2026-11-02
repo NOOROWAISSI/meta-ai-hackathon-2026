@@ -59,6 +59,13 @@ export function RealOpportunities() {
     refetchInterval: 300000,
     retry: false,
   });
+  const campus = useQuery({
+    queryKey: ["campus-posts"],
+    queryFn: realCatalogService.campusPosts,
+    staleTime: 300000,
+    refetchInterval: 300000,
+    retry: false,
+  });
   const sources = useQuery({
     queryKey: ["real-sources"],
     queryFn: realCatalogService.sources,
@@ -83,10 +90,19 @@ export function RealOpportunities() {
       !preferences.data?.some((p) => p.opportunityId === item.id && p.notInterested) &&
       (kind === "all" || item.kind === kind) &&
       (scope === "all" || item.scope === scope) &&
-      (university === "all" || item.universityId === university) &&
+      (university === "all" ||
+        item.universityId === university ||
+        item.universityIds?.includes(university)) &&
       `${item.title} ${item.organizer} ${item.topics.join(" ")}`
         .toLowerCase()
         .includes(query.trim().toLowerCase()),
+  );
+  const campusMatches = (campus.data ?? []).filter(
+    (post) =>
+      (university === "all" || post.universityIds.includes(university)) &&
+      scope !== "global_online" &&
+      (kind === "all" || post.kind === kind) &&
+      `${post.title} ${post.summary}`.toLowerCase().includes(query.trim().toLowerCase()),
   );
   const collections = [
     {
@@ -203,7 +219,22 @@ export function RealOpportunities() {
           )}
         </p>
         <PalestineNetwork selected={university} onSelect={setUniversity} />
-        <CampusPosts university={university} />
+        {university !== "all" &&
+          collection.data?.sources?.some(
+            (source) =>
+              source.sourceId.endsWith(`-${university}`) &&
+              !["checked", "manual_review_required"].includes(source.outcome),
+          ) && (
+            <p
+              role="status"
+              className="rounded-2xl border border-amber-400/30 bg-amber-400/5 p-4 text-sm"
+            >
+              {t(
+                "Some university sources could not be read at the last check. Available collected posts stay visible; this does not mean the university has no activities.",
+                "تعذّر قراءة بعض مصادر الجامعة بآخر فحص. المنشورات اللي جمعناها بتضل ظاهرة؛ هذا مش معناه ما عندهم فعاليات.",
+              )}
+            </p>
+          )}
         <div className="glass rounded-3xl p-5">
           <div className="grid gap-4 sm:grid-cols-[1fr_230px]">
             <div>
@@ -300,31 +331,58 @@ export function RealOpportunities() {
           catalog.data && (
             <>
               <p role="status" className="text-sm text-muted-foreground">
-                {rows.length} {t("opportunities", "فرصة")} ·{" "}
+                {rows.length} {t("opportunity listings", "فرصة بتفاصيل منشورة")} ·{" "}
+                {campusMatches.length} {t("community posts", "منشور جامعي")} ·{" "}
                 {catalog.data.filter((item) => item.kind === "course").length}{" "}
                 {t("courses in the source catalog", "دورة في المصادر")}
               </p>
-              {!rows.length ? (
+              {!rows.length && campusMatches.length > 0 ? (
+                <div className="glass rounded-3xl p-6" role="status">
+                  <h2 className="text-xl font-bold">
+                    {t("University activity is available", "في فعاليات ومنشورات جامعية")}
+                  </h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {campusMatches.length}{" "}
+                    {t(
+                      "matching community posts. Check the announcements and past activities below; publication does not confirm open registration.",
+                      "منشور مطابق. الإعلانات والفعاليات الماضية موجودة تحت، وحالة التسجيل موضّحة لكل نشاط.",
+                    )}
+                  </p>
+                  <a href="#campus-posts" className="detail-cta mt-4 inline-flex">
+                    {t("Show university posts", "شوف منشورات الجامعات")}
+                  </a>
+                </div>
+              ) : !rows.length ? (
                 <div className="prep-empty">
                   <MapPin className="size-10 text-primary" aria-hidden />
                   <h2>
-                    {scope === "palestine"
+                    {university !== "all"
                       ? t(
-                          "Local announcements are being reviewed.",
-                          "الإعلانات المحلية قيد المراجعة.",
+                          "No collected announcements match these filters yet.",
+                          "لسه ما تجمّعت إعلانات مطابقة لهاي الفلاتر.",
                         )
-                      : t("No matching opportunities.", "لا توجد فرص مطابقة.")}
+                      : scope === "palestine"
+                        ? t(
+                            "Local announcements are being reviewed.",
+                            "الإعلانات المحلية قيد المراجعة.",
+                          )
+                        : t("No matching opportunities.", "لا توجد فرص مطابقة.")}
                   </h2>
                   <p>
-                    {scope === "palestine"
+                    {university !== "all"
                       ? t(
-                          "The local source list includes EWB An-Najah, Prime Academy, Knowledge Academy, and Birzeit. We will not invent a course or registration date from a profile name.",
-                          "المصادر المحلية تشمل EWB النجاح وPrime Academy وKnowledge Academy وبيرزيت. نتحقق من الإعلان نفسه قبل عرض الدورة وتواريخها.",
+                          "This is a collection gap, not a claim that the university has no activities. Clear the filters or check the source collection status below.",
+                          "هذا نقص بالتجميع، مش معناه الجامعة ما عندها فعاليات. امسح الفلاتر أو راجع حالة جمع المصادر تحت.",
                         )
-                      : t(
-                          "Try another topic or clear your filters.",
-                          "جرّب موضوعًا آخر أو امسح الفلاتر.",
-                        )}
+                      : scope === "palestine"
+                        ? t(
+                            "The local source list includes EWB An-Najah, Prime Academy, Knowledge Academy, and Birzeit. We will not invent a course or registration date from a profile name.",
+                            "المصادر المحلية تشمل EWB النجاح وPrime Academy وKnowledge Academy وبيرزيت. نتحقق من الإعلان نفسه قبل عرض الدورة وتواريخها.",
+                          )
+                        : t(
+                            "Try another topic or clear your filters.",
+                            "جرّب موضوعًا آخر أو امسح الفلاتر.",
+                          )}
                   </p>
                   <button
                     type="button"
@@ -485,6 +543,7 @@ export function RealOpportunities() {
             </>
           )
         )}
+        <CampusPosts university={university} query={query} kind={kind} scope={scope} />
         <details
           className="glass rounded-3xl p-5"
           onToggle={(event) => setSourcesOpen(event.currentTarget.open)}

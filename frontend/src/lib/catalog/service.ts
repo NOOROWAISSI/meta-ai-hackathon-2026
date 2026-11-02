@@ -26,6 +26,7 @@ const listingSchema = z.object({
   availabilityState: z.enum(["unknown", "ended", "cancelled"]).optional(),
   sourceFreshness: z.enum(["not_checked", "current", "stale"]).optional(),
   universityId: z.string().nullable().optional(),
+  universityIds: z.array(z.string()).optional(),
   organizationId: z.string().nullable().optional(),
   extractionMethod: z.string().optional(),
 });
@@ -50,6 +51,7 @@ const sourceSchema = z.object({
 export type SourceRegistration = z.infer<typeof sourceSchema>;
 const campusActivitySchema = z.object({
   id: z.string(),
+  organizerName: z.string().nullable().optional(),
   universityIds: z.array(z.string()),
   organizationIds: z.array(z.string()),
   title: z.string(),

@@ -6,7 +6,17 @@ import { useLocale } from "@/components/LocaleProvider";
 import { isContractInstant } from "@/lib/contract/time";
 import { useVisitState } from "@/components/VisitMemory";
 
-export function CampusPosts({ university }: { university: string }) {
+export function CampusPosts({
+  university,
+  query = "",
+  kind = "all",
+  scope = "all",
+}: {
+  university: string;
+  query?: string;
+  kind?: string;
+  scope?: string;
+}) {
   const { language, t } = useLocale();
   const [channel, setChannel] = useVisitState<string>("campus.posts.channel", "all");
   const [view, setView] = useVisitState<string>("campus.posts.view", "all");
@@ -33,6 +43,9 @@ export function CampusPosts({ university }: { university: string }) {
     .filter(
       (p) =>
         (university === "all" || p.universityIds.includes(university)) &&
+        scope !== "global_online" &&
+        (kind === "all" || p.kind === kind) &&
+        `${p.title} ${p.summary}`.toLowerCase().includes(query.trim().toLowerCase()) &&
         (channel === "all" || p.channel === channel) &&
         (view === "all" ||
           (view === "archive"
@@ -45,7 +58,11 @@ export function CampusPosts({ university }: { university: string }) {
         Number(b.availability === "ended" || b.postType === "recap"),
     );
   return (
-    <section className="glass rounded-3xl p-5 sm:p-7" aria-labelledby="campus-posts-title">
+    <section
+      id="campus-posts"
+      className="glass scroll-mt-24 rounded-3xl p-5 sm:p-7"
+      aria-labelledby="campus-posts-title"
+    >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="prep-eyebrow">
@@ -162,10 +179,11 @@ export function CampusPosts({ university }: { university: string }) {
               {post.title}
             </h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              {groups
-                .filter((g) => post.organizationIds.includes(g.id))
-                .map((g) => (language === "ar" ? g.arabicName : g.name))
-                .join(" · ")}
+              {post.organizerName ||
+                groups
+                  .filter((g) => post.organizationIds.includes(g.id))
+                  .map((g) => (language === "ar" ? g.arabicName : g.name))
+                  .join(" · ")}
             </p>
             <p className="mt-3 max-w-3xl whitespace-pre-line text-sm leading-7" dir="auto">
               {post.summary}
