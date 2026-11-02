@@ -38,6 +38,21 @@ public sealed class Application(IStateStore store, Catalog catalog, IMetaModelCl
             return string.Equals(action, oldAction, StringComparison.Ordinal) && old.Target == task.Target;
         return string.Equals(old.Title.Trim(), task.Title.Trim(), StringComparison.OrdinalIgnoreCase);
     }
+    // Self-report entries keep their provenance: the briefing note is
+    // application-generated, project experience and background are the
+    // student's own words, and accepted interpretations stay marked as
+    // system-proposed readings rather than direct reports.
+    private static ExperienceEntry[] ExperienceEntries(Opportunity opportunity, StudentProfile profile)
+    {
+        var entries = new List<ExperienceEntry>();
+        var note = BriefingStartingPoints.PlanningNote(opportunity, profile);
+        if (!string.IsNullOrWhiteSpace(note)) entries.Add(new(ExperienceKinds.BriefingNote, note));
+        entries.AddRange(profile.ProjectExperience.Select(e => new ExperienceEntry(ExperienceKinds.Experience, e.Description)));
+        entries.AddRange(profile.AcceptedInterpretations.Select(e => new ExperienceEntry(ExperienceKinds.AcceptedInterpretation, e.Text)));
+        if (!string.IsNullOrWhiteSpace(profile.Background)) entries.Add(new(ExperienceKinds.SelfReport, profile.Background));
+        return entries.Where(e => !string.IsNullOrWhiteSpace(e.Text)).Take(30)
+            .Select(e => e.Text.Length <= 1000 ? e : e with { Text = e.Text[..1000] }).ToArray();
+    }
     private static void Check(Opportunity o, UserState state, AnalysisRequest request)
     {
         Input.Require(request is not null && request.Profile is not null && request.Submission is not null);
@@ -63,8 +78,12 @@ public sealed class Application(IStateStore store, Catalog catalog, IMetaModelCl
         var capacity = PreparationCapacity.Evaluate(opportunity, Input.Fact<double>(profile.AvailableHoursPerWeek), retained, DateTimeOffset.UtcNow).AvailableHours;
         var rules = opportunity.Requirements.Where(r => r.Lane is "submission" or "preparation" && r.Evaluation["key"]?.GetValue<string>() != "unresolved" && Catalog.Reviewed(opportunity, r) && Matching.Applies(r, profile) == true && analysis.Matches.Single(m => m.RequirementId == r.Id).Status != "supported").Select(r => new ReviewedRequirement(r.Id, r.Statement, r.Lane, true, r.IsMandatory, Catalog.ReviewedDeliverable(opportunity, r))).ToArray();
         var reviewedResources = resources.For(opportunity).Where(resource => resource.Status == "reviewed").ToArray();
-        var projection = new PlanGenerationContext(id, opportunity.Theme, opportunity.SourceRevision, request.ExpectedSourceRevision, profile.Goals, rules, reviewedResources.Select(resource => resource.Id).ToArray(), Input.Fact<double>(profile.AvailableHoursPerWeek), Catalog.Instant(opportunity, "submission_close"), analysis.ParticipationSummary == "does_not_meet_confirmed_requirement", previous?.Tasks.Select(t => new ExistingPlanTask(t.Id, t.Title, t.Status, t.Target, trustedActions.GetValueOrDefault(t.Id))).ToArray() ?? [], new PlanningProfile(new[] { BriefingStartingPoints.PlanningNote(opportunity, profile) ?? "" }.Concat(profile.ProjectExperience.Select(e => e.Description)).Concat(profile.AcceptedInterpretations.Select(e => e.Text)).Append(profile.Background).Where(s => !string.IsNullOrWhiteSpace(s)).Take(30).Select(s => s.Length <= 1000 ? s : s[..1000]).ToArray(), profile.Skills.Where(s => s.State == "reported_has").Select(s => s.Label).Take(30).ToArray(), profile.Constraints)) { ReviewedResources = reviewedResources.Select(resource => new ReviewedResourceInfo(resource.Id, resource.Title, resource.RelevanceNote)).ToArray(), RetainedEffortHours = retained.Sum(t => t.RemainingEstimatedHours), AvailableCapacityHours = capacity };
+        var projection = new PlanGenerationContext(id, opportunity.Theme, opportunity.SourceRevision, request.ExpectedSourceRevision, profile.Goals, rules, reviewedResources.Select(resource => resource.Id).ToArray(), Input.Fact<double>(profile.AvailableHoursPerWeek), Catalog.Instant(opportunity, "submission_close"), analysis.ParticipationSummary == "does_not_meet_confirmed_requirement", previous?.Tasks.Select(t => new ExistingPlanTask(t.Id, t.Title, t.Status, t.Target, trustedActions.GetValueOrDefault(t.Id))).ToArray() ?? [], new PlanningProfile(ExperienceEntries(opportunity, profile), profile.Skills.Where(s => s.State == "reported_has").Select(s => s.Label).Take(30).ToArray(), profile.Constraints)) { ReviewedResources = reviewedResources.Select(resource => new ReviewedResourceInfo(resource.Id, resource.Title, resource.RelevanceNote)).ToArray(), RetainedEffortHours = retained.Sum(t => t.RemainingEstimatedHours), AvailableCapacityHours = capacity };
         GenerationPolicy.ValidateInput(projection);
+        // P2 disclosure gate: after request integrity and input validation, but
+        // before any provider call or candidate write. A missing or outdated
+        // acknowledgment therefore produces no external request and no draft.
+        Disclosure.RequireCurrent(snapshot);
         var output = await model.GenerateCandidateAsync(projection, ct);
         GenerationPolicy.ValidateInput(projection); GenerationPolicy.ValidateCandidate(output, projection);
         output = PlanActionRenderer.WithCapacityGuidance(output, projection);

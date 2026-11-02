@@ -58,7 +58,7 @@ app.Use(async (http, next) => {
             MySqlException => new ApiError("provider_unavailable", "Application storage is unavailable. The last confirmed data is preserved; retry shortly.", Guid.NewGuid().ToString("N"), true),
             _ => new ApiError("provider_unavailable", "The operation could not be completed. Retry shortly.", Guid.NewGuid().ToString("N"), true)
         };
-        if (!http.Response.HasStarted) { http.Response.StatusCode = failure.Code switch { "invalid_input" => 400, "not_found" => 404, "version_conflict" => 409, "rate_limited" => 429, "timeout" => 504, _ => 503 }; await http.Response.WriteAsJsonAsync(failure, cancellationToken: http.RequestAborted); }
+        if (!http.Response.HasStarted) { http.Response.StatusCode = failure.Code switch { "invalid_input" => 400, "disclosure_required" => 403, "not_found" => 404, "version_conflict" => 409, "rate_limited" => 429, "timeout" => 504, _ => 503 }; await http.Response.WriteAsJsonAsync(failure, cancellationToken: http.RequestAborted); }
     }
 });
 app.Use(async (http, next) => {

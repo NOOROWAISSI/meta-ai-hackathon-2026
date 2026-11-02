@@ -9,6 +9,12 @@ public sealed class ProfileController(Application service, IStateStore store) : 
     private string Owner => (string)HttpContext.Items["owner"]!;
     [HttpGet]
     public Task<StudentProfile> Get(CancellationToken ct) => store.Read(Owner, state => state.Profile, ct);
+    [HttpGet("disclosure")]
+    public Task<DisclosureStatus> GetDisclosure(CancellationToken ct) => store.Read(Owner, state => Disclosure.Status(state), ct);
+    [HttpPost("disclosure/acknowledge")]
+    public Task<DisclosureStatus> AcknowledgeDisclosure(CancellationToken ct) => store.Change(Owner, state => Disclosure.Acknowledge(state), ct);
+    [HttpPost("disclosure/withdraw")]
+    public Task<DisclosureStatus> WithdrawDisclosure(CancellationToken ct) => store.Change(Owner, state => Disclosure.Withdraw(state), ct);
     [HttpPut]
     public Task<StudentProfile> Save(ProfileUpdate update, CancellationToken ct) => service.SaveProfile(Owner, update, ct);
     [HttpGet("editor")]
