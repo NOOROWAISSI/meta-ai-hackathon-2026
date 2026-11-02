@@ -260,6 +260,7 @@ export function AccountPreparation({
   });
   const [disclosureNeeded, setDisclosureNeeded] = useState(false);
   const [acknowledging, setAcknowledging] = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
   const key = ["account", auth?.user?.id, "preparation", opportunityId];
   const data = useQuery({
     queryKey: key,
@@ -435,8 +436,13 @@ export function AccountPreparation({
     );
   }
   async function withdrawDisclosure() {
+    if (withdrawing) return;
+    setError("");
+    setWithdrawing(true);
     try {
-      await accountApi.withdrawDisclosure();
+      const status = await accountApi.withdrawDisclosure();
+      if (!live.current) return;
+      query.setQueryData(["account", auth?.user?.id, "disclosure"], status);
       void query.invalidateQueries({ queryKey: ["account", auth?.user?.id, "disclosure"] });
       setNotice(
         t(
@@ -445,9 +451,10 @@ export function AccountPreparation({
         ),
       );
     } catch {
-      setError(
-        t("Your acknowledgment could not be withdrawn.", "تعذّر سحب إقرارك."),
-      );
+      if (!live.current) return;
+      setError(t("Your acknowledgment could not be withdrawn.", "تعذّر سحب إقرارك."));
+    } finally {
+      if (live.current) setWithdrawing(false);
     }
   }
   async function accept() {
@@ -586,6 +593,26 @@ export function AccountPreparation({
             Explore other opportunities
           </Link>
         </p>
+      )}
+      {disclosure.data && !disclosure.data.required && (
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border px-4 py-3 text-sm text-muted-foreground">
+          <span>
+            {t(
+              "Data sharing with Meta AI: acknowledged.",
+              "مشاركة البيانات مع Meta AI: تم الإقرار.",
+            )}
+          </span>
+          <button
+            type="button"
+            className="min-h-11 text-primary underline"
+            disabled={withdrawing}
+            onClick={() => void withdrawDisclosure()}
+          >
+            {withdrawing
+              ? t("Withdrawing…", "جارٍ سحب الإقرار…")
+              : t("Withdraw acknowledgment", "سحب الإقرار")}
+          </button>
+        </div>
       )}
       {plan && !newDraft && !candidate ? (
         <>
@@ -815,17 +842,6 @@ export function AccountPreparation({
             {busy && <LoaderCircle className="size-4 animate-spin" aria-hidden />}
             {busy ? "Generating through the backend…" : "Generate preparation draft"}
           </button>
-          {disclosure.data && !disclosure.data.required && (
-            <p className="mt-4 text-sm text-muted-foreground">
-              {t(
-                "Data sharing with Meta AI: acknowledged.",
-                "مشاركة البيانات مع Meta AI: تم الإقرار.",
-              )}{" "}
-              <button type="button" className="underline" onClick={() => void withdrawDisclosure()}>
-                {t("Withdraw acknowledgment", "سحب الإقرار")}
-              </button>
-            </p>
-          )}
         </section>
       )}
       <SubmissionChecklist
