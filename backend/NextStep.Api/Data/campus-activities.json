@@ -411,7 +411,7 @@
   {
     "publishedDateText": "16 April 2026",
     "eventDateText": "تبدأ عند اكتمال العدد؛ لا يوجد موعد ثابت منشور",
-    "availability": "unknown",
+    "availability": "ended",
     "verificationLevel": "primary_source",
     "channel": "official_website",
     "postType": "announcement",
@@ -422,12 +422,15 @@
     ],
     "organizationIds": [],
     "title": "تحليل البيانات باستخدام بايثون — التعليم المستمر بالنجاح",
-    "summary": "إعلان جامعة النجاح بتاريخ 16 أبريل 2026 عن دورة وجاهية لتحليل البيانات بلغة بايثون، تبدأ عند اكتمال العدد. لم ينشر الإعلان موعدًا ثابتًا أو إغلاق التسجيل؛ الإعلان قديم وتوفّر دفعة حالية يحتاج تأكيدًا من المركز.",
+    "summary": "إعلان أبريل لدورة بايثون. صفحة الدورة الرسمية تعرض الآن The Course is Completed؛ الدورة منتهية وتظهر في الأرشيف فقط. أي دفعة جديدة تحتاج إعلانًا أو رابط التحاق منفصلًا.",
     "originalUrl": "https://zajelnews.najah.edu/news/article/6447/",
     "kind": "course",
     "sourcePassage": "تعقد الدورة وجاهي وتبدأ عند اكتمال العدد",
     "organizerName": "مركز التعليم المستمر — جامعة النجاح الوطنية",
-    "contentUrl": "https://zajelnews.najah.edu/news/article/6447/"
+    "contentUrl": "https://www.najah.ai/Courses/Details/3281",
+    "registrationState": "closed",
+    "availabilityCheckedAt": "2026-11-02T14:59:09.545Z",
+    "availabilityEvidence": "The Course is Completed"
   },
   {
     "publishedDateText": null,

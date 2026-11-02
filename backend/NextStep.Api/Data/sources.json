@@ -11,5 +11,41 @@
   { "id": "harvard-cs50", "name": "Harvard · CS50 OpenCourseWare", "url": "https://cs50.harvard.edu/x/", "region": "global_online", "channel": "official_website", "collection": "public_html", "verificationUrl": null, "note": "Official online courses. Optional certificates/credit may have separate conditions and costs." },
   { "id": "ieee-education", "name": "IEEE · Educational events", "url": "https://educationweek.ieee.org/events/", "region": "mixed", "channel": "official_website", "collection": "public_html", "verificationUrl": null, "note": "Review location/format per event; only Palestine or online opportunities belong in the selected initial geographic scope." },
   { "id": "google-gdg", "name": "Google Developer Groups", "url": "https://gdg.community.dev/", "region": "mixed", "channel": "official_website", "collection": "public_html", "verificationUrl": null, "note": "Review each local event's organizer, format, price and registration window." },
-  { "id": "meta-global-2026", "name": "Meta · Global AI Developer Hackathon", "url": "https://dev.meta.ai/events/global-hackathon", "region": "global_online", "channel": "official_website", "collection": "public_html", "verificationUrl": null, "note": "Example of discovery followed by official-source confirmation. Applications closed 25 October 2026 unless the organizer changes the published window; project submission is a separate phase." }
+  { "id": "meta-global-2026", "name": "Meta · Global AI Developer Hackathon", "url": "https://dev.meta.ai/events/global-hackathon", "region": "global_online", "channel": "official_website", "collection": "public_html", "verificationUrl": null, "note": "Example of discovery followed by official-source confirmation. Applications closed 25 October 2026 unless the organizer changes the published window; project submission is a separate phase." },
+    {
+        "id": "najah-academy-live",
+        "name": "An-Najah official live course catalog",
+        "url": "https://www.najah.ai/Courses",
+        "region": "palestine",
+        "channel": "official_website",
+        "collection": "public_html",
+        "verificationUrl": "https://www.najah.edu/ar/about/announcements/2026/08/30/mnh-mn-mwss-n-mt-wtwfyq-fkhwry/",
+        "universityId": "najah",
+        "organizationId": "university-najah",
+        "note": "The university links this platform. Read each actual session enrollment control; a catalog card alone does not establish availability."
+    },
+    {
+        "id": "ieee-najah-public-events",
+        "name": "IEEE An-Najah public event feed",
+        "url": "https://ieeennu.com/api/events/approved",
+        "region": "palestine",
+        "channel": "official_website",
+        "collection": "public_html",
+        "verificationUrl": "https://ieeennu.com/activities",
+        "universityId": "najah",
+        "organizationId": "ieee-najah",
+        "note": "Public endpoint used by the branch activity page. APPROVED describes publication moderation, never student acceptance. Past dates and reports are not new openings."
+    },
+    {
+        "id": "ewb-najah-official-site",
+        "name": "EWB An-Najah activity pages",
+        "url": "https://ewbpal.com/activities/",
+        "region": "palestine",
+        "channel": "official_website",
+        "collection": "public_html",
+        "verificationUrl": "https://eng.najah.edu/en/students/student-societies/engineers-without-borders/",
+        "universityId": "najah",
+        "organizationId": "ewb-najah",
+        "note": "University-referenced chapter website. Read activity details and dates; archive pages do not establish open registration."
+    }
 ]
