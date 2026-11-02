@@ -134,6 +134,7 @@ it("shows existing university posts instead of claiming there are no matching op
   ]);
   show(<RealOpportunities />);
   fireEvent.click(screen.getByRole("button", { name: "Filter Najah" }));
+  fireEvent.change(screen.getByLabelText("Opportunity timing"), { target: { value: "archive" } });
   expect(await screen.findByText("University activity is available")).toBeVisible();
   expect(await screen.findByText("A collected campus workshop")).toBeVisible();
   expect(screen.getByText("Past activity")).toBeVisible();

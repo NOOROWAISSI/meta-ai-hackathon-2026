@@ -20,6 +20,7 @@ const base: CampusActivity = {
   sourcePassage: "The public source's original announcement passage.",
   verificationLevel: "secondary_excerpt",
   collectedAt: "2026-11-02T00:50:00Z",
+  discoveryState: "current",
 };
 let query: QueryClient;
 beforeEach(() => {

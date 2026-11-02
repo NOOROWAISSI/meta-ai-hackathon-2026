@@ -29,6 +29,8 @@ const listingSchema = z.object({
   universityIds: z.array(z.string()).optional(),
   organizationId: z.string().nullable().optional(),
   extractionMethod: z.string().optional(),
+  discoveryState: z.enum(["current", "needs_recheck", "archived"]).optional(),
+  availabilityCheckedAt: z.string().nullable().optional(),
 });
 /** Discovery-only extension; courses never inherit hackathon eligibility rules. */
 export type ListingSummary = Pick<
@@ -52,6 +54,10 @@ export type SourceRegistration = z.infer<typeof sourceSchema>;
 const campusActivitySchema = z.object({
   id: z.string(),
   organizerName: z.string().nullable().optional(),
+  discoveryState: z.enum(["current", "needs_recheck", "archived"]).optional(),
+  registrationState: z.enum(["open", "closed", "not_specified"]).optional(),
+  availabilityCheckedAt: z.string().nullable().optional(),
+  availabilityEvidence: z.string().nullable().optional(),
   universityIds: z.array(z.string()),
   organizationIds: z.array(z.string()),
   title: z.string(),
