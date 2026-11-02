@@ -1,5 +1,7 @@
 # Palestine opportunity network
 
+The initial snapshot below was expanded to 47 group/chapter records and an actual organization-post feed. Current scope, social-source provenance, migration 8 and verification are documented in [CAMPUS-POSTS-RESEARCH-2026-11-02.md](CAMPUS-POSTS-RESEARCH-2026-11-02.md). The original 11-group / 45-source figures below describe the initial verification snapshot, not exhaustive current coverage.
+
 ## Delivered
 
 - A searchable Discover directory of all 21 universities in the Ministry's university category, with Arabic and English names, official links and identity references. University colleges are a separate Ministry category and are not silently counted as universities.
