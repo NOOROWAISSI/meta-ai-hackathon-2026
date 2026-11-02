@@ -34,6 +34,12 @@ public static class CampusActivityChecks {
             Check(posts.Where(p => p.Availability == "ended" || p.VerificationLevel == "secondary_excerpt").All(p => listings.All(l => l.Id != p.Id)));
             var rag = listings.Single(l => l.Id == "campus-binxttech-rag-announcement");
             Check(rag.RegistrationState == "not_specified" && rag.SourceStatus == "needs_verification" && rag.RegistrationDeadline is null && rag.Format == "unknown");
+            Check(rag.UniversityIds.Contains("najah") && rag.UniversityIds.Contains("birzeit") && rag.UniversityIds.Contains("bethlehem"));
+            var course = listings.Single(l => l.Id == "campus-najah-python-data-course");
+            Check(course.UniversityIds.Contains("najah") && course.RegistrationState == "not_specified" && course.RegistrationDeadline is null);
+            Check(listings.Any(l => l.Id == "campus-bethlehem-opportunity-lab-2026" && l.UniversityIds.Contains("bethlehem")));
+            Check(posts.Any(p => p.Id == "campus-qou-innovation-hub-launch-2026" && p.UniversityIds.Contains("qou")));
+            Check(posts.Single(p => p.Id == "campus-ieee-najah-xtreme20-report").Availability == "ended");
             Check(host.Model.Calls == 0 && host.Announcements.Calls == 0 && host.Evidence.Calls == 0);
         });
         test("automatic campus post storage preserves first seen and deduplicates successive source checks", async () => {

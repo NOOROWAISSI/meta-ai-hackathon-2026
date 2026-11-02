@@ -384,5 +384,173 @@
     "verificationLevel": "primary_source",
     "collectedAt": "2026-11-02T01:18:07.639Z",
     "postType": "recap"
+  },
+  {
+    "publishedDateText": null,
+    "eventDateText": "17 February — year not published",
+    "availability": "unknown",
+    "verificationLevel": "primary_source",
+    "channel": "official_website",
+    "postType": "announcement",
+    "collectedAt": "2026-11-02T10:11:31.491Z",
+    "id": "campus-ptuk-problem-solving-invitation",
+    "universityIds": [
+      "ptuk"
+    ],
+    "organizationIds": [
+      "cse-ptuk"
+    ],
+    "title": "مسابقة Problem Solving — نادي هندسة أنظمة الحاسوب",
+    "summary": "نادي الحاسوب بخضوري نشر إعلان مسابقة لحل المسائل، مدرجة في صفحة الفعاليات كفعالية قادمة بتاريخ 17 فبراير دون سنة ظاهرة. السنة وحالة التسجيل الحالية غير مؤكّدتين؛ راجع النادي قبل الالتزام.",
+    "originalUrl": "https://cseptuk.com/events/",
+    "kind": "competition",
+    "sourcePassage": "نادي الحاسوب يعلن عن مسابقة ال problem solving",
+    "organizerName": "نادي هندسة أنظمة الحاسوب — جامعة فلسطين التقنية خضوري",
+    "contentUrl": "https://cseptuk.com/events/"
+  },
+  {
+    "publishedDateText": "16 April 2026",
+    "eventDateText": "تبدأ عند اكتمال العدد؛ لا يوجد موعد ثابت منشور",
+    "availability": "unknown",
+    "verificationLevel": "primary_source",
+    "channel": "official_website",
+    "postType": "announcement",
+    "collectedAt": "2026-11-02T10:11:31.491Z",
+    "id": "campus-najah-python-data-course",
+    "universityIds": [
+      "najah"
+    ],
+    "organizationIds": [],
+    "title": "تحليل البيانات باستخدام بايثون — التعليم المستمر بالنجاح",
+    "summary": "إعلان جامعة النجاح بتاريخ 16 أبريل 2026 عن دورة وجاهية لتحليل البيانات بلغة بايثون، تبدأ عند اكتمال العدد. لم ينشر الإعلان موعدًا ثابتًا أو إغلاق التسجيل؛ الإعلان قديم وتوفّر دفعة حالية يحتاج تأكيدًا من المركز.",
+    "originalUrl": "https://zajelnews.najah.edu/news/article/6447/",
+    "kind": "course",
+    "sourcePassage": "تعقد الدورة وجاهي وتبدأ عند اكتمال العدد",
+    "organizerName": "مركز التعليم المستمر — جامعة النجاح الوطنية",
+    "contentUrl": "https://zajelnews.najah.edu/news/article/6447/"
+  },
+  {
+    "publishedDateText": null,
+    "eventDateText": "18 November 2026 · 10:00–13:00 · time zone not stated",
+    "availability": "unknown",
+    "verificationLevel": "primary_source",
+    "channel": "official_website",
+    "postType": "announcement",
+    "collectedAt": "2026-11-02T10:11:31.491Z",
+    "id": "campus-bethlehem-opportunity-lab-2026",
+    "universityIds": [
+      "bethlehem"
+    ],
+    "organizationIds": [],
+    "title": "Opportunity Lab — Interdisciplinary Innovation Race",
+    "summary": "نشاط ابتكار تنظمه جامعة بيت لحم وARIJ في بيت لحم يوم 18 نوفمبر 2026، من 10 صباحًا إلى 1 ظهرًا وفق الأجندة. تفاصيل التسجيل والمنافسة غير منشورة هنا.",
+    "originalUrl": "https://www.technopark.ps/innovationsummit/en/agenda",
+    "kind": "competition",
+    "sourcePassage": "Opportunity Lab — Interdisciplinary Innovation Race",
+    "organizerName": "Bethlehem University & ARIJ",
+    "contentUrl": "https://www.technopark.ps/innovationsummit/en/agenda"
+  },
+  {
+    "publishedDateText": null,
+    "eventDateText": "22 November 2026 · 10:00–12:00 · time zone not stated",
+    "availability": "unknown",
+    "verificationLevel": "primary_source",
+    "channel": "official_website",
+    "postType": "announcement",
+    "collectedAt": "2026-11-02T10:11:31.491Z",
+    "id": "campus-qou-innovation-hub-launch-2026",
+    "universityIds": [
+      "qou"
+    ],
+    "organizationIds": [],
+    "title": "Q Innovation Launch — جامعة القدس المفتوحة",
+    "summary": "تعريف طلبة القدس المفتوحة بمركز Q Innovation Hub وفرص التواصل مع منظومة الابتكار. النشاط منشور ليوم 22 نوفمبر 2026؛ شروط الدخول والتسجيل تُراجع مع الجهة.",
+    "originalUrl": "https://www.technopark.ps/innovationsummit/en/agenda",
+    "kind": "community_update",
+    "sourcePassage": "Q Innovation Launch",
+    "organizerName": "Al-Quds Open University",
+    "contentUrl": "https://www.technopark.ps/innovationsummit/en/agenda"
+  },
+  {
+    "publishedDateText": null,
+    "eventDateText": "21 November 2026 · 10:00–14:00 · time zone not stated",
+    "availability": "unknown",
+    "verificationLevel": "primary_source",
+    "channel": "official_website",
+    "postType": "announcement",
+    "collectedAt": "2026-11-02T10:11:31.491Z",
+    "id": "campus-dar-alkalima-demo-day-2026",
+    "universityIds": [
+      "dar-al-kalima"
+    ],
+    "organizationIds": [],
+    "title": "Demo Day — جامعة دار الكلمة",
+    "summary": "عرض مشاريع خريجين وحرفيين في الصناعات الإبداعية ببيت لحم يوم 21 نوفمبر 2026. العرض ليس إعلان مسابقة جديدة؛ آلية مشاركة المشاريع تحتاج مراجعة المنظم.",
+    "originalUrl": "https://www.technopark.ps/innovationsummit/en/agenda",
+    "kind": "community_update",
+    "sourcePassage": "Demo Day",
+    "organizerName": "Dar Al-Kalima University",
+    "contentUrl": "https://www.technopark.ps/innovationsummit/en/agenda"
+  },
+  {
+    "publishedDateText": null,
+    "eventDateText": "17 November 2026 · 10:00–13:00 · time zone not stated",
+    "availability": "unknown",
+    "verificationLevel": "primary_source",
+    "channel": "official_website",
+    "postType": "announcement",
+    "collectedAt": "2026-11-02T10:11:31.491Z",
+    "id": "palestine-codemap-gaza-2026",
+    "universityIds": [],
+    "organizationIds": [],
+    "title": "CodeMap Bootcamp in Gaza",
+    "summary": "بوتكامب تنظمه Taqat Work في غزة، مدرج يوم 17 نوفمبر 2026 من 10 صباحًا إلى 1 ظهرًا. المنهج وشروط التسجيل والتكلفة غير مذكورة في الأجندة.",
+    "originalUrl": "https://www.technopark.ps/innovationsummit/en/agenda",
+    "kind": "training",
+    "sourcePassage": "CodeMap Bootcamp in Gaza",
+    "organizerName": "Taqat Work",
+    "contentUrl": "https://www.technopark.ps/innovationsummit/en/agenda"
+  },
+  {
+    "publishedDateText": null,
+    "eventDateText": "21 November 2026 · 11:00–12:00 · time zone not stated",
+    "availability": "unknown",
+    "verificationLevel": "primary_source",
+    "channel": "official_website",
+    "postType": "announcement",
+    "collectedAt": "2026-11-02T10:11:31.491Z",
+    "id": "palestine-problem-to-product-2026",
+    "universityIds": [],
+    "organizationIds": [],
+    "title": "From Problem to Product Workshop",
+    "summary": "ورشة عن أدوات إدارة المنتج وتطبيقها على مشكلات عملية، تقدمها Jerusalem High-Tech Foundry عن بُعد يوم 21 نوفمبر 2026. لا يظهر موعد إغلاق للتسجيل.",
+    "originalUrl": "https://www.technopark.ps/innovationsummit/en/agenda",
+    "kind": "workshop",
+    "sourcePassage": "From Problem to Product Workshop",
+    "organizerName": "Jerusalem High-Tech Foundry (JHF)",
+    "contentUrl": "https://www.technopark.ps/innovationsummit/en/agenda"
+  },
+  {
+    "publishedDateText": "30 October 2026",
+    "eventDateText": "30 October 2026",
+    "availability": "ended",
+    "verificationLevel": "primary_source",
+    "channel": "official_website",
+    "postType": "recap",
+    "collectedAt": "2026-11-02T10:11:31.491Z",
+    "id": "campus-ieee-najah-xtreme20-report",
+    "universityIds": [
+      "najah"
+    ],
+    "organizationIds": [
+      "ieee-najah"
+    ],
+    "title": "IEEE النجاح — مشاركة الفرق في IEEEXtreme 20.0",
+    "summary": "تقرير رسمي منشور في 30 أكتوبر 2026 عن مشاركة فرق الجامعة بتنظيم فرع IEEE الطلابي. هذا خبر فعالية جرت، وليس تسجيلًا مفتوحًا لمسابقة جديدة.",
+    "originalUrl": "https://posts.najah.edu/ar/articles/تحت-إشراف-ومتابعة-عمادة-شؤون-الطلبة-وكلية-الهندسة-فرق-جامعة-النجاح-الوطنية",
+    "kind": "competition",
+    "sourcePassage": "شاركت فرق من جامعة النجاح الوطنية، من خلال فرع جمعية مهندسي الكهرباء والإلكترونيات (IEEE) الطلابي",
+    "organizerName": "IEEE An-Najah Student Branch",
+    "contentUrl": "https://posts.najah.edu/ar/articles/تحت-إشراف-ومتابعة-عمادة-شؤون-الطلبة-وكلية-الهندسة-فرق-جامعة-النجاح-الوطنية"
   }
 ]
