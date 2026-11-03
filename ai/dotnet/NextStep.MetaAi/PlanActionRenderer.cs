@@ -18,6 +18,7 @@ public static class PlanActionRenderer
     public static bool Matches(PlanCandidateOutput output, RenderedPlanProof? proof)
     {
         if (output is null || proof is null || proof.Context is null || proof.Selections is null || proof.Reason is null) return false;
+        using var suppressed = AiRejectionDiagnostics.Suppress();
         try {
             GenerationPolicy.ValidateInput(proof.Context);
             var rendered = Render(proof.Selections, proof.Reason, proof.Context);
@@ -29,6 +30,7 @@ public static class PlanActionRenderer
     public static bool MatchesForDisplay(PlanCandidateOutput output, RenderedPlanProof? proof)
     {
         if (output is null || proof is null || proof.Context is null || proof.Selections is null || proof.Reason is null) return false;
+        using var suppressed = AiRejectionDiagnostics.Suppress();
         try {
             var rendered = Render(proof.Selections, proof.Reason, proof.Context);
             GenerationPolicy.ValidateCandidate(rendered, proof.Context);

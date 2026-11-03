@@ -714,6 +714,28 @@ DiagReject("record video without video deliverable classified", Envelope(TaskJso
 DiagReject("prepare requirement on submission lane classified", Envelope(TaskJson(target: new("requirement", RequirementId: "req"), action: "prepare_requirement")), "render.preparation_target",
     context: Context() with { ReviewedRequirements = [new("req", "Submit the demo", "submission", true, false)] });
 DiagReject("oversized response classified", Envelope(TaskJson() + new string(' ', 4096)), "response.oversized", options: Small());
+Sync("internal proof checks stay silent in diagnostics", () =>
+{
+    AiRejectionDiagnostics.Clear(); AiRejectionDiagnostics.Enabled = true;
+    try
+    {
+        var output = PlanActionRenderer.Render([new("clarify", new("goal", "goal-demo"), "should", 2, [])], "prepare", Context());
+        var badProof = new RenderedPlanProof([new("clarify", new("goal", "goal-demo"), "must", 2, [])], "prepare", Context());
+        Assert(!PlanActionRenderer.Matches(output, badProof));
+        Assert(AiRejectionDiagnostics.Snapshot().Count == 0);
+    }
+    finally { AiRejectionDiagnostics.Enabled = false; AiRejectionDiagnostics.Clear(); }
+});
+Sync("diagnostics queue stays bounded", () =>
+{
+    AiRejectionDiagnostics.Clear(); AiRejectionDiagnostics.Enabled = true;
+    try
+    {
+        for (var i = 0; i < 300; i++) AiRejectionDiagnostics.Record("test", "test.category", null);
+        Assert(AiRejectionDiagnostics.Snapshot().Count <= 256);
+    }
+    finally { AiRejectionDiagnostics.Enabled = false; AiRejectionDiagnostics.Clear(); }
+});
 Test("diagnostics stay silent while disabled", async () =>
 {
     AiRejectionDiagnostics.Clear(); AiRejectionDiagnostics.Enabled = false;
