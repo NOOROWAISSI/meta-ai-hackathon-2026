@@ -51,6 +51,26 @@ public static class DisclosureChecks
             var refused = await client.PostAsJsonAsync("/api/opportunities/E01/plan-candidates", Request(profile, submission, opportunity), Wire.Json);
             Check(refused.StatusCode == HttpStatusCode.Forbidden && host.Model.Calls == calls);
         });
+        test("withdrawal after acceptance blocks generation and preserves accepted progress", async () => {
+            await using var host = new Factory();
+            var (client, profile, submission, opportunity) = await Setup(host);
+            (await client.PostAsync("/api/profile/disclosure/acknowledge", null)).EnsureSuccessStatusCode();
+            var generated = await client.PostAsJsonAsync("/api/opportunities/E01/plan-candidates", Request(profile, submission, opportunity), Wire.Json);
+            generated.EnsureSuccessStatusCode();
+            var acceptedPlan = await client.PostAsJsonAsync("/api/plans/E01/accept", new AcceptPlan(generated.Headers.GetValues("X-Candidate-Id").Single(), null, Guid.NewGuid().ToString("N")), Wire.Json);
+            acceptedPlan.EnsureSuccessStatusCode();
+            var plan = (await acceptedPlan.Content.ReadFromJsonAsync<Plan>(Wire.Json))!;
+            var done = await client.PatchAsJsonAsync($"/api/plans/E01/tasks/{plan.Tasks[0].Id}", new TaskUpdate(plan.Version, "done", Guid.NewGuid().ToString("N")), Wire.Json);
+            done.EnsureSuccessStatusCode();
+            var plansBefore = await client.GetStringAsync("/api/plans");
+            var calls = host.Model.Calls;
+            var status = (await (await client.PostAsync("/api/profile/disclosure/withdraw", null)).Content.ReadFromJsonAsync<DisclosureStatus>(Wire.Json))!;
+            Check(status.Required && status.AcknowledgedVersion is null);
+            var refused = await client.PostAsJsonAsync("/api/opportunities/E01/plan-candidates", Request(profile, submission, opportunity), Wire.Json);
+            Check(refused.StatusCode == HttpStatusCode.Forbidden && host.Model.Calls == calls);
+            Check((await refused.Content.ReadFromJsonAsync<ApiError>(Wire.Json))!.Code == "disclosure_required");
+            Check(await client.GetStringAsync("/api/plans") == plansBefore);
+        });
         test("an outdated acknowledgment version blocks generation until re-acknowledged", async () => {
             await using var host = new Factory();
             var (client, profile, submission, opportunity) = await Setup(host);
