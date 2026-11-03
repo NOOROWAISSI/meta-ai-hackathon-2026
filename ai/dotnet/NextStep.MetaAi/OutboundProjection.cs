@@ -112,6 +112,9 @@ public static class OutboundProjection
             ["opportunityId"] = input.OpportunityId,
             ["opportunityTheme"] = input.OpportunityTheme,
             ["sourceRevision"] = input.SourceRevision,
+            // IDs may be student-controlled; their derived lookup belongs
+            // beside the other untrusted user data, never in system text.
+            ["selectionGuide"] = BuildSelectionGuide(input),
             ["goals"] = goals,
             ["reviewedRequirements"] = requirements,
             ["reviewedResources"] = new JsonArray(input.ReviewedResources.Select(r => JsonSerializer.SerializeToNode(r, Json)).ToArray()),
@@ -126,5 +129,33 @@ public static class OutboundProjection
             },
         };
     }
+
+    // The valid action and target combinations for this exact context, stated
+    // explicitly so the model's allowed output space matches the application
+    // rules the renderer and policy enforce. Built only from the already
+    // validated input; carries IDs and rule shapes, never profile prose.
+    private static string BuildSelectionGuide(PlanGenerationContext input)
+    {
+        var guide = new System.Text.StringBuilder(" Valid selections for this request (the only allowed action and target combinations):");
+        foreach (var goal in input.Goals)
+            guide.Append($" Goal {goal.Id}: actions clarify, explore, prototype, adapt, define_outcome, build_component, integrate_flow, test_flow; priorities should or could, never must; staged actions in the order define_outcome, then build_component, then integrate_flow, then test_flow; each action at most once for this goal.");
+        foreach (var requirement in input.ReviewedRequirements)
+        {
+            if (requirement.Lane == "preparation")
+            {
+                guide.Append($" Requirement {requirement.Id} (preparation): action prepare_requirement only; priorities should or could, never must; at most once.");
+                continue;
+            }
+            var video = requirement.Deliverable is { Type: "video" } deliverable &&
+                deliverable.SourceRevision == input.SourceRevision && deliverable.EvidenceIds.Count > 0 &&
+                deliverable.RequiredActions.Contains("record", StringComparer.Ordinal);
+            guide.Append($" Requirement {requirement.Id} (submission{(requirement.IsMandatory ? ", mandatory" : "")}): actions prepare_artifact, verify_channel, deliver, confirm_receipt{(video ? ", record_video" : "")}; priorities {(requirement.IsMandatory ? "must only for the actions this requirement explicitly requires, otherwise should or could" : "should or could, never must")}; each action at most once for this requirement{(video ? "; video steps in the order record_video, then verify_channel, then deliver, then confirm_receipt" : "")}.");
+        }
+        foreach (var task in input.ExistingTasks.Where(t => (t.Status is "done" or "in_progress") && t.ActionCode is not null))
+            guide.Append($" Already covered by existing work, do not select again: {task.ActionCode} for {(task.Target.Kind == "goal" ? "goal " + task.Target.GoalId : "requirement " + task.Target.RequirementId)}.");
+        guide.Append(" Copy every goal and requirement ID exactly as written. Each task object has exactly the fields action, target, priority, estimatedHours, resourceIds; each target has kind plus goalId for a goal or requirementId for a requirement, never both.");
+        return guide.ToString();
+    }
+
 
 }

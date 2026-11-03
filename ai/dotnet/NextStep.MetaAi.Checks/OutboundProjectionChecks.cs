@@ -89,7 +89,7 @@ internal static class OutboundProjectionChecks
             var keys = payload.Select(p => p.Key).OrderBy(k => k).ToArray();
             Assert(keys.SequenceEqual(["availableHoursPerWeek", "existingTasks", "goals", "opportunityId",
                 "opportunityTheme", "reviewedRequirements", "reviewedResources", "reviewedSubmissionDeadline",
-                "selfReport", "sourceRevision"]));
+                "selectionGuide", "selfReport", "sourceRevision"]));
             var reportKeys = payload["selfReport"]!.AsObject().Select(p => p.Key).OrderBy(k => k).ToArray();
             Assert(reportKeys.SequenceEqual(["acceptedExperience", "constraints", "reportedSkills"]));
         });
