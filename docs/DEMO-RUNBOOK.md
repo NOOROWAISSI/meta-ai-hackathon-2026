@@ -1,6 +1,8 @@
 # NextStep demo runbook
 
-The [official event page](https://cerebralvalley.ai/e/meta-ai-developer-hackathon) lists project submission on 4 November 2026 at 21:00 ET: 5 November at 02:00 UTC / 04:00 Asia/Hebron. The [official waiver](https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver), read in a public JavaScript browser, evaluates the working demo and demo-video quality. The signed-in submission form is not visible publicly. A mandatory hosted URL, repository access and video length remain unconfirmed; do not invent those limits.
+The [official event page](https://cerebralvalley.ai/e/meta-ai-developer-hackathon) lists project submission on 4 November 2026 at 21:00 ET: 5 November at 02:00 UTC / 04:00 Asia/Hebron. The [official waiver](https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver), read in a public JavaScript browser, evaluates the working demo and demo-video quality. The organizer reminder supplied by Noor on 3 November specifies a **three-minute demo video** and a **mandatory open-source GitHub repository**. The signed-in submission form is still unavailable; a mandatory hosted application URL, allowed upload hosts and exact form fields remain unconfirmed.
+
+Use [the timed narration](submission/VIDEO-SCRIPT.md), [draft form answers](submission/APPLICATION-ANSWERS.md), and [final checklist](submission/FINAL-CHECKLIST.md). Repository visibility is public; the MIT license proposal awaits contributor agreement. Do not call licensing complete before the approved license is added.
 
 ## Verify the machine before recording
 
@@ -34,7 +36,7 @@ Exit 0 in Local mode means the public UI/API checks passed, not that Meta, OAuth
 
 The current #30 application can demonstrate public discovery and account workflows, but it does not include the reviewed P1/P2 combined release. Do not present the current Meta generation path as having the final privacy/structured-output safeguards. The API reporting `modelConfigured=true` confirms configuration presence only.
 
-The proposed integration sequence remains P1 -> corrected P2 -> #29/#30 reconciliation -> combined tests/schema and rollback verification -> controlled synthetic live Meta validation. Keep main unchanged until these gates pass. Rofi's private combined-candidate results need independent verification against the current application head.
+The proposed integration sequence remains P1 -> corrected P2 -> #29/#30 reconciliation -> combined tests/schema and recovery verification -> controlled synthetic live Meta validation. Keep main unchanged until these gates pass. The private combined rehearsal at aefee57f was independently verified with 630 automated checks, 31 synthetic browser assertions, 17 schema checks and five additive upgrade paths. These are offline/rehearsal results, not final release or live-provider approval. Follow-up corrections and the actual publishable integration SHA still need review. A standalone P1/P2 binary cannot safely read the full combined state after writes; use a tested compatible combined recovery build or a reviewed forward fix, preserving post-upgrade progress.
 
 Development seed accounts are synthetic local accounts. Do not publish the documented development password or copy that database into a public demo. Do not reset an existing student's profile or plan to make a recording look complete. If an external provider is unavailable, show the real error and preserve inputs; never substitute a template and call it live AI.
 
