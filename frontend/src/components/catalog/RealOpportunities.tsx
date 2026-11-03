@@ -21,6 +21,9 @@ import { realCatalogService, type ListingSummary } from "@/lib/catalog/service";
 import { useLocale } from "@/components/LocaleProvider";
 import { formatContractInstant } from "@/lib/contract/time";
 import { SourceFreshness } from "./SourceFreshness";
+import { PalestineNetwork } from "./PalestineNetwork";
+import { CampusPosts } from "./CampusPosts";
+import { campusState, listingState } from "@/lib/catalog/freshness";
 import { isCatalogTranslationEnabled, translateCatalog } from "@/lib/catalog/translation";
 import {
   PreferenceActions,
@@ -33,6 +36,7 @@ const kinds = [
   { value: "hackathon", label: "Hackathons", icon: Trophy },
   { value: "competition", label: "Competitions", icon: GraduationCap },
   { value: "workshop", label: "Workshops", icon: GraduationCap },
+  { value: "training", label: "Training", icon: GraduationCap },
 ] as const;
 export function RealOpportunities() {
   const { language, t } = useLocale();
@@ -40,6 +44,8 @@ export function RealOpportunities() {
   const [query, setQuery] = useVisitState("real.query", "");
   const [kind, setKind] = useVisitState<string>("real.kind", "all");
   const [scope, setScope] = useVisitState("real.scope", "all");
+  const [university, setUniversity] = useVisitState("real.university", "all");
+  const [activityView, setActivityView] = useVisitState("real.activity.v2", "current");
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const catalog = useQuery({
     queryKey: ["real-listings"],
@@ -51,6 +57,13 @@ export function RealOpportunities() {
   const collection = useQuery({
     queryKey: ["source-collection-status"],
     queryFn: realCatalogService.collectionStatus,
+    staleTime: 300000,
+    refetchInterval: 300000,
+    retry: false,
+  });
+  const campus = useQuery({
+    queryKey: ["campus-posts"],
+    queryFn: realCatalogService.campusPosts,
     staleTime: 300000,
     refetchInterval: 300000,
     retry: false,
@@ -77,11 +90,25 @@ export function RealOpportunities() {
   const rows = displayRows.filter(
     (item) =>
       !preferences.data?.some((p) => p.opportunityId === item.id && p.notInterested) &&
+      (activityView === "all" ||
+        listingState(item) === (activityView === "archive" ? "archived" : activityView)) &&
       (kind === "all" || item.kind === kind) &&
       (scope === "all" || item.scope === scope) &&
+      (university === "all" ||
+        item.universityId === university ||
+        item.universityIds?.includes(university)) &&
       `${item.title} ${item.organizer} ${item.topics.join(" ")}`
         .toLowerCase()
         .includes(query.trim().toLowerCase()),
+  );
+  const campusMatches = (campus.data ?? []).filter(
+    (post) =>
+      (activityView === "all" ||
+        campusState(post) === (activityView === "archive" ? "archived" : activityView)) &&
+      (university === "all" || post.universityIds.includes(university)) &&
+      scope !== "global_online" &&
+      (kind === "all" || post.kind === kind) &&
+      `${post.title} ${post.summary}`.toLowerCase().includes(query.trim().toLowerCase()),
   );
   const collections = [
     {
@@ -197,7 +224,40 @@ export function RealOpportunities() {
             "معلومات من مصادر حقيقية؛ التسجيل وإمكانية الوصول وشروط المشاركة تُراجع بشكل منفصل. قد تظهر الإعلانات المستخرجة آليًا قبل المراجعة البشرية، وتُوسم بأنها بحاجة للتحقق.",
           )}
         </p>
+        <PalestineNetwork selected={university} onSelect={setUniversity} />
+        {university !== "all" &&
+          collection.data?.sources?.some(
+            (source) =>
+              source.sourceId.endsWith(`-${university}`) &&
+              !["checked", "manual_review_required"].includes(source.outcome),
+          ) && (
+            <p
+              role="status"
+              className="rounded-2xl border border-amber-400/30 bg-amber-400/5 p-4 text-sm"
+            >
+              {t(
+                "Some university sources could not be read at the last check. Available collected posts stay visible; this does not mean the university has no activities.",
+                "تعذّر قراءة بعض مصادر الجامعة بآخر فحص. المنشورات اللي جمعناها بتضل ظاهرة؛ هذا مش معناه ما عندهم فعاليات.",
+              )}
+            </p>
+          )}
         <div className="glass rounded-3xl p-5">
+          <label htmlFor="real-activity" className="mb-2 block text-sm font-semibold">
+            {t("Opportunity timing", "حالة الفرصة")}
+          </label>
+          <select
+            id="real-activity"
+            className="prep-input mb-4 w-full sm:w-auto"
+            value={activityView}
+            onChange={(event) => setActivityView(event.target.value)}
+          >
+            <option value="current">{t("Current & upcoming", "الحالية والقادمة")}</option>
+            <option value="needs_recheck">
+              {t("Availability unconfirmed", "التوفّر غير مؤكّد")}
+            </option>
+            <option value="archive">{t("Past & closed", "المنتهية والمغلقة")}</option>
+            <option value="all">{t("All, including archive", "الكل، مع الأرشيف")}</option>
+          </select>
           <div className="grid gap-4 sm:grid-cols-[1fr_230px]">
             <div>
               <label htmlFor="real-search" className="mb-2 block text-sm font-semibold">
@@ -253,6 +313,7 @@ export function RealOpportunities() {
                     hackathon: "هاكاثونات",
                     competition: "مسابقات",
                     workshop: "ورش عمل",
+                    training: "تدريبات",
                   }[item.value],
                 )}
               </button>
@@ -292,31 +353,58 @@ export function RealOpportunities() {
           catalog.data && (
             <>
               <p role="status" className="text-sm text-muted-foreground">
-                {rows.length} {t("opportunities", "فرصة")} ·{" "}
+                {rows.length} {t("opportunity listings", "فرصة بتفاصيل منشورة")} ·{" "}
+                {campusMatches.length} {t("community posts", "منشور جامعي")} ·{" "}
                 {catalog.data.filter((item) => item.kind === "course").length}{" "}
                 {t("courses in the source catalog", "دورة في المصادر")}
               </p>
-              {!rows.length ? (
+              {!rows.length && campusMatches.length > 0 ? (
+                <div className="glass rounded-3xl p-6" role="status">
+                  <h2 className="text-xl font-bold">
+                    {t("University activity is available", "في فعاليات ومنشورات جامعية")}
+                  </h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {campusMatches.length}{" "}
+                    {t(
+                      "matching community posts. Check the announcements and past activities below; publication does not confirm open registration.",
+                      "منشور مطابق. الإعلانات والفعاليات الماضية موجودة تحت، وحالة التسجيل موضّحة لكل نشاط.",
+                    )}
+                  </p>
+                  <a href="#campus-posts" className="detail-cta mt-4 inline-flex">
+                    {t("Show university posts", "شوف منشورات الجامعات")}
+                  </a>
+                </div>
+              ) : !rows.length ? (
                 <div className="prep-empty">
                   <MapPin className="size-10 text-primary" aria-hidden />
                   <h2>
-                    {scope === "palestine"
+                    {university !== "all"
                       ? t(
-                          "Local announcements are being reviewed.",
-                          "الإعلانات المحلية قيد المراجعة.",
+                          "No collected announcements match these filters yet.",
+                          "لسه ما تجمّعت إعلانات مطابقة لهاي الفلاتر.",
                         )
-                      : t("No matching opportunities.", "لا توجد فرص مطابقة.")}
+                      : scope === "palestine"
+                        ? t(
+                            "Local announcements are being reviewed.",
+                            "الإعلانات المحلية قيد المراجعة.",
+                          )
+                        : t("No matching opportunities.", "لا توجد فرص مطابقة.")}
                   </h2>
                   <p>
-                    {scope === "palestine"
+                    {university !== "all"
                       ? t(
-                          "The local source list includes EWB An-Najah, Prime Academy, Knowledge Academy, and Birzeit. We will not invent a course or registration date from a profile name.",
-                          "المصادر المحلية تشمل EWB النجاح وPrime Academy وKnowledge Academy وبيرزيت. نتحقق من الإعلان نفسه قبل عرض الدورة وتواريخها.",
+                          "This is a collection gap, not a claim that the university has no activities. Clear the filters or check the source collection status below.",
+                          "هذا نقص بالتجميع، مش معناه الجامعة ما عندها فعاليات. امسح الفلاتر أو راجع حالة جمع المصادر تحت.",
                         )
-                      : t(
-                          "Try another topic or clear your filters.",
-                          "جرّب موضوعًا آخر أو امسح الفلاتر.",
-                        )}
+                      : scope === "palestine"
+                        ? t(
+                            "The local source list includes EWB An-Najah, Prime Academy, Knowledge Academy, and Birzeit. We will not invent a course or registration date from a profile name.",
+                            "المصادر المحلية تشمل EWB النجاح وPrime Academy وKnowledge Academy وبيرزيت. نتحقق من الإعلان نفسه قبل عرض الدورة وتواريخها.",
+                          )
+                        : t(
+                            "Try another topic or clear your filters.",
+                            "جرّب موضوعًا آخر أو امسح الفلاتر.",
+                          )}
                   </p>
                   <button
                     type="button"
@@ -324,7 +412,9 @@ export function RealOpportunities() {
                     onClick={() => {
                       setKind("all");
                       setScope("all");
+                      setUniversity("all");
                       setQuery("");
+                      setActivityView("current");
                     }}
                   >
                     {t("Clear filters", "مسح الفلاتر")}
@@ -364,8 +454,8 @@ export function RealOpportunities() {
                                 hackathon: "هاكاثون",
                                 competition: "مسابقة",
                                 workshop: "ورشة عمل",
-                              }[item.kind as "course" | "hackathon" | "competition" | "workshop"] ??
-                                item.kind,
+                                training: "تدريب",
+                              }[item.kind] ?? item.kind,
                             )}
                           </span>
                           <span className="text-xs text-muted-foreground">
@@ -476,6 +566,14 @@ export function RealOpportunities() {
             </>
           )
         )}
+        <CampusPosts
+          university={university}
+          query={query}
+          kind={kind}
+          scope={scope}
+          activityView={activityView}
+          onActivityViewChange={setActivityView}
+        />
         <details
           className="glass rounded-3xl p-5"
           onToggle={(event) => setSourcesOpen(event.currentTarget.open)}

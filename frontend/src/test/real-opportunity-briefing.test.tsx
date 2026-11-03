@@ -15,6 +15,11 @@ vi.mock("@/components/auth/AuthProvider", () => ({
 vi.mock("@/components/discover/AppShell", () => ({
   AppShell: ({ children }: { children: ReactNode }) => <main>{children}</main>,
 }));
+vi.mock("@/components/catalog/PalestineNetwork", () => ({
+  PalestineNetwork: ({ onSelect }: { onSelect: (id: string) => void }) => (
+    <button onClick={() => onSelect("najah")}>Filter Najah</button>
+  ),
+}));
 vi.mock("@tanstack/react-router", () => ({
   Link: ({
     to,
@@ -72,6 +77,13 @@ beforeEach(() => {
   state.signedIn = false;
   query = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   vi.spyOn(realCatalogService, "listings").mockResolvedValue([listing]);
+  vi.spyOn(realCatalogService, "campusPosts").mockResolvedValue([]);
+  vi.spyOn(realCatalogService, "network").mockResolvedValue({
+    reviewedAt: "2026-11-02T00:00:00Z",
+    referenceUrl: "https://example.org/directory",
+    institutions: [],
+    organizations: [],
+  });
   vi.spyOn(briefing, "loadAccountProfile").mockResolvedValue(profile);
   vi.spyOn(accountApi, "preferences").mockResolvedValue([]);
 });
@@ -83,6 +95,51 @@ afterEach(() => {
 function show(children: ReactNode) {
   return render(<QueryClientProvider client={query}>{children}</QueryClientProvider>);
 }
+it("keeps a joint opportunity visible under every associated university", async () => {
+  vi.mocked(realCatalogService.listings).mockResolvedValue([
+    {
+      ...listing,
+      scope: "palestine",
+      universityId: "bethlehem",
+      universityIds: ["bethlehem", "najah"],
+    },
+  ]);
+  show(<RealOpportunities />);
+  await screen.findByRole("button", { name: /Open AI & Data/ });
+  fireEvent.click(screen.getByRole("button", { name: "Filter Najah" }));
+  expect(screen.getByRole("button", { name: /Open AI & Data/ })).toBeVisible();
+  expect(screen.queryByText("No matching opportunities.")).toBeNull();
+});
+it("shows existing university posts instead of claiming there are no matching opportunities", async () => {
+  vi.mocked(realCatalogService.listings).mockResolvedValue([]);
+  vi.mocked(realCatalogService.campusPosts).mockResolvedValue([
+    {
+      id: "actual-collected-post",
+      universityIds: ["najah"],
+      organizationIds: [],
+      title: "A collected campus workshop",
+      summary: "An archived activity with original published evidence.",
+      originalUrl: "https://example.org/activity",
+      contentUrl: "https://example.org/activity",
+      channel: "official_website",
+      kind: "workshop",
+      publishedDateText: null,
+      eventDateText: null,
+      availability: "ended",
+      sourcePassage: "An original activity report.",
+      verificationLevel: "primary_source",
+      collectedAt: "2026-11-02T00:00:00Z",
+      postType: "recap",
+    },
+  ]);
+  show(<RealOpportunities />);
+  fireEvent.click(screen.getByRole("button", { name: "Filter Najah" }));
+  fireEvent.change(screen.getByLabelText("Opportunity timing"), { target: { value: "archive" } });
+  expect(await screen.findByText("University activity is available")).toBeVisible();
+  expect(await screen.findByText("A collected campus workshop")).toBeVisible();
+  expect(screen.getByText("Past activity")).toBeVisible();
+  expect(screen.queryByText("No matching opportunities.")).toBeNull();
+});
 it("opens an internal opportunity briefing instead of navigating directly to an external source", async () => {
   Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
     configurable: true,

@@ -10,13 +10,15 @@ public sealed class Factory(bool fake = true, bool recovery = false, bool google
 {
     public FakeModel Model { get; } = new();
     public FakePersonalBriefingModel Briefing { get; } = new();
+    public FakeEvidenceIntelligence Evidence { get; } = new();
+    public FakeAnnouncementIntelligence Announcements { get; } = new();
     public FakeEmailSender Email { get; } = new();
     public FakeGoogleBackchannel Google { get; } = new();
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
         builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?> { ["ConnectionStrings:NextStep"] = Environment.GetEnvironmentVariable("NEXTSTEP_CHECKS_CONNECTION") ?? throw new InvalidOperationException("Set NEXTSTEP_CHECKS_CONNECTION to the dedicated local MySQL instance.") }));
-        if (fake) builder.ConfigureTestServices(services => { services.RemoveAll<IMetaModelClient>(); services.AddSingleton<IMetaModelClient>(Model); services.RemoveAll<NextStep.Api.IPersonalBriefingModel>(); services.AddSingleton<NextStep.Api.IPersonalBriefingModel>(Briefing); });
+        if (fake) builder.ConfigureTestServices(services => { services.RemoveAll<IMetaModelClient>(); services.AddSingleton<IMetaModelClient>(Model); services.RemoveAll<NextStep.Api.IPersonalBriefingModel>(); services.AddSingleton<NextStep.Api.IPersonalBriefingModel>(Briefing); services.RemoveAll<NextStep.Api.IEvidenceIntelligence>(); services.AddSingleton<NextStep.Api.IEvidenceIntelligence>(Evidence); services.RemoveAll<NextStep.Api.IAnnouncementIntelligence>(); services.AddSingleton<NextStep.Api.IAnnouncementIntelligence>(Announcements); });
         if (google) {
             builder.UseSetting("Authentication:Google:ClientId", "synthetic-client.apps.googleusercontent.com");
             builder.UseSetting("Authentication:Google:ClientSecret", "synthetic-test-only-client-secret");
@@ -29,12 +31,20 @@ public sealed class Factory(bool fake = true, bool recovery = false, bool google
         }
     }
 }
+public sealed class FakeAnnouncementIntelligence : NextStep.Api.IAnnouncementIntelligence {
+    public int Calls;
+    public bool Fail;
+    public NextStep.Api.AnnouncementDraft Draft = new("directory", "training", "", "", "", "", []);
+    public Task<NextStep.Api.AnnouncementDraft> Extract(string text, CancellationToken ct) { Calls++; if (Fail) throw new NextStep.Api.ApiFault("timeout", "Synthetic timeout"); return Task.FromResult(Draft); }
+}
 public sealed class FakeModel : IMetaModelClient
 {
     public PlanGenerationContext? LastContext;
     public int Calls;
     public string? ErrorCode;
     public bool Invalid;
+    public bool Arbitrary;
+    public bool VideoPlan;
     public TaskCompletionSource? Entered;
     public TaskCompletionSource? Resume;
     public string Prefix = "Practice";
@@ -46,6 +56,13 @@ public sealed class FakeModel : IMetaModelClient
         if (Resume is not null) await Resume.Task.WaitAsync(ct);
         if (ErrorCode is { } code) throw new MetaAiException(code, "Test provider failure", true);
         var goal = Invalid ? "dangling-goal" : context.Goals.First().Id;
-        return new([new(Prefix + " the walkthrough", new("goal", goal), "should", "A short walkthrough draft", "Explain the implemented flow and its limitations", 2, []), new(Prefix + " the prototype", new("goal", goal), "could", "One small demonstrable interaction", "Run the example and list unfinished work", 1, [])], "Synthetic provider used only by the test host; timing is assessed by the application.");
+        if (Arbitrary) return new([], "You qualify to participate and are approved for entry.");
+        if (VideoPlan) {
+            var rule = context.ReviewedRequirements.Single(r => r.Deliverable?.Type == "video");
+            var selections = new[] { "record_video", "verify_channel", "deliver", "confirm_receipt" }.Select(action => new PlanActionSelection(action, new("requirement", RequirementId: rule.Id), "must", 1, Array.Empty<string>())).ToArray();
+            return PlanActionRenderer.Render(selections, "unknown", context);
+        }
+        var actions = Prefix switch { "Replacement" => new[] { "explore", "adapt" }, "Fresh" or "Extend" => new[] { "adapt", "explore" }, _ => new[] { "clarify", "prototype" } };
+        return PlanActionRenderer.Render([new(actions[0], new("goal", goal), "should", 2, []), new(actions[1], new("goal", goal), "could", 1, [])], "prepare", context);
     }
 }
