@@ -185,6 +185,79 @@ async function showDraft() {
   await screen.findByRole("heading", { name: "Review your preparation draft." });
   return screen.getByRole("complementary", { name: "Time and workload preview" });
 }
+const withdrawn = {
+  currentVersion: 1,
+  acknowledgedVersion: null,
+  acknowledgedAt: null,
+  required: true,
+};
+it("withdraws from an accepted workspace only after confirmed storage while preserving the plan", async () => {
+  const stored = { ...fixture.plan, context } as Plan;
+  const original = structuredClone(stored);
+  vi.mocked(accountApi.plans).mockResolvedValue([stored]);
+  let confirm!: () => void;
+  const withdraw = vi.spyOn(accountApi, "withdrawDisclosure").mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        confirm = () => {
+          vi.mocked(accountApi.disclosure).mockResolvedValue(withdrawn);
+          resolve(withdrawn);
+        };
+      }),
+  );
+  render(
+    <QueryClientProvider client={query}>
+      <AccountPreparation opportunityId="E01" />
+    </QueryClientProvider>,
+  );
+  await screen.findByRole("button", { name: "Review a new preparation draft" });
+  fireEvent.click(await screen.findByRole("button", { name: "Withdraw acknowledgment" }));
+  expect(screen.getByRole("button", { name: "Withdrawing…" })).toBeDisabled();
+  expect(screen.queryByText(/was withdrawn/)).toBeNull();
+  await act(async () => confirm());
+  expect(await screen.findByText(/was withdrawn/)).toBeVisible();
+  expect(screen.queryByRole("button", { name: "Withdraw acknowledgment" })).toBeNull();
+  expect(screen.getByRole("button", { name: "Review a new preparation draft" })).toBeVisible();
+  expect(withdraw).toHaveBeenCalledTimes(1);
+  expect(accountApi.generate).not.toHaveBeenCalled();
+  expect(stored).toEqual(original);
+});
+it("keeps a reviewed candidate visible when sharing is withdrawn without accepting or regenerating", async () => {
+  const accept = vi.spyOn(accountApi, "accept");
+  vi.spyOn(accountApi, "withdrawDisclosure").mockImplementation(async () => {
+    vi.mocked(accountApi.disclosure).mockResolvedValue(withdrawn);
+    return withdrawn;
+  });
+  await showDraft();
+  const calls = vi.mocked(accountApi.generate).mock.calls.length;
+  fireEvent.click(screen.getByRole("button", { name: "Withdraw acknowledgment" }));
+  expect(await screen.findByText(/was withdrawn/)).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Review your preparation draft." })).toBeVisible();
+  expect(screen.getByRole("button", { name: "Accept plan" })).toBeVisible();
+  expect(accountApi.generate).toHaveBeenCalledTimes(calls);
+  expect(accept).not.toHaveBeenCalled();
+});
+it("a failed withdrawal retains acknowledged status and supports a deliberate retry", async () => {
+  const withdraw = vi
+    .spyOn(accountApi, "withdrawDisclosure")
+    .mockRejectedValueOnce(new Error("Synthetic storage failure"))
+    .mockImplementationOnce(async () => {
+      vi.mocked(accountApi.disclosure).mockResolvedValue(withdrawn);
+      return withdrawn;
+    });
+  render(
+    <QueryClientProvider client={query}>
+      <AccountPreparation opportunityId="E01" />
+    </QueryClientProvider>,
+  );
+  fireEvent.click(await screen.findByRole("button", { name: "Withdraw acknowledgment" }));
+  expect(await screen.findByText("Your acknowledgment could not be withdrawn.")).toBeVisible();
+  expect(screen.queryByText(/was withdrawn/)).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Withdraw acknowledgment" }));
+  expect(await screen.findByText(/was withdrawn/)).toBeVisible();
+  expect(withdraw).toHaveBeenCalledTimes(2);
+  expect(screen.queryByText("Your acknowledgment could not be withdrawn.")).toBeNull();
+});
 it("avoids a duplicate event title and page heading in the embedded workspace", async () => {
   render(
     <QueryClientProvider client={query}>
