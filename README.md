@@ -26,7 +26,7 @@ In another terminal:
 
 ## Review status
 
-The current application branch has local build, frontend and MySQL checks, but the final P1/P2 privacy and structured-output integration is still under review in PRs #31/#32. Its frontend review follow-up is isolated in PR #33. Earlier live-provider evidence does not certify the final combined candidate. No browser demo profile or plan is silently imported on sign-in.
+This branch is the final release candidate for the hackathon submission. It composes, in order: P1 structured plan safety (PR #31), the corrected P2 privacy work (PR #32, including PR #33), the profile-evidence and submission-document work (PRs #29 and #30), the combined candidate (PR #34), and the independent-review corrections (PR #35). See docs/RELEASE-CANDIDATE.md for the composition, the verification record and the remaining gates. The MIT license at the repository root was agreed by both contributors. One live generation canary passed on an earlier commit of this line; the final candidate's live behavior is not separately certified, and no deployment is claimed. No browser demo profile or plan is silently imported on sign-in.
 
 For the demo, use [the walkthrough](docs/DEMO-RUNBOOK.md) and [release gates](docs/DEMO-RELEASE-GATES.json). Run `powershell -NoProfile -ExecutionPolicy Bypass -File backend/Check-Demo.ps1 -Mode Local` to check public UI/API availability. Submission mode intentionally refuses to report readiness while the final integration, authenticated submission requirements and live E2E remain unverified. Provider configuration alone is not a successful model call.
 
