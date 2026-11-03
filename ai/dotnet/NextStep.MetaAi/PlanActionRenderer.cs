@@ -65,7 +65,7 @@ public static class PlanActionRenderer
 
     public static PlanCandidateOutput Render(IReadOnlyList<PlanActionSelection> selections, string reason, PlanGenerationContext context)
     {
-        if (selections is null || selections.Count is 0 or > 6 || reason is not ("prepare" or "scope" or "unknown" or "capacity_path")) Invalid();
+        if (selections is null || selections.Count is 0 or > 6 || reason is not ("prepare" or "scope" or "unknown" or "capacity_path")) Invalid("render.selection_shape");
         GenerationPolicy.ValidateReviewedMetadata(context);
         var result = new List<CandidateTask>();
         var seen = new HashSet<(string, string?, string?)>();
@@ -75,20 +75,20 @@ public static class PlanActionRenderer
         var videoStages = new Dictionary<string, int>(StringComparer.Ordinal) { ["record_video"] = 0, ["verify_channel"] = 1, ["deliver"] = 2, ["confirm_receipt"] = 3 };
         foreach (var s in selections)
         {
-            if (s is null || !Templates.TryGetValue(s.Action, out var template) || s.Target is null || s.ResourceIds is null) { Invalid(); return null!; }
-            if (!seen.Add((s.Action, s.Target.GoalId, s.Target.RequirementId))) Invalid();
-            if (context.ExistingTasks.Any(t => t.Status is "done" or "in_progress" && t.ActionCode == s.Action && t.Target == s.Target)) Invalid();
+            if (s is null || !Templates.TryGetValue(s.Action, out var template) || s.Target is null || s.ResourceIds is null) { Invalid("render.unknown_action"); return null!; }
+            if (!seen.Add((s.Action, s.Target.GoalId, s.Target.RequirementId))) Invalid("render.duplicate_identity");
+            if (context.ExistingTasks.Any(t => t.Status is "done" or "in_progress" && t.ActionCode == s.Action && t.Target == s.Target)) Invalid("render.existing_conflict");
             var deliveryAction = s.Action is "prepare_artifact" or "record_video" or "verify_channel" or "deliver" or "confirm_receipt";
-            if (deliveryAction && (s.Target.Kind != "requirement" || !context.ReviewedRequirements.Any(r => r.Id == s.Target.RequirementId && r.Lane == "submission" && r.Applies == true))) Invalid();
-            if (s.Action == "record_video" && !context.ReviewedRequirements.Any(r => r.Id == s.Target.RequirementId && r.Deliverable is { Type: "video" } d && d.SourceRevision == context.SourceRevision && d.EvidenceIds.Count > 0 && d.RequiredActions.Contains("record", StringComparer.Ordinal))) Invalid();
+            if (deliveryAction && (s.Target.Kind != "requirement" || !context.ReviewedRequirements.Any(r => r.Id == s.Target.RequirementId && r.Lane == "submission" && r.Applies == true))) Invalid("render.delivery_target");
+            if (s.Action == "record_video" && !context.ReviewedRequirements.Any(r => r.Id == s.Target.RequirementId && r.Deliverable is { Type: "video" } d && d.SourceRevision == context.SourceRevision && d.EvidenceIds.Count > 0 && d.RequiredActions.Contains("record", StringComparer.Ordinal))) Invalid("render.record_video_metadata");
             if (s.Target.RequirementId is { } requirementId && videoStages.TryGetValue(s.Action, out var videoStage) && context.ReviewedRequirements.Any(r => r.Id == requirementId && r.Deliverable?.Type == "video")) {
-                if (lastVideoStage.TryGetValue(requirementId, out var previousVideo) && videoStage <= previousVideo) Invalid();
+                if (lastVideoStage.TryGetValue(requirementId, out var previousVideo) && videoStage <= previousVideo) Invalid("render.video_stage_order");
                 lastVideoStage[requirementId] = videoStage;
             }
-            if (s.Action == "prepare_requirement" && (s.Target.Kind != "requirement" || !context.ReviewedRequirements.Any(r => r.Id == s.Target.RequirementId && r.Lane == "preparation" && r.Applies == true))) Invalid();
-            if (!deliveryAction && s.Action != "prepare_requirement" && s.Target.Kind != "goal") Invalid();
+            if (s.Action == "prepare_requirement" && (s.Target.Kind != "requirement" || !context.ReviewedRequirements.Any(r => r.Id == s.Target.RequirementId && r.Lane == "preparation" && r.Applies == true))) Invalid("render.preparation_target");
+            if (!deliveryAction && s.Action != "prepare_requirement" && s.Target.Kind != "goal") Invalid("render.target_kind");
             if (stages.TryGetValue(s.Action, out var stage) && s.Target.GoalId is { } goal) {
-                if (lastStage.TryGetValue(goal, out var previous) && stage <= previous) Invalid();
+                if (lastStage.TryGetValue(goal, out var previous) && stage <= previous) Invalid("render.stage_order");
                 lastStage[goal] = stage;
             }
             result.Add(new($"Step {result.Count + 1}: {template.Title}", s.Target, s.Priority, template.Deliverable, template.Criteria, s.EstimatedHours, s.ResourceIds) { Action = s.Action });
@@ -114,5 +114,9 @@ public static class PlanActionRenderer
         return output;
     }
     [System.Diagnostics.CodeAnalysis.DoesNotReturn]
-    private static void Invalid() => throw new MetaAiException("invalid_model_output", "Invalid preparation action selection.");
+    private static void Invalid(string category)
+    {
+        AiRejectionDiagnostics.Record("render", category, null);
+        throw new MetaAiException("invalid_model_output", "Invalid preparation action selection.");
+    }
 }

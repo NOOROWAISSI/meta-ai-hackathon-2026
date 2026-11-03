@@ -66,7 +66,7 @@ public static class GenerationPolicy
 
     public static void ValidateCandidate(PlanCandidateOutput candidate, PlanGenerationContext input)
     {
-        if (candidate is null || candidate.Tasks is null || candidate.Tasks.Count > 6 || !Guidance(candidate.Explanation, 4000)) InvalidOutput();
+        if (candidate is null || candidate.Tasks is null || candidate.Tasks.Count > 6 || !Guidance(candidate.Explanation, 4000)) InvalidOutput("policy.candidate_shape");
         var goals = input.Goals.Select(g => g.Id).ToHashSet(StringComparer.Ordinal);
         var rules = input.ReviewedRequirements.ToDictionary(r => r.Id, StringComparer.Ordinal);
         // IDs alone convey no relevance. Only entries with reviewed metadata may be selected.
@@ -90,39 +90,51 @@ public static class GenerationPolicy
                 !double.IsFinite(task.EstimatedHours) || task.EstimatedHours <= 0 || task.EstimatedHours > 168 ||
                 task.ResourceIds is null || task.ResourceIds.Count > 10 ||
                 task.ResourceIds.Distinct(StringComparer.Ordinal).Count() != task.ResourceIds.Count ||
-                task.ResourceIds.Any(r => !Id(r) || !resources.Contains(r))) InvalidOutput();
+                task.ResourceIds.Any(r => !Id(r) || !resources.Contains(r))) InvalidOutput("policy.task_shape");
             var title = task.Title.Trim();
             if (task.Action is { } action)
             {
-                if (!identities.Add((action, task.Target.GoalId, task.Target.RequirementId))) InvalidOutput();
-                if (untrustedTitles.Contains(title)) InvalidOutput();
+                if (!identities.Add((action, task.Target.GoalId, task.Target.RequirementId))) InvalidOutput("policy.duplicate_identity");
+                if (untrustedTitles.Contains(title)) InvalidOutput("policy.duplicate_title");
                 trustedTitles.Add(title);
             }
             else
             {
-                if (untrustedTitles.Contains(title) || trustedTitles.Contains(title)) InvalidOutput();
+                if (untrustedTitles.Contains(title) || trustedTitles.Contains(title)) InvalidOutput("policy.duplicate_title");
                 untrustedTitles.Add(title);
             }
             foreach (var old in retained)
             {
                 if (task.Action is { } newAction && old.ActionCode is { } oldAction)
-                { if (oldAction == newAction && old.Target == task.Target) InvalidOutput(); }
-                else if (string.Equals(old.Title.Trim(), title, StringComparison.OrdinalIgnoreCase)) InvalidOutput();
+                { if (oldAction == newAction && old.Target == task.Target) InvalidOutput("policy.existing_conflict"); }
+                else if (string.Equals(old.Title.Trim(), title, StringComparison.OrdinalIgnoreCase)) InvalidOutput("policy.existing_conflict");
             }
             var target = task.Target;
-            var valid = target.Kind switch
+            string? targetError = null;
+            if (target.Kind == "goal")
             {
-                "goal" => target.RequirementId is null && target.GoalId is { } g && goals.Contains(g) && task.Priority != "must",
-                "requirement" => target.GoalId is null && target.RequirementId is { } r && rules.TryGetValue(r, out var rule) &&
-                    rule.Applies == true && (rule.Lane is "submission" or "preparation") && (task.Priority != "must" || rule.IsMandatory),
-                _ => false
-            };
-            if (!valid) InvalidOutput();
+                if (target.RequirementId is not null || target.GoalId is null) targetError = "policy.target_shape";
+                else if (!goals.Contains(target.GoalId)) targetError = "policy.unknown_goal";
+                else if (task.Priority == "must") targetError = "policy.must_on_goal";
+            }
+            else if (target.Kind == "requirement")
+            {
+                if (target.GoalId is not null || target.RequirementId is null) targetError = "policy.target_shape";
+                else if (!rules.TryGetValue(target.RequirementId, out var rule)) targetError = "policy.unknown_requirement";
+                else if (rule.Applies != true || rule.Lane is not ("submission" or "preparation")) targetError = "policy.target_shape";
+                else if (task.Priority == "must" && !rule.IsMandatory) targetError = "policy.must_on_nonmandatory";
+            }
+            else targetError = "policy.target_shape";
+            if (targetError is not null) InvalidOutput(targetError);
         }
         // No capacity cap: orchestration assesses new AND retained effort without shrinking estimates.
     }
     [System.Diagnostics.CodeAnalysis.DoesNotReturn]
     private static void InvalidInput() => throw new MetaAiException("invalid_input", "Invalid preparation context.");
     [System.Diagnostics.CodeAnalysis.DoesNotReturn]
-    private static void InvalidOutput() => throw new MetaAiException("invalid_model_output", "Invalid preparation candidate.");
+    private static void InvalidOutput(string category = "policy.unclassified")
+    {
+        AiRejectionDiagnostics.Record("policy", category, null);
+        throw new MetaAiException("invalid_model_output", "Invalid preparation candidate.");
+    }
 }

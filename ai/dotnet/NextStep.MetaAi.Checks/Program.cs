@@ -670,6 +670,91 @@ foreach (var metadata in new[] {
     });
 }
 
+// ---- Live-compatibility reproduction: real-provider-shaped envelopes and
+// typed rejection diagnostics. All payloads are synthetic fixtures.
+string Envelope(string content, string finish = "stop") =>
+    "{\"id\":\"chatcmpl-synthetic\",\"object\":\"chat.completion\",\"model\":\"muse-spark-1.3\",\"system_fingerprint\":\"fp_synthetic\",\"choices\":[{\"index\":0,\"finish_reason\":\"" + finish + "\",\"message\":{\"role\":\"assistant\",\"refusal\":null,\"content\":" + JsonSerializer.Serialize(content) + "}}],\"usage\":{\"prompt_tokens\":10,\"completion_tokens\":20,\"total_tokens\":30}}";
+void DiagReject(string name, string rawEnvelope, string category, PlanGenerationContext? context = null, MetaAiOptions? options = null)
+    => Test(name, async () => {
+        AiRejectionDiagnostics.Clear(); AiRejectionDiagnostics.Enabled = true;
+        try
+        {
+            using var h = new FakeHandler((_, _, _) => Task.FromResult(Raw(rawEnvelope)));
+            using var http = new HttpClient(h);
+            await Error("invalid_model_output", () => Client(http, options).GenerateCandidateAsync(context ?? Context()));
+            Assert(AiRejectionDiagnostics.Snapshot().Contains(category));
+        }
+        finally { AiRejectionDiagnostics.Enabled = false; AiRejectionDiagnostics.Clear(); }
+    });
+Test("real-provider-shaped envelope with refusal and usage passes", async () =>
+{
+    using var h = new FakeHandler((_, _, _) => Task.FromResult(Raw(Envelope(TaskJson()))));
+    using var http = new HttpClient(h);
+    var candidate = await Client(http).GenerateCandidateAsync(Context());
+    Assert(candidate.Tasks.Count == 1 && h.Count == 1);
+});
+DiagReject("finish reason length classified", Envelope(TaskJson(), finish: "length"), "envelope.finish_reason");
+DiagReject("extra selections root field classified", Envelope("{\"tasks\":[" + TaskObject() + "],\"reason\":\"prepare\",\"notes\":\"extra\"}"), "content.fields");
+DiagReject("extra task field classified", Envelope("{\"tasks\":[{\"action\":\"clarify\",\"target\":{\"kind\":\"goal\",\"goalId\":\"goal-demo\"},\"priority\":\"should\",\"estimatedHours\":2,\"resourceIds\":[],\"title\":\"Draft\"}],\"reason\":\"prepare\"}"), "content.task_fields");
+DiagReject("extra target field classified", Envelope("{\"tasks\":[{\"action\":\"clarify\",\"target\":{\"kind\":\"goal\",\"goalId\":\"goal-demo\",\"confidence\":0.9},\"priority\":\"should\",\"estimatedHours\":2,\"resourceIds\":[]}],\"reason\":\"prepare\"}"), "content.target_fields");
+DiagReject("duplicate content keys classified", Envelope("{\"tasks\":[" + TaskObject() + "],\"reason\":\"prepare\",\"reason\":\"prepare\"}"), "content.duplicate_keys");
+DiagReject("string estimated hours classified", Envelope("{\"tasks\":[{\"action\":\"clarify\",\"target\":{\"kind\":\"goal\",\"goalId\":\"goal-demo\"},\"priority\":\"should\",\"estimatedHours\":\"2\",\"resourceIds\":[]}],\"reason\":\"prepare\"}"), "content.estimated_hours");
+DiagReject("seven tasks classified", Envelope("{\"tasks\":[" + string.Join(",", Enumerable.Repeat(TaskObject(), 7)) + "],\"reason\":\"prepare\"}"), "content.task_count");
+DiagReject("unknown reason classified", Envelope(TaskJson(reason: "maybe")), "content.reason");
+DiagReject("prose content classified", Envelope("Here are your tasks."), "content.parse");
+DiagReject("duplicate action and target classified", Envelope("{\"tasks\":[" + TaskObject() + "," + TaskObject() + "],\"reason\":\"prepare\"}"), "render.duplicate_identity");
+DiagReject("stage order violation classified", Envelope("{\"tasks\":[" +
+    "{\"action\":\"build_component\",\"target\":{\"kind\":\"goal\",\"goalId\":\"goal-demo\"},\"priority\":\"should\",\"estimatedHours\":2,\"resourceIds\":[]}," +
+    "{\"action\":\"define_outcome\",\"target\":{\"kind\":\"goal\",\"goalId\":\"goal-demo\"},\"priority\":\"should\",\"estimatedHours\":1,\"resourceIds\":[]}],\"reason\":\"prepare\"}"), "render.stage_order");
+DiagReject("must on goal classified", Envelope(TaskJson(priority: "must")), "policy.must_on_goal");
+DiagReject("unknown action classified", Envelope(TaskJson(action: "summarize")), "render.unknown_action");
+DiagReject("delivery action on goal classified", Envelope(TaskJson(action: "deliver")), "render.delivery_target");
+DiagReject("record video without video deliverable classified", Envelope(TaskJson(target: new("requirement", RequirementId: "req"), action: "record_video", priority: "must")), "render.record_video_metadata",
+    context: Context() with { ReviewedRequirements = [new("req", "Submit the demo", "submission", true, true)] });
+DiagReject("prepare requirement on submission lane classified", Envelope(TaskJson(target: new("requirement", RequirementId: "req"), action: "prepare_requirement")), "render.preparation_target",
+    context: Context() with { ReviewedRequirements = [new("req", "Submit the demo", "submission", true, false)] });
+DiagReject("oversized response classified", Envelope(TaskJson() + new string(' ', 4096)), "response.oversized", options: Small());
+Test("diagnostics stay silent while disabled", async () =>
+{
+    AiRejectionDiagnostics.Clear(); AiRejectionDiagnostics.Enabled = false;
+    using var h = new FakeHandler((_, _, _) => Task.FromResult(Raw(Envelope(TaskJson(priority: "must")))));
+    using var http = new HttpClient(h);
+    await Error("invalid_model_output", () => Client(http).GenerateCandidateAsync(Context()));
+    Assert(AiRejectionDiagnostics.Snapshot().Count == 0);
+});
+Test("selection guide enumerates valid combinations", async () =>
+{
+    string? system = null;
+    using var h = new FakeHandler(async (_, request, ct) =>
+    {
+        var body = await request.Content!.ReadAsStringAsync(ct);
+        using var outer = JsonDocument.Parse(body);
+        system = outer.RootElement.GetProperty("messages")[0].GetProperty("content").GetString();
+        return Reply(TaskJson());
+    });
+    using var http = new HttpClient(h);
+    await Client(http).GenerateCandidateAsync(Context());
+    Assert(system is not null && system.Contains("Valid selections for this request") &&
+        system.Contains("Goal goal-demo") && system.Contains("never must"));
+});
+Test("selection guide includes mandatory video chain", async () =>
+{
+    string? system = null;
+    var context = Context() with { ReviewedRequirements = [new("req-vid", "Submit a video", "submission", true, true,
+        new ReviewedDeliverable("video", ["record", "deliver", "confirm_receipt"], "revision-1", ["ev"]))] };
+    using var h = new FakeHandler(async (_, request, ct) =>
+    {
+        var body = await request.Content!.ReadAsStringAsync(ct);
+        using var outer = JsonDocument.Parse(body);
+        system = outer.RootElement.GetProperty("messages")[0].GetProperty("content").GetString();
+        return Reply(TaskJson(target: new("requirement", RequirementId: "req-vid"), action: "record_video", priority: "must"));
+    });
+    using var http = new HttpClient(h);
+    var candidate = await Client(http).GenerateCandidateAsync(context);
+    Assert(candidate.Tasks.Count == 1);
+    Assert(system is not null && system.Contains("Requirement req-vid (submission, mandatory)") && system.Contains("record_video"));
+});
+
 var passed = 0; var failed = 0;
 foreach (var item in cases)
 {

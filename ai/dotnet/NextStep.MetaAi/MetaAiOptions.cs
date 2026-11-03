@@ -11,6 +11,10 @@ public sealed class MetaAiOptions
     public int MaxRetries { get; set; } = 1;
     public int MaxRetryDelaySeconds { get; set; } = 5;
     public int MaxResponseBytes { get; set; } = 131072;
+    // Content-free rejection diagnostics. Off by default and never enabled by
+    // shipped production configuration; see AiRejectionDiagnostics.
+    public bool DiagnosticsEnabled { get; set; } = false;
+    public string? DiagnosticsFile { get; set; } = null;
 }
 public sealed class MetaAiException : Exception
 {
