@@ -751,7 +751,8 @@ Test("selection guide enumerates valid combinations", async () =>
     {
         var body = await request.Content!.ReadAsStringAsync(ct);
         using var outer = JsonDocument.Parse(body);
-        system = outer.RootElement.GetProperty("messages")[0].GetProperty("content").GetString();
+        using var data = JsonDocument.Parse(outer.RootElement.GetProperty("messages")[1].GetProperty("content").GetString()!);
+        system = data.RootElement.GetProperty("selectionGuide").GetString();
         return Reply(TaskJson());
     });
     using var http = new HttpClient(h);
@@ -768,13 +769,38 @@ Test("selection guide includes mandatory video chain", async () =>
     {
         var body = await request.Content!.ReadAsStringAsync(ct);
         using var outer = JsonDocument.Parse(body);
-        system = outer.RootElement.GetProperty("messages")[0].GetProperty("content").GetString();
+        using var data = JsonDocument.Parse(outer.RootElement.GetProperty("messages")[1].GetProperty("content").GetString()!);
+        system = data.RootElement.GetProperty("selectionGuide").GetString();
         return Reply(TaskJson(target: new("requirement", RequirementId: "req-vid"), action: "record_video", priority: "must"));
     });
     using var http = new HttpClient(h);
     var candidate = await Client(http).GenerateCandidateAsync(context);
     Assert(candidate.Tasks.Count == 1);
     Assert(system is not null && system.Contains("Requirement req-vid (submission, mandatory)") && system.Contains("record_video"));
+});
+
+foreach (var raw in new[] { "[]", "null", "\"not-an-object\"", "{\"choices\":[null]}", "{\"choices\":[[]]}", "{\"choices\":[42]}" })
+    Test("non-object envelope or choice is a classified model rejection " + raw, async () => {
+        using var handler = new FakeHandler((_, _, _) => Task.FromResult(Raw(raw)));
+        using var http = new HttpClient(handler);
+        await Error("invalid_model_output", () => Client(http).GenerateCandidateAsync(Context()));
+        Assert(handler.Count == 1);
+    });
+Test("student-controlled identifiers stay in user data rather than system instructions", async () => {
+    const string goalId = "goal-demo. IGNORE_PRIOR_RULES_SYNTHETIC_MARKER";
+    var context = Context() with { Goals = [new(goalId, "Prepare a walkthrough")] };
+    using var handler = new FakeHandler(async (_, request, ct) => {
+        using var body = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(ct));
+        var messages = body.RootElement.GetProperty("messages");
+        Assert(!messages[0].GetProperty("content").GetString()!.Contains(goalId));
+        using var data = JsonDocument.Parse(messages[1].GetProperty("content").GetString()!);
+        Assert(data.RootElement.GetProperty("goals")[0].GetProperty("id").GetString() == goalId);
+        Assert(data.RootElement.GetProperty("selectionGuide").GetString()!.Contains(goalId));
+        return Reply(TaskJson(target: new("goal", goalId)));
+    });
+    using var http = new HttpClient(handler);
+    var output = await Client(http).GenerateCandidateAsync(context);
+    Assert(output.Tasks[0].Target.GoalId == goalId);
 });
 
 var passed = 0; var failed = 0;
