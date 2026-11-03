@@ -31,7 +31,21 @@ public sealed record ReviewedDeliverable(string Type, IReadOnlyList<string> Requ
     string SourceRevision, IReadOnlyList<string> EvidenceIds);
 public sealed record ExistingPlanTask(string Id, string Title, string Status, TaskTarget Target,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? ActionCode = null);
-public sealed record PlanningProfile(IReadOnlyList<string> AcceptedExperience,
+// One self-report entry with its provenance. Kinds are the ExperienceKinds
+// constants: briefing_note (application-generated context), experience
+// (student-reported project work), self_report (student free text), and
+// accepted_interpretation (a system-proposed reading the student accepted,
+// which is weaker evidence than a direct report and must stay distinguishable).
+public sealed record ExperienceEntry(string Kind, string Text);
+public static class ExperienceKinds
+{
+    public const string BriefingNote = "briefing_note";
+    public const string Experience = "experience";
+    public const string SelfReport = "self_report";
+    public const string AcceptedInterpretation = "accepted_interpretation";
+    public static bool Valid(string? kind) => kind is BriefingNote or Experience or SelfReport or AcceptedInterpretation;
+}
+public sealed record PlanningProfile(IReadOnlyList<ExperienceEntry> AcceptedExperience,
     IReadOnlyList<string> ReportedSkills, IReadOnlyList<string> Constraints);
 
 // Trusted server-side projection of a reviewed resource. No URL is sent to the model;
@@ -66,6 +80,7 @@ public static class ApiErrorMapping
     public static int StatusCode(AiApiError error) => error.Code switch
     {
         "invalid_input" => 400, "not_found" => 404, "version_conflict" => 409,
+        "disclosure_required" => 403,
         "rate_limited" => 429, "timeout" => 504,
         "provider_unavailable" or "invalid_model_output" => 503,
         _ => throw new ArgumentException("Unsupported API error code.", nameof(error))

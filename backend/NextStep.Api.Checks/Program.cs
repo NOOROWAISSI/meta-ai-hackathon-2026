@@ -29,6 +29,9 @@ async Task<(HttpClient Client, StudentProfile Profile, SubmissionState Submissio
     var (client, original) = await Session(host);
     var profile = original with { AvailableHoursPerWeek = Known(5), Goals = [new("goal-test", "Prepare a prototype walkthrough")], EntrantType = KnownText("individual"), Enrollment = KnownText("higher_education"), Background = "Synthetic check profile" };
     var saved = await client.PutAsJsonAsync("/api/profile", new ProfileUpdate(original.Version, profile), Wire.Json); saved.EnsureSuccessStatusCode();
+    // P2: Ready() is the generation-ready setup, so it acknowledges the
+    // data-sharing disclosure. DisclosureChecks covers the blocked paths.
+    (await client.PostAsync("/api/profile/disclosure/acknowledge", null)).EnsureSuccessStatusCode();
     profile = (await saved.Content.ReadFromJsonAsync<StudentProfile>(Wire.Json))!;
     var opportunity = (await client.GetFromJsonAsync<Opportunity>("/api/opportunities/E01", Wire.Json))!;
     var submission = (await client.GetFromJsonAsync<SubmissionState>("/api/submissions/E01", Wire.Json))!;
@@ -273,7 +276,7 @@ Test("missing submission items change submission assessment only", async () => {
     Assert(analysis.SubmissionSummary == "incomplete" && analysis.ParticipationSummary == "needs_verification");
 });
 Test("unsaving never deletes an accepted plan and hide remains independent", async () => {
-    var data = await Ready(); var (plan, _) = await Accepted(data.Client, data.Profile, data.Submission, data.Opportunity);
+    await using var host = new Factory(); var data = await Ready(host); var (plan, _) = await Accepted(data.Client, data.Profile, data.Submission, data.Opportunity);
     (await data.Client.PutAsJsonAsync("/api/preferences/E01", new OpportunityPreference("E01", false, true), Wire.Json)).EnsureSuccessStatusCode();
     var preference = (await data.Client.GetFromJsonAsync<OpportunityPreference[]>("/api/preferences", Wire.Json))!.Single();
     Assert(!preference.Saved && preference.NotInterested);
@@ -328,7 +331,7 @@ Test("email accounts persist, reject incorrect credentials, and revoke only the 
     Assert((await client.PostAsJsonAsync("/api/auth/register", new RegisterRequest(email, password), Wire.Json)).StatusCode == HttpStatusCode.BadRequest);
 });
 Test("Google stays explicitly unavailable without credentials; the real catalog keeps courses separate from hackathon rules", async () => {
-    var client = factory.CreateClient();
+    await using var host = new Factory(); var client = host.CreateClient();
     var config = (await client.GetFromJsonAsync<JsonObject>("/api/auth/config", Wire.Json))!;
     if (!config["googleEnabled"]!.GetValue<bool>()) Assert((await client.GetAsync("/api/auth/google")).StatusCode == HttpStatusCode.ServiceUnavailable);
     Assert(AuthEndpoints.SafeReturn("https://untrusted.invalid") == "/" && AuthEndpoints.SafeReturn("//untrusted.invalid") == "/");
@@ -607,6 +610,7 @@ Test("signed-in accounts cannot read coverage, accept candidates or update tasks
     async Task<(HttpClient Client, StudentProfile Profile)> Account() {
         var client = host.CreateClient(); client.DefaultRequestHeaders.Add("X-NextStep-Request", "1");
         (await client.PostAsJsonAsync("/api/auth/register", new RegisterRequest("coverage-" + Guid.NewGuid().ToString("N") + "@example.invalid", "Synthetic-Coverage-2026!", "Coverage isolation check"), Wire.Json)).EnsureSuccessStatusCode();
+        (await client.PostAsync("/api/profile/disclosure/acknowledge", null)).EnsureSuccessStatusCode();
         var original = (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!; owners.Add(original.Id["profile-".Length..]);
         var profile = original with { AvailableHoursPerWeek = Known(5), Goals = [new("goal-isolation", "Prepare the prototype")], EntrantType = KnownText("individual"), Enrollment = KnownText("higher_education") };
         var saved = await client.PutAsJsonAsync("/api/profile", new ProfileUpdate(profile.Version, profile), Wire.Json); saved.EnsureSuccessStatusCode();
@@ -819,6 +823,7 @@ Test("Meta selection self-report cannot bypass a published age blocker or satisf
 });
 CapacityAndNetworkChecks.Register(Test);
 RetainedDuplicateChecks.Register(Test);
+DisclosureChecks.Register(Test);
 Test("stale-profile progress preserves accepted context and never adopts new capacity silently", async () => {
     await using var host = new Factory();
     var data = await Ready(host); var (plan, _) = await Accepted(data.Client, data.Profile, data.Submission, data.Opportunity);

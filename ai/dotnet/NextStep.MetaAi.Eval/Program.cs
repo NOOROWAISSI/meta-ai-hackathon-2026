@@ -106,7 +106,7 @@ return results.All(r => r.Status == "ok") ? 0 : 1;
 
 static IReadOnlyList<EvaluationScenario> CreateScenarios(DateTimeOffset now)
 {
-    static PlanningProfile Profile(string[] experience, string[] skills, string[] constraints) => new(experience, skills, constraints);
+    static PlanningProfile Profile(string[] experience, string[] skills, string[] constraints) => new(experience.Select(e => new ExperienceEntry(ExperienceKinds.Experience, e)).ToArray(), skills, constraints);
     PlanGenerationContext Context(string id, string theme, PlanGoal goal, PlanningProfile profile,
         double? hours, DateTimeOffset? deadline, IReadOnlyList<ReviewedRequirement>? requirements = null,
         IReadOnlyList<string>? resources = null, IReadOnlyList<ExistingPlanTask>? existing = null) =>

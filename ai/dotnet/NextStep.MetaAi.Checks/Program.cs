@@ -335,7 +335,8 @@ Test("minimal self-report reaches prompt with correct labels", async () =>
         Assert(doc.RootElement.GetProperty("response_format").GetProperty("type").GetString() == "json_schema");
         using var context = JsonDocument.Parse(doc.RootElement.GetProperty("messages")[1].GetProperty("content").GetString()!);
         var report = context.RootElement.GetProperty("selfReport");
-        Assert(report.GetProperty("acceptedExperience")[0].GetString() == "Built a small API");
+        var entry = report.GetProperty("acceptedExperience")[0];
+        Assert(entry.GetProperty("kind").GetString() == "experience" && entry.GetProperty("text").GetString() == "Built a small API");
         Assert(report.GetProperty("reportedSkills")[0].GetString() == "C#");
         Assert(report.GetProperty("constraints")[0].GetString() == "Limited internet");
         Assert(context.RootElement.GetProperty("reviewedSubmissionDeadline").ValueKind == JsonValueKind.Null);
@@ -352,7 +353,7 @@ Sync("DI registration resolves without network", () =>
     var services = new ServiceCollection(); services.AddMetaAiClient(new ConfigurationBuilder().Build());
     using var provider = services.BuildServiceProvider(); Assert(provider.GetRequiredService<IMetaModelClient>() is MetaModelClient);
 });
-foreach (var pair in new[] { ("invalid_input",400), ("not_found",404), ("version_conflict",409), ("rate_limited",429), ("timeout",504), ("provider_unavailable",503), ("invalid_model_output",503) })
+foreach (var pair in new[] { ("invalid_input",400), ("disclosure_required",403), ("not_found",404), ("version_conflict",409), ("rate_limited",429), ("timeout",504), ("provider_unavailable",503), ("invalid_model_output",503) })
     Sync("ApiError wire shape and status " + pair.Item1, () => {
         var e = new MetaAiException(pair.Item1, "Safe message").Error;
         using var doc = JsonDocument.Parse(JsonSerializer.Serialize(e, ContractJson.CreateOptions()));
@@ -514,6 +515,7 @@ Test("quality instructions require full mandatory actions and honest infeasible 
 NextStep.MetaAi.Checks.QualityRegressionChecks.Register(Sync);
 NextStep.MetaAi.Checks.SubmissionCoverageChecks.Register(Sync);
 NextStep.MetaAi.Checks.DuplicateIdentityChecks.Register(Sync);
+NextStep.MetaAi.Checks.OutboundProjectionChecks.Register(Sync);
 
 // Structured response regression tests exercise the production decoder through an in-memory provider.
 var validSelection = "{\"tasks\":[{\"action\":\"clarify\",\"target\":{\"kind\":\"goal\",\"goalId\":\"goal-demo\"},\"priority\":\"should\",\"estimatedHours\":1,\"resourceIds\":[]}],\"reason\":\"unknown\"}";
@@ -670,7 +672,7 @@ Console.WriteLine($"RESULT passed={passed} failed={failed} total={cases.Count}")
 Environment.ExitCode = failed == 0 ? 0 : 1;
 
 static PlanGenerationContext Context() => new("demo", "Useful prototype", "revision-1", "revision-1",
-    [new("goal-demo", "Prepare a walkthrough")], [], [], 5, null, false, [], new(["Built a small API"], ["C#"], ["Limited internet"]));
+    [new("goal-demo", "Prepare a walkthrough")], [], [], 5, null, false, [], new([new ExperienceEntry(ExperienceKinds.Experience, "Built a small API")], ["C#"], ["Limited internet"]));
 static MetaAiOptions Settings() => new() { ApiKey = "fake-test-only", OverallTimeoutSeconds = 8, AttemptTimeoutSeconds = 3, MaxRetries = 1 };
 static MetaAiOptions Small() { var o = Settings(); o.MaxResponseBytes = 1024; return o; }
 static MetaModelClient Client(HttpClient http, MetaAiOptions? o = null) { http.Timeout = Timeout.InfiniteTimeSpan; return new(http, Options.Create(o ?? Settings())); }
