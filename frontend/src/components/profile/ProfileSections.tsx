@@ -236,7 +236,7 @@ export function ProfileSections({
           <TextField
             name="experience"
             label="Experience overview (optional)"
-            hint="Coursework, independent learning, team projects, or anything else you want to describe."
+            hint="Coursework, independent learning, team projects, or anything else you want to describe. This text is shared with Meta AI when you generate a draft, after you acknowledge the disclosure. Avoid names and contact details."
             multiline
             {...field}
           />
@@ -529,7 +529,7 @@ export function ProfileSections({
         <TextField
           name="constraints"
           label="Practical constraints (optional)"
-          hint="For example limited equipment, unreliable connectivity, travel, or accessibility needs."
+          hint="For example limited equipment, unreliable connectivity, travel, or accessibility needs. This text is shared with Meta AI when you generate a draft, after you acknowledge the disclosure. Avoid names and contact details."
           multiline
           {...field}
         />

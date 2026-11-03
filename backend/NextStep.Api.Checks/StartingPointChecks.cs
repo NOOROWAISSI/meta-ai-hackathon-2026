@@ -39,6 +39,7 @@ internal static class StartingPointChecks
         test("confirmed starting point persists idempotently without changing plans or submission evidence",async()=>{
             await using var host=new Factory();using var client=host.CreateClient();client.DefaultRequestHeaders.Add("X-NextStep-Request","1");
             (await client.PostAsJsonAsync("/api/auth/register",new RegisterRequest("starting-check-"+Guid.NewGuid().ToString("N")+"@example.invalid","Synthetic-Starting-Check-2026!","Temporary starting check"),Wire.Json)).EnsureSuccessStatusCode();
+            (await client.PostAsync("/api/profile/disclosure/acknowledge",null)).EnsureSuccessStatusCode();
             var profile=(await client.GetFromJsonAsync<StudentProfile>("/api/profile",Wire.Json))!;
             try{
                 var listing=(await client.GetFromJsonAsync<ListingSummary[]>("/api/listings",Wire.Json))!.Single(item=>item.Id=="meta-global-ai-2026");var record=host.Services.GetRequiredService<Catalog>().Get(listing.Id);
@@ -64,7 +65,7 @@ internal static class StartingPointChecks
                 var currentPlan=(await client.GetFromJsonAsync<Plan>("/api/plans/"+listing.Id,Wire.Json))!;
                 host.Model.Prefix="Extend";
                 var refreshed=await client.PostAsJsonAsync("/api/opportunities/"+listing.Id+"/plan-candidates",new AnalysisRequest(record.SourceRevision,saved,submission,currentPlan),Wire.Json);refreshed.EnsureSuccessStatusCode();
-                Check(host.Model.LastContext!.SelfReport.AcceptedExperience.Any(item=>item.Contains("built similar work independently")));
+                Check(host.Model.LastContext!.SelfReport.AcceptedExperience.Any(item=>item.Text.Contains("built similar work independently")));
                 Check(await client.GetStringAsync("/api/plans/"+listing.Id)==beforePlan);
                 var analysisBefore=Matching.Analyze(record,profile,submission,DateTimeOffset.UtcNow);var analysisAfter=Matching.Analyze(record,saved,submission,DateTimeOffset.UtcNow);
                 Check(analysisBefore.Matches.Select(item=>item.Status).SequenceEqual(analysisAfter.Matches.Select(item=>item.Status)));
