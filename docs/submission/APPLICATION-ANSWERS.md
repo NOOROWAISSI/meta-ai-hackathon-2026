@@ -46,5 +46,5 @@ Source coverage is incomplete and depends on accessible organizer/community page
 - Exact reviewed submission branch/tag/commit: pending final integration.
 - Three-minute demo video URL: pending recording/upload.
 - Public hosted application URL: not confirmed; do not submit localhost as a public URL.
-- Open-source license: MIT proposed to Rofi; approval and addition pending.
+- Open-source license: MIT, approved by both contributors and added to the feature branch; verify LICENSE is included in the final submitted revision. Third-party licenses and notices remain applicable.
 - Any form-specific track, required screenshots, additional answers, limits and team identifiers: confirm in the authenticated form.

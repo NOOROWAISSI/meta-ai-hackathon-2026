@@ -2,7 +2,7 @@
 
 The [official event page](https://cerebralvalley.ai/e/meta-ai-developer-hackathon) lists project submission on 4 November 2026 at 21:00 ET: 5 November at 02:00 UTC / 04:00 Asia/Hebron. The [official waiver](https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver), read in a public JavaScript browser, evaluates the working demo and demo-video quality. The organizer reminder supplied by Noor on 3 November specifies a **three-minute demo video** and a **mandatory open-source GitHub repository**. The signed-in submission form is still unavailable; a mandatory hosted application URL, allowed upload hosts and exact form fields remain unconfirmed.
 
-Use [the timed narration](submission/VIDEO-SCRIPT.md), [draft form answers](submission/APPLICATION-ANSWERS.md), and [final checklist](submission/FINAL-CHECKLIST.md). Repository visibility is public; the MIT license proposal awaits contributor agreement. Do not call licensing complete before the approved license is added.
+Use [the timed narration](submission/VIDEO-SCRIPT.md), [draft form answers](submission/APPLICATION-ANSWERS.md), and [final checklist](submission/FINAL-CHECKLIST.md). Repository visibility is public. Both contributors approved MIT and the feature branch includes [LICENSE](../LICENSE); verify that the final integration and submitted branch include it too. Third-party dependencies retain their own licenses and notices.
 
 ## Verify the machine before recording
 
