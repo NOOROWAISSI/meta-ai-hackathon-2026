@@ -40,6 +40,8 @@ Return to the opportunity, then My Plans.
 
 ## Recording notes
 
+- Real canary generation took about 77 seconds. Rehearse the wait separately. If the form permits edited footage, show the genuine Generate/consent action, visibly label any shortened wait (for example "Generation wait shortened; this run took 77 seconds"), then show the actual returned draft. Do not imply instant output. Alternatively, review a previously generated real candidate/plan and say that it was generated before recording. Obtain permission for any new live call; the previous eight-request budget is exhausted.
+- A provider timeout must remain a real timeout with preserved inputs and deliberate retry; do not substitute a synthetic candidate to hide it. The narration remains 356 spoken words and the exported video must fit three minutes.
 - Keep the total under three minutes; shorten the opening if generation is slow. Do not assume a particular permitted video host or editing policy until the submission form is checked.
 - Use readable 1280×720 or 1920×1080 capture, English UI for this narration, and a quiet screen without notifications, terminals, credentials or personal documents.
 - The six archive fixtures and synthetic browser host are test tools, not evidence of a live model call. If shown, label the footage explicitly.
