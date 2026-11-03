@@ -20,11 +20,14 @@ public sealed class OfficialPageReader : IOfficialPageReader, IDisposable
             if (robots.IsSuccessStatusCode) {
                 var rules = await ReadBody(robots.Content, 65536, ct);
                 if (!RobotsAllows(rules, address.PathAndQuery)) return new("robots_disallowed", null);
-            } else if (robots.StatusCode != HttpStatusCode.NotFound) return new("robots_unavailable", null);
+            } else if (robots.StatusCode != HttpStatusCode.NotFound && !IsMissingUniversityRobots(address, robots.StatusCode, robots.Headers.Location)) return new("robots_unavailable", null);
             using var response = await client.GetAsync(address, HttpCompletionOption.ResponseHeadersRead, ct);
             if (!response.IsSuccessStatusCode) return new("http_" + (int)response.StatusCode, null);
-            if (response.Content.Headers.ContentType?.MediaType is not ("text/html" or "application/xhtml+xml")) return new("unsupported_content", null);
-            return new("checked", await ReadBody(response.Content, 524288, ct));
+            var publicEventJson = address.Host == "ieeennu.com" && address.AbsolutePath == "/api/events/approved" && response.Content.Headers.ContentType?.MediaType == "application/json";
+            if (!publicEventJson && response.Content.Headers.ContentType?.MediaType is not ("text/html" or "application/xhtml+xml")) return new("unsupported_content", null);
+            // GDG embeds chapter/event data and its site configuration in the public HTML (about 730 KB).
+            var limit = address.Host == "gdg.community.dev" ? 1048576 : 524288;
+            return new("checked", await ReadBody(response.Content, limit, ct));
         } catch (OperationCanceledException) when (!ct.IsCancellationRequested) { return new("timeout", null); }
           catch (HttpRequestException) { return new("source_unavailable", null); }
           catch (InvalidDataException) { return new("page_too_large", null); }
@@ -36,6 +39,12 @@ public sealed class OfficialPageReader : IOfficialPageReader, IDisposable
         while ((read = await stream.ReadAsync(chunk, ct)) > 0) { if (buffer.Length + read > limit) throw new InvalidDataException(); buffer.Write(chunk, 0, read); }
         return Encoding.UTF8.GetString(buffer.ToArray());
     }
+    // This public ASP.NET site redirects its missing robots file to its explicit 404 handler.
+    // Login redirects, other hosts, and non-404 handlers remain unavailable.
+    public static bool IsMissingUniversityRobots(Uri address, HttpStatusCode status, Uri? location) =>
+        address.Host == "www.najah.ai" && status == HttpStatusCode.Found && location is not null &&
+        Uri.TryCreate(address, location, out var target) && target.Scheme == "https" && target.Host == address.Host && target.Port == 443 &&
+        target.AbsolutePath == "/Home/HandleError/404" && target.Query.Length == 0 && string.IsNullOrEmpty(target.UserInfo);
     public static bool RobotsAllows(string robots, string path)
     {
         var groups = new List<(List<string> Agents, List<(string Pattern, bool Allow)> Rules)>();

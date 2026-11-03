@@ -58,6 +58,7 @@ public sealed record TaskUpdate(int ExpectedVersion, string Status, string Opera
 // Application storage envelope, never a competing public contract or model DTO.
 public sealed record StoredCandidate(string Id, string OpportunityId, AssessmentContext Context, int? BaseVersion, PlanGoal[] Goals, PlanCandidateOutput Output, DateTimeOffset ExpiresAt);
 public sealed record Receipt(string Fingerprint, string OpportunityId);
+public sealed record PreparationSelection(string OpportunityId, string Title, string Organizer, string SelectedAt);
 public sealed class UserState
 {
     public int SchemaVersion { get; set; } = 1;
@@ -69,4 +70,5 @@ public sealed class UserState
     public Dictionary<string, StoredCandidate> Candidates { get; set; } = [];
     public Dictionary<string, Receipt> Receipts { get; set; } = [];
     public Dictionary<string, OpportunityPreference> Preferences { get; set; } = [];
+    public Dictionary<string, PreparationSelection> PreparationSelections { get; set; } = [];
 }
