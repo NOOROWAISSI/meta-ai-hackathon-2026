@@ -23,7 +23,7 @@ The exact authenticated form fields, permitted upload hosts and any public-deplo
 ## Repository and packaging
 
 - Repository visibility verified public on 3 November.
-- MIT proposed; obtain contributor agreement and add the approved license before claiming licensing complete.
+- MIT agreed by both contributors; the LICENSE file is added on the combined candidate branch and takes effect when that work is merged. Licensing is complete only after the merge.
 - Final README identifies what works, setup and limits; dependency/third-party notices preserved.
 - No private audit bundle, raw student data, local configuration or credentials in submission attachments.
 - Never reuse historical development credentials in a public deployment. Environment-based seed settings do not rotate existing account hashes.
