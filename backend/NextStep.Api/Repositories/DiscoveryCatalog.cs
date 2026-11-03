@@ -16,6 +16,8 @@ public sealed record ListingSummary(string Id, string Kind, string Title, string
     public string[] UniversityIds { get; init; } = [];
     public string? OrganizationId { get; init; }
     public string ExtractionMethod { get; init; } = "source_record";
+    public string DiscoveryState { get; init; } = "current";
+    public string? AvailabilityCheckedAt { get; init; }
 }
 public sealed record SourceRegistration(string Id, string Name, string Url, string Region, string Channel, string Collection, string? VerificationUrl, string Note) {
     public string? UniversityId { get; init; }

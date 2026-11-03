@@ -5,21 +5,28 @@ import { realCatalogService } from "@/lib/catalog/service";
 import { useLocale } from "@/components/LocaleProvider";
 import { isContractInstant } from "@/lib/contract/time";
 import { useVisitState } from "@/components/VisitMemory";
+import { campusState } from "@/lib/catalog/freshness";
 
 export function CampusPosts({
   university,
   query = "",
   kind = "all",
   scope = "all",
+  activityView,
+  onActivityViewChange,
 }: {
   university: string;
   query?: string;
   kind?: string;
   scope?: string;
+  activityView?: string;
+  onActivityViewChange?: (value: string) => void;
 }) {
   const { language, t } = useLocale();
   const [channel, setChannel] = useVisitState<string>("campus.posts.channel", "all");
-  const [view, setView] = useVisitState<string>("campus.posts.view", "all");
+  const [localView, setLocalView] = useVisitState<string>("campus.posts.view.v2", "current");
+  const view = activityView ?? localView;
+  const setView = onActivityViewChange ?? setLocalView;
   const [visible, setVisible] = useVisitState<number>("campus.posts.visible", 6);
   const posts = useQuery({
     queryKey: ["campus-posts"],
@@ -47,10 +54,7 @@ export function CampusPosts({
         (kind === "all" || p.kind === kind) &&
         `${p.title} ${p.summary}`.toLowerCase().includes(query.trim().toLowerCase()) &&
         (channel === "all" || p.channel === channel) &&
-        (view === "all" ||
-          (view === "archive"
-            ? p.availability === "ended" || p.postType === "recap"
-            : p.availability !== "ended" && p.postType !== "recap")),
+        (view === "all" || campusState(p) === (view === "archive" ? "archived" : view)),
     )
     .sort(
       (a, b) =>
@@ -118,7 +122,10 @@ export function CampusPosts({
             }}
           >
             <option value="all">{t("All posts", "كل المنشورات")}</option>
-            <option value="announcements">{t("Announcements to check", "إعلانات للمراجعة")}</option>
+            <option value="current">{t("Current & upcoming", "الحالية والقادمة")}</option>
+            <option value="needs_recheck">
+              {t("Availability unconfirmed", "التوفّر غير مؤكّد")}
+            </option>
             <option value="archive">
               {t("Past activities & reports", "فعاليات ماضية وتقارير")}
             </option>
@@ -163,11 +170,21 @@ export function CampusPosts({
                   : post.channel}
               </span>
               <span className="text-muted-foreground">
-                {post.availability === "ended"
-                  ? t("Past activity", "فعالية ماضية")
-                  : post.postType === "recap"
-                    ? t("Activity report", "تقرير نشاط")
-                    : t("Registration needs checking", "التسجيل يحتاج تحقق")}
+                {campusState(post) === "needs_recheck"
+                  ? t(
+                      "Availability unconfirmed · not a current opening",
+                      "التوفّر غير مؤكّد · مش فرصة حالية مؤكّدة",
+                    )
+                  : post.availability === "ended"
+                    ? t("Past activity", "فعالية ماضية")
+                    : post.postType === "recap"
+                      ? t("Activity report", "تقرير نشاط")
+                      : post.registrationState === "open"
+                        ? t("Enrollment link available on source", "رابط التحاق متاح عند الجهة")
+                        : t(
+                            "Upcoming activity · registration unconfirmed",
+                            "نشاط قادم · التسجيل غير مؤكّد",
+                          )}
               </span>
               {post.verificationLevel === "secondary_excerpt" && (
                 <span className="text-amber-700 dark:text-amber-300">
@@ -188,6 +205,11 @@ export function CampusPosts({
             <p className="mt-3 max-w-3xl whitespace-pre-line text-sm leading-7" dir="auto">
               {post.summary}
             </p>
+            {post.availabilityEvidence && (
+              <p className="mt-2 text-sm font-semibold" dir="auto">
+                {t("Source availability", "حالة التوفّر بالمصدر")}: {post.availabilityEvidence}
+              </p>
+            )}
             {post.eventDateText && (
               <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
                 <CalendarDays className="size-4 shrink-0" aria-hidden />

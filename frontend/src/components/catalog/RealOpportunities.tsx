@@ -23,6 +23,7 @@ import { formatContractInstant } from "@/lib/contract/time";
 import { SourceFreshness } from "./SourceFreshness";
 import { PalestineNetwork } from "./PalestineNetwork";
 import { CampusPosts } from "./CampusPosts";
+import { campusState, listingState } from "@/lib/catalog/freshness";
 import { isCatalogTranslationEnabled, translateCatalog } from "@/lib/catalog/translation";
 import {
   PreferenceActions,
@@ -44,6 +45,7 @@ export function RealOpportunities() {
   const [kind, setKind] = useVisitState<string>("real.kind", "all");
   const [scope, setScope] = useVisitState("real.scope", "all");
   const [university, setUniversity] = useVisitState("real.university", "all");
+  const [activityView, setActivityView] = useVisitState("real.activity.v2", "current");
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const catalog = useQuery({
     queryKey: ["real-listings"],
@@ -88,6 +90,8 @@ export function RealOpportunities() {
   const rows = displayRows.filter(
     (item) =>
       !preferences.data?.some((p) => p.opportunityId === item.id && p.notInterested) &&
+      (activityView === "all" ||
+        listingState(item) === (activityView === "archive" ? "archived" : activityView)) &&
       (kind === "all" || item.kind === kind) &&
       (scope === "all" || item.scope === scope) &&
       (university === "all" ||
@@ -99,6 +103,8 @@ export function RealOpportunities() {
   );
   const campusMatches = (campus.data ?? []).filter(
     (post) =>
+      (activityView === "all" ||
+        campusState(post) === (activityView === "archive" ? "archived" : activityView)) &&
       (university === "all" || post.universityIds.includes(university)) &&
       scope !== "global_online" &&
       (kind === "all" || post.kind === kind) &&
@@ -236,6 +242,22 @@ export function RealOpportunities() {
             </p>
           )}
         <div className="glass rounded-3xl p-5">
+          <label htmlFor="real-activity" className="mb-2 block text-sm font-semibold">
+            {t("Opportunity timing", "حالة الفرصة")}
+          </label>
+          <select
+            id="real-activity"
+            className="prep-input mb-4 w-full sm:w-auto"
+            value={activityView}
+            onChange={(event) => setActivityView(event.target.value)}
+          >
+            <option value="current">{t("Current & upcoming", "الحالية والقادمة")}</option>
+            <option value="needs_recheck">
+              {t("Availability unconfirmed", "التوفّر غير مؤكّد")}
+            </option>
+            <option value="archive">{t("Past & closed", "المنتهية والمغلقة")}</option>
+            <option value="all">{t("All, including archive", "الكل، مع الأرشيف")}</option>
+          </select>
           <div className="grid gap-4 sm:grid-cols-[1fr_230px]">
             <div>
               <label htmlFor="real-search" className="mb-2 block text-sm font-semibold">
@@ -392,6 +414,7 @@ export function RealOpportunities() {
                       setScope("all");
                       setUniversity("all");
                       setQuery("");
+                      setActivityView("current");
                     }}
                   >
                     {t("Clear filters", "مسح الفلاتر")}
@@ -543,7 +566,14 @@ export function RealOpportunities() {
             </>
           )
         )}
-        <CampusPosts university={university} query={query} kind={kind} scope={scope} />
+        <CampusPosts
+          university={university}
+          query={query}
+          kind={kind}
+          scope={scope}
+          activityView={activityView}
+          onActivityViewChange={setActivityView}
+        />
         <details
           className="glass rounded-3xl p-5"
           onToggle={(event) => setSourcesOpen(event.currentTarget.open)}

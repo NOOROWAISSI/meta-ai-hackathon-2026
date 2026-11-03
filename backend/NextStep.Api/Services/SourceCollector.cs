@@ -49,10 +49,10 @@ public sealed class SourceCollector(DiscoveryCatalog catalog, MySqlStateStore st
     private async Task Capture(SourceRegistration source, Uri page, SourcePage result, CancellationToken ct)
     {
         ListingSummary[] listings = [];
-        if (result.Html is not null) await activityFeed.Store(source, GdgCampusReader.Read(result.Html, page, source), ct);
+        if (result.Html is not null) await activityFeed.Store(source, GdgCampusReader.Read(result.Html, page, source).Concat(IeeeNajahReader.Read(result.Html, page, source)).ToArray(), ct);
         if (result.Html is not null) try {
-                listings = StructuredOpportunityReader.Read(result.Html, page, source).Concat(GoogleCourseCatalogReader.Read(result.Html, page, source)).DistinctBy(item => item.OfficialUrl).ToArray();
-                if (listings.Length == 0 && page.AbsoluteUri != new Uri(source.Url).AbsoluteUri) listings = await announcements.Read(source, page, result.Html, ct);
+                listings = StructuredOpportunityReader.Read(result.Html, page, source).Concat(GoogleCourseCatalogReader.Read(result.Html, page, source)).Concat(NajahCourseReader.Read(result.Html, page, source)).DistinctBy(item => item.OfficialUrl).ToArray();
+                if (listings.Length == 0 && source.Id is not ("najah-academy-live" or "ieee-najah-public-events") && page.AbsoluteUri != new Uri(source.Url).AbsoluteUri) listings = await announcements.Read(source, page, result.Html, ct);
                 listings = listings.Select(item => item with { UniversityId = source.UniversityId }).ToArray();
             }
             catch (RegexMatchTimeoutException) { result = new("parse_limit", null); }
@@ -68,7 +68,7 @@ public sealed class SourceCollector(DiscoveryCatalog catalog, MySqlStateStore st
     }
     public static List<(string Url, string Title)> CandidateLinks(string html, Uri address)
     {
-        var links = new List<(string Url, string Title)>();
+        var links = NajahCourseReader.Links(html, address);
         try {
             foreach (Match match in Links.Matches(html)) {
                 var label = WebUtility.HtmlDecode(Tags.Replace(match.Groups["text"].Value, " ")).Trim();

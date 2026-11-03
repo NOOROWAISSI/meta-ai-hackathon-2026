@@ -8,6 +8,10 @@ public sealed record CampusActivity(string Id, string[] UniversityIds, string[] 
     public string? FirstSeenAt { get; init; }
     public string PostType { get; init; } = "announcement";
     public string? OrganizerName { get; init; }
+    public string RegistrationState { get; init; } = "not_specified";
+    public string? AvailabilityCheckedAt { get; init; }
+    public string? AvailabilityEvidence { get; init; }
+    public string DiscoveryState { get; init; } = "needs_recheck";
 }
 public sealed class CampusActivityFeed(MySqlStateStore store, PalestineNetwork network) {
     public async Task<CampusActivity[]> Read(CancellationToken ct) {
@@ -16,7 +20,7 @@ public sealed class CampusActivityFeed(MySqlStateStore store, PalestineNetwork n
         await using var rows = await query.ExecuteReaderAsync(ct);
         while (await rows.ReadAsync(ct)) { var item = JsonSerializer.Deserialize<CampusActivity>(rows.GetString(0), Wire.Json)!; records[item.Id] = item with { FirstSeenAt = DateTime.SpecifyKind(rows.GetDateTime(1), DateTimeKind.Utc).ToString("O") }; }
         return records.Values.GroupBy(p => p.Channel == "official_website" && new Uri(p.OriginalUrl).AbsolutePath.StartsWith("/events/details/", StringComparison.Ordinal) ? p.OriginalUrl.TrimEnd('/') : p.Id, StringComparer.Ordinal)
-            .Select(group => group.OrderByDescending(p => p.CollectedAt, StringComparer.Ordinal).First()).OrderByDescending(p => p.CollectedAt, StringComparer.Ordinal).ThenBy(p => p.Id, StringComparer.Ordinal).ToArray();
+            .Select(group => group.OrderByDescending(p => p.CollectedAt, StringComparer.Ordinal).First()).Select(p => p with { DiscoveryState = CampusFreshness.Classify(p, DateTimeOffset.UtcNow) }).OrderByDescending(p => p.CollectedAt, StringComparer.Ordinal).ThenBy(p => p.Id, StringComparer.Ordinal).ToArray();
     }
     internal async Task Store(SourceRegistration source, CampusActivity[] activities, CancellationToken ct) {
         if (activities.Length == 0) return;
@@ -32,5 +36,5 @@ public sealed class CampusActivityFeed(MySqlStateStore store, PalestineNetwork n
     }
     public async Task<ListingSummary[]> Opportunities(CancellationToken ct) => (await Read(ct)).Where(p => p.PostType == "announcement" && p.Availability != "ended" && (p.Kind is "hackathon" or "training" or "course" or "competition" or "workshop") && p.VerificationLevel == "primary_source")
         .Select(p => new ListingSummary(p.Id, p.Kind, p.Title, p.OrganizerName ?? string.Join(" × ", network.Read().Organizations.Where(o => p.OrganizationIds.Contains(o.Id)).Select(o => o.Name)), "unknown", p.OriginalUrl, p.Summary, p.Title.Contains(" AI", StringComparison.Ordinal) ? ["AI"] : [], "palestine", null, "not_specified", "unknown", null, "needs_verification", p.SourcePassage,
-            "Public organization announcement. Event timing, entry conditions, fees and submission requirements must be checked separately. No registration deadline inferred.") { UniversityId = p.UniversityIds.FirstOrDefault(), UniversityIds = p.UniversityIds.ToArray(), OrganizationId = p.OrganizationIds.FirstOrDefault(), SourcePageUrl = p.ContentUrl, FirstSeenAt = p.FirstSeenAt ?? p.CollectedAt, ExtractionMethod = "organization_post" }).ToArray();
+            "Public organization announcement. Event timing, entry conditions, fees and submission requirements must be checked separately. No registration deadline inferred.") { UniversityId = p.UniversityIds.FirstOrDefault(), UniversityIds = p.UniversityIds.ToArray(), OrganizationId = p.OrganizationIds.FirstOrDefault(), SourcePageUrl = p.ContentUrl, FirstSeenAt = p.FirstSeenAt ?? p.CollectedAt, ExtractionMethod = "organization_post", DiscoveryState = p.DiscoveryState }).ToArray();
 }

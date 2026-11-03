@@ -19,6 +19,20 @@ Public Facebook/Instagram collection remains access-dependent. Existing secondar
 
 ## Verification
 
+## Follow-up: actual enrollment and source freshness
+
+The earlier April Python invitation was traced to its actual [course detail page](https://www.najah.ai/Courses/Details/3281), which explicitly displays `The Course is Completed`. It is now closed/ended and omitted from current discovery, while its history remains in the archive.
+
+Discovery now defaults to current/upcoming items. Separate views expose unconfirmed availability and archived/closed activities. An old or undated announcement is not made current by a new collection timestamp. Published future activity dates describe timing only; registration and participation remain separately checked. A native course enrollment observation expires after seven days or a failed source check.
+
+The registered [Najah Academy live catalog](https://www.najah.ai/Courses) uses `onclick` session links instead of normal anchors. A bounded native adapter follows those public course links, preserves their teacher/session identifiers, and checks the actual enrollment-control region. `Enroll now` and `The Course is Completed` are distinguished from navigation login links and hidden registration/completion modals. Current verified sessions at this check include AI foundations, digital skills, and AI-assisted digital marketing. No publication/start date or deadline is inferred from a catalog card.
+
+The branch's [IEEE activities page](https://ieeennu.com/activities) publicly calls `/api/events/approved`. Its native reader supports the public event envelope, collects only activity fields, and never interprets moderation `APPROVED` as student approval. Forty-eight real records were read in the local collection run; past or undated unconfirmed records remain outside current openings. The university-referenced [EWB activity site](https://ewbpal.com/activities/) is also registered. Restricted Facebook/Instagram retrieval is still not treated as evidence of no activity; authenticated/private social content is not fetched.
+
+These adapters use public sources with no model calls. For Najah's robots file, only its observed same-origin redirect to the explicit `/Home/HandleError/404` handler is treated as a missing robots file; other redirects and restrictions remain unavailable.
+
+Follow-up validation: 127/127 backend/MySQL checks, 180/180 frontend checks, TypeScript, changed-file lint, canonical contract validation and production build passed. An isolated browser verified Najah's current course sessions, the completed April course only in the archive, a separate unconfirmed view, mobile sizing and zero model calls. Live public-source collection was checked through the application repository; no student accounts or plans were changed.
+
 - Backend/MySQL checks: 124/124.
 - Frontend suite: 180/180 across 36 files, including cross-university attribution and false-empty-state regression checks.
 - Changed-file lint, TypeScript, canonical contract fixture validation and production build passed.

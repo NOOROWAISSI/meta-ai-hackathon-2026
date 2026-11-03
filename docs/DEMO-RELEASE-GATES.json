@@ -1,0 +1,10 @@
+{
+  "reviewedApplicationCommit": "9a8c6331f1c9952d60e1415898f98c7d12f381d6",
+  "gates": [
+    { "id": "official_submission_requirements", "status": "partially_verified", "evidence": "Official page/waiver checked: general project deadline 4 November 2026 at 21:00 ET (5 November 02:00 UTC / 04:00 Asia/Hebron); judging includes working demo and video quality. Authenticated submission fields, video length, hosted URL and repository requirements remain unconfirmed." },
+    { "id": "p1_p2_integration", "status": "pending_review", "evidence": "PRs #31 and #32 remain draft. Privacy follow-up and combined schema/state review must be completed before integration." },
+    { "id": "combined_regression_and_rollback", "status": "not_independently_verified", "evidence": "Verify the combined candidate against the exact latest #29/#30 inputs, required tables/indexes/foreign keys and upgrade/rollback paths on disposable databases." },
+    { "id": "browser_to_live_meta", "status": "not_verified_on_final_candidate", "evidence": "After integration, run the agreed controlled synthetic generation, acceptance, MySQL progress and browser-reload journey with Rofi. Configuration presence is not a live-provider pass." },
+    { "id": "submission_artifacts", "status": "not_finalized", "evidence": "Prepare the video and/or hosted URL after the official requirements are confirmed. Do not expose the development database or shared demo password publicly." }
+  ]
+}
