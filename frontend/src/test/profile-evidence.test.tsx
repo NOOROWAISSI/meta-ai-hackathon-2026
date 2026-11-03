@@ -22,8 +22,12 @@ vi.mock("@/lib/profile/evidence", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/profile/evidence")>()),
   evidenceService: service,
 }));
+const locale = vi.hoisted(() => ({ language: "en" }));
 vi.mock("@/components/LocaleProvider", () => ({
-  useLocale: () => ({ language: "en", t: (en: string) => en }),
+  useLocale: () => ({
+    language: locale.language,
+    t: (en: string, ar: string) => (locale.language === "ar" ? ar : en),
+  }),
 }));
 vi.mock("@/components/auth/AuthProvider", () => ({
   useAuth: () => ({ user: { id: "student-a" } }),
@@ -96,6 +100,7 @@ const insight: InsightView = {
 };
 beforeEach(() => {
   vi.clearAllMocks();
+  locale.language = "en";
   service.read.mockResolvedValue(structuredClone(initial));
   service.savedComparison.mockResolvedValue(null);
   // Combined integration: extraction sits behind the per-document opt-in.
@@ -120,6 +125,32 @@ beforeEach(() => {
   });
 });
 afterEach(cleanup);
+
+it.each(["en", "ar"])(
+  "discloses embedded links and personal information before comparison in %s",
+  async (language) => {
+    locale.language = language;
+    render(<EvidenceOpportunityInsight opportunityId="selected-event" />);
+    const consent = await screen.findByRole("checkbox");
+    expect(consent).not.toBeChecked();
+    expect(service.compare).not.toHaveBeenCalled();
+    const label = consent.closest("label");
+    expect(label).toHaveTextContent(
+      language === "en" ? "Dedicated source-link fields" : "حقول روابط المصادر المنفصلة",
+    );
+    expect(label).toHaveTextContent(
+      language === "en"
+        ? "may still contain links or personal information"
+        : "ممكن يضل فيها روابط أو معلومات شخصية",
+    );
+    expect(label).toHaveTextContent(
+      language === "en" ? "review them before agreeing" : "راجعها قبل ما توافق",
+    );
+    expect(label).not.toHaveTextContent(
+      "Links, source files and internal review notes are not sent.",
+    );
+  },
+);
 
 const recommended = {
   ...insight,
@@ -407,9 +438,7 @@ it("explains concrete transfers, gaps, citations and preparation rather than mat
   // Finding 2: the comparison consent explains that it is governed by its
   // own consent, independent of the extraction opt-in state, and that
   // confirmed facts may include quotations from imported documents.
-  expect(
-    screen.getByText(/governed by this consent alone/),
-  ).toBeInTheDocument();
+  expect(screen.getByText(/governed by this consent alone/)).toBeInTheDocument();
   expect(
     screen.getByText(/even if I have withdrawn a document's extraction permission/),
   ).toBeInTheDocument();

@@ -72,6 +72,19 @@ public static class ProfileEvidenceChecks {
         result.EnsureSuccessStatusCode(); return (await result.Content.ReadFromJsonAsync<EvidenceView>(Wire.Json))!;
     }
     public static void Register(Action<string, Func<Task>> test) {
+        test("comparison discloses embedded URLs without pretending structured URL omission redacts shared text", () => Run(async (host, client, view) => {
+            const string embedded = "https://example.invalid/student-project";
+            var original = (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!;
+            (await client.PutAsJsonAsync("/api/profile", new ProfileUpdate(original.Version, original with { Background = "I personally built a scheduling project. Project notes: " + embedded }), Wire.Json)).EnsureSuccessStatusCode();
+            view = (await client.GetFromJsonAsync<EvidenceView>("/api/profile/evidence", Wire.Json))!;
+            var calls = host.Evidence.Calls;
+            var refused = await client.PostAsJsonAsync("/api/listings/meta-global-ai-2026/evidence-comparison", new InsightRequest(view.ProfileVersion, view.Workspace.Version, false, "en"), Wire.Json);
+            Check(!refused.IsSuccessStatusCode && host.Evidence.Calls == calls);
+            (await client.PostAsJsonAsync("/api/listings/meta-global-ai-2026/evidence-comparison", new InsightRequest(view.ProfileVersion, view.Workspace.Version, true, "en"), Wire.Json)).EnsureSuccessStatusCode();
+            var context = host.Evidence.LastContext!;
+            Check(context["confirmed"]!.ToJsonString().Contains(embedded));
+            Check(context["listing"]?["url"] is null && context["opportunity"]?["officialUrl"] is null);
+        }));
         test("prior knowledge correction is scoped, confirmed, retryable and does not assert mastery", () => Run(async (host, client, view) => {
             const string eventId = "harvard-cs50-python";
             var generated = await client.PostAsJsonAsync($"/api/listings/{eventId}/evidence-comparison", new InsightRequest(view.ProfileVersion, view.Workspace.Version, true, "en"), Wire.Json); generated.EnsureSuccessStatusCode();
