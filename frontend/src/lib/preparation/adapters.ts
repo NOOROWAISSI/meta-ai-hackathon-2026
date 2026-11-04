@@ -29,8 +29,18 @@ export function toStudentProfile(editor: UserProfile): StudentProfile {
   return {
     id: "student-local",
     version: editor.version ?? 0,
-    reportedAge: unknown(),
-    majority: { reached: unknown() },
+    reportedAge: fact(editor.reportedAge ?? undefined, at),
+    majority: {
+      reached: fact(
+        editor.majorityReached === "yes"
+          ? true
+          : editor.majorityReached === "no"
+            ? false
+            : undefined,
+        at,
+      ),
+      ...(editor.majorityJurisdiction ? { jurisdiction: editor.majorityJurisdiction } : {}),
+    },
     enrollment: fact(editor.educationStatus === "university" ? "higher_education" : undefined, at),
     residence: {
       country: fact(

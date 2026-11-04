@@ -2,6 +2,7 @@ import { z } from "zod";
 import { isContractInstant } from "../contract/time";
 import type { StudentProfile, Recommendation } from "@/lib/contract/types";
 import type { ListingSummary } from "./service";
+import { apiJson, accountDataChanged } from "@/lib/account/api";
 
 export type AccountProfileFacts = Pick<
   StudentProfile,
@@ -73,6 +74,33 @@ export interface MetaBriefing {
   personalRelevance: string;
   preparationPriorities: string[];
   questionsToClarify: string[];
+  sources?: Array<{ label: string; url: string }> | undefined;
+  generatedAt?: string | undefined;
+  startingPoint?: BriefingStartingPoint | null | undefined;
+}
+export interface BriefingStartingPoint {
+  questionId: string;
+  challenge: string;
+  question: string;
+  answer: "not_yet" | "guided" | "independent" | "not_sure" | null;
+  label: string;
+  explanation: string;
+  nextAction: string;
+  options: Array<{ value: "not_yet" | "guided" | "independent" | "not_sure"; label: string }>;
+  evidence: Array<{ kind: string; label: string; text: string }>;
+}
+export async function saveBriefingStartingPoint(
+  context: BriefingContext,
+  questionId: string,
+  answer: string,
+) {
+  const profile = await apiJson<StudentProfile>(
+    `/listings/${encodeURIComponent(context.opportunityId)}/starting-point`,
+    "PUT",
+    { context, questionId, answer },
+  );
+  accountDataChanged();
+  return profile;
 }
 export interface MetaBriefingService {
   available: boolean;
@@ -81,24 +109,30 @@ export interface MetaBriefingService {
     signal: AbortSignal,
   ): Promise<MetaBriefing>;
 }
-// No guessed endpoint, browser Meta call, or template labelled as live AI.
+// Authenticated application endpoint; provider requests/credentials remain server-side.
 export const metaBriefingService: MetaBriefingService = {
-  available: false,
-  async explain() {
-    throw new Error("The Meta briefing adapter is awaiting backend integration.");
+  available: true,
+  async explain(input, signal) {
+    return apiJson<MetaBriefing>(
+      `/listings/${encodeURIComponent(input.context.opportunityId)}/briefing`,
+      "POST",
+      { context: input.context },
+      signal,
+    );
   },
 };
 export function briefingContext(
   item: ListingSummary,
   profile: AccountProfileFacts,
   language: "ar" | "en",
+  planningSourceRevision: string | null = null,
 ): BriefingContext {
   return {
     opportunityId: item.id,
     profileId: profile.id,
     profileVersion: profile.version,
     language,
-    sourceRevision: JSON.stringify(item),
+    sourceRevision: JSON.stringify({ listing: item, planningSourceRevision }),
   };
 }
 export function validateBriefing(input: unknown, expected: BriefingContext): MetaBriefing {
@@ -118,6 +152,32 @@ export function validateBriefing(input: unknown, expected: BriefingContext): Met
       personalRelevance: text,
       preparationPriorities: z.array(text).max(20),
       questionsToClarify: z.array(text).max(20),
+      sources: z
+        .array(z.object({ label: z.string(), url: z.string().url() }))
+        .max(30)
+        .optional(),
+      generatedAt: z.string().refine(isContractInstant).optional(),
+      startingPoint: z
+        .object({
+          questionId: z.string(),
+          challenge: text,
+          question: text,
+          answer: z.enum(["not_yet", "guided", "independent", "not_sure"]).nullable(),
+          label: text,
+          explanation: text,
+          nextAction: text,
+          options: z
+            .array(
+              z.object({
+                value: z.enum(["not_yet", "guided", "independent", "not_sure"]),
+                label: text,
+              }),
+            )
+            .max(4),
+          evidence: z.array(z.object({ kind: z.string(), label: text, text })).max(20),
+        })
+        .nullable()
+        .optional(),
     })
     .strict()
     .parse(input);

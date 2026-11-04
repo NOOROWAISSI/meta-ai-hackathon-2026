@@ -12,7 +12,15 @@ public sealed record SeedResult(int Created, int Skipped);
 /// <summary>Explicit development-only seed. Never resets passwords or overwrites existing students.</summary>
 public sealed class DemoStudentSeed(MySqlStateStore store, IWebHostEnvironment environment)
 {
-    public const string Password = "NextStep-Demo-2026!";
+    // Development-only safeguard (combined hardening): the shared demo
+    // password is never a source literal. It comes from the
+    // NEXTSTEP_DEMO_SEED_PASSWORD environment variable, set only on the
+    // developer's machine or in the test harness. Seeding and demo sign-in
+    // fail closed when it is unset, and Run() additionally refuses outside
+    // Development/Testing. Rotate by changing the variable and reseeding a
+    // fresh database; existing seeded accounts keep the old hash.
+    public static string Password => Environment.GetEnvironmentVariable("NEXTSTEP_DEMO_SEED_PASSWORD")
+        ?? throw new ApiFault("invalid_input", "Set NEXTSTEP_DEMO_SEED_PASSWORD to seed or use demo accounts. Demo seeding is development-only.");
     public static readonly DemoStudent[] Students = [
         new("noor.student@example.invalid", "نور أحمد", "ملف طالب تجريبي: هندسة حاسوب، مهتمة بتطوير الويب والذكاء الاصطناعي.", ["AI", "Web development"], ["React", "TypeScript"], 6),
         new("omar.student@example.invalid", "عمر خالد", "ملف طالب تجريبي: علوم حاسوب، مهتم بالأمن السيبراني؛ لا وقت للتحضير حاليًا.", ["Cybersecurity", "Data"], ["Python"], 0),

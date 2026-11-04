@@ -1,0 +1,35 @@
+{
+    "reviewedApplicationCommit":  "e0dfcbc26aa4fa7cdf10a3b3491d05c64877c50b",
+    "gates":  [
+                  {
+                      "id":  "official_submission_requirements",
+                      "status":  "partially_verified",
+                      "evidence":  "Official deadline: 4 November 2026 at 21:00 ET (5 November 02:00 UTC / 04:00 Asia/Hebron). Organizer reminder supplied on 3 November specifies a three-minute demo and mandatory open-source GitHub repository. Authenticated form fields, upload hosts and a hosted application URL requirement remain unconfirmed."
+                  },
+                  {
+                      "id":  "p1_p2_integration",
+                      "status":  "pending_review",
+                      "evidence":  "Combined PR #34 at efaeb0e has been independently reviewed. Follow-up e0dfcbc fixes two reproduced AI boundary issues. Follow the agreed P1/P2/real-integration composition order; final review is pending."
+                  },
+                  {
+                      "id":  "combined_regression_and_rollback",
+                      "status":  "verified_rehearsal_only",
+                      "evidence":  "Independent corrected-candidate results: shared AI 316/316, backend/MySQL 150/150, frontend 197/197, state compatibility 4/4 and schema 17/17. The corrected application also passed 31/31 synthetic browser assertions. Earlier five-path upgrade checks are separate; verify the actual final integration/recovery SHA before release."
+                  },
+                  {
+                      "id":  "browser_to_live_meta",
+                      "status":  "not_verified_on_final_candidate",
+                      "evidence":  "Rofi reported one successful six-task real canary on the earlier prompt design in about 76.8 seconds. His eight-request budget is exhausted. The user-data selection-guide move has no new live verification; further calls require a new explicit budget."
+                  },
+                  {
+                      "id":  "open_source_license",
+                      "status":  "passed",
+                      "evidence":  "Both contributors approved MIT; this candidate includes LICENSE crediting Noor Owaissi and Rofi Ibnu Haafizh. Existing third-party notices are preserved. Verify the same file on the final submitted revision."
+                  },
+                  {
+                      "id":  "submission_artifacts",
+                      "status":  "not_finalized",
+                      "evidence":  "Timed three-minute narration, draft answers and checklist are prepared under docs/submission. Record/upload the approved final build and complete the actual form. Do not expose private audit history, development credentials or student data."
+                  }
+              ]
+}

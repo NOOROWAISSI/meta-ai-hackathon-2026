@@ -21,7 +21,7 @@ The resource catalog resolves actual reviewed course snapshots to resource IDs/d
 
 ## Test accounts
 
-Existing Noor/Omar/Lina accounts are preserved. A fourth synthetic account, `adam.student@example.invalid`, has five weekly hours, reported skills and two goals ready for testing. Password: `NextStep-Demo-2026!`. The explicit seed skips existing accounts and never resets edits or progress. These are development accounts and cannot receive mail.
+Existing Noor/Omar/Lina accounts are preserved. A fourth synthetic account, `adam.student@example.invalid`, has five weekly hours, reported skills and two goals ready for testing. Password: the NEXTSTEP_DEMO_SEED_PASSWORD value used when seeding (not stored in this repository). The explicit seed skips existing accounts and never resets edits or progress. These are development accounts and cannot receive mail.
 
 ## Remaining external verification
 

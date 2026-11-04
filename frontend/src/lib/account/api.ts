@@ -69,6 +69,13 @@ export interface ProfileEnvelope {
   displayName: string;
 }
 export type AccountPreference = OpportunityPreference & { savedAt: string | null };
+/** Server-owned state of the Meta data-sharing disclosure acknowledgment. */
+export interface DisclosureStatus {
+  currentVersion: number;
+  acknowledgedVersion: number | null;
+  acknowledgedAt: string | null;
+  required: boolean;
+}
 /** Application-side report, separate from the canonical candidate/plan wire contracts. */
 export interface SubmissionCoverageView {
   context: AssessmentContext;
@@ -123,6 +130,17 @@ export const accountApi = {
     ),
   resources: (id: string) =>
     apiJson<ReviewedResource[]>(`/opportunities/${encodeURIComponent(id)}/resources`),
+  disclosure: () => apiJson<DisclosureStatus>("/profile/disclosure"),
+  async acknowledgeDisclosure() {
+    const status = await apiJson<DisclosureStatus>("/profile/disclosure/acknowledge", "POST");
+    accountDataChanged();
+    return status;
+  },
+  async withdrawDisclosure() {
+    const status = await apiJson<DisclosureStatus>("/profile/disclosure/withdraw", "POST");
+    accountDataChanged();
+    return status;
+  },
   plans: () => apiJson<Plan[]>("/plans"),
   async generate(
     opportunity: Opportunity,

@@ -1,0 +1,18 @@
+# Independent review of the combined pre-demo candidate
+
+Base reviewed: efaeb0ebe4f462c16950d8dd93b1a914dcad1d61. Corrective application commit: e0dfcbc26aa4fa7cdf10a3b3491d05c64877c50b. No live provider request is part of this independent review.
+
+## Findings and corrections
+
+1. The newly refactored decoder called JsonElement.TryGetProperty without first checking that the outer JSON value and choices[0] were objects. Six synthetic envelopes (array/null/string roots and null/array/number choices) reproduced InvalidOperationException instead of the intended invalid_model_output boundary. Explicit object guards now produce classified envelope.shape or envelope.choice_shape rejections. Malformed results remain refused; no candidate is created by these checks.
+2. BuildSelectionGuide interpolated goal IDs into the system message. The application accepts student-supplied non-control-character IDs, so their strings are data rather than trusted policy. A synthetic identifier containing an instruction marker was accepted by input validation and appeared in the system message. The exact same guide is now generated inside OutboundProjection and serialized as selectionGuide in the user-data JSON. System instructions are static and explicitly treat guide identifiers as untrusted data. The field allowlist is updated explicitly. The permitted actions, priority rules, duplicate checks, stage ordering, public DTO and server acceptance rules are unchanged.
+
+Baseline results: the original 309 shared AI checks passed. All seven added independent probes failed before the fixes. After correction: 316/316 shared AI checks and 6/6 offline decoder fixtures; backend/MySQL 150/150; state compatibility 4/4; frontend 197/197, TypeScript, canonical fixture validation and production build. Frontend manifests and lockfile match the already installed reviewed dependencies byte-for-byte; that installation was reused rather than claiming another clean install. Deep schema verification passes 17/17 on a fresh disposable database.
+
+The corrected application commit e0dfcbc also passed all 31 synthetic browser/API/MySQL assertions through the production decoder: generation disclosure, preview/acceptance, reload, Done progress, regeneration, malformed/verdict output, stale/cross-account/tampered acceptance and missing extraction opt-in. The audit used isolated ports 5189/8189 with an explicitly allowed audit origin, Edge and Docker mysql invocation; the existing harness retained fresh-context reads and bounded full-window pacing. No assertions or production limits were weakened. The previous review separately reproduced five schema upgrade paths on aefee57f. All such synthetic results remain distinct from live Meta behavior.
+
+## Live evidence and remaining decision
+
+Rofi reports one successful real-provider canary on the earlier selection-guide design, after three earlier rejected generations. It returned six tasks and was accepted/persisted in about 76.8 seconds. This is one successful scenario, not broad reliability. His eight-request budget is exhausted. Moving the guide to the user-data projection changes the provider prompt boundary; its live compatibility has not been revalidated here. Any further live validation needs a new explicit budget approved by Rofi. No live calls were made by this review.
+
+The MIT license on the candidate credits both contributors and matches their agreement. The combined approach remains a pre-demo review tree; follow the agreed P1 -> corrected P2 -> real integration composition order, with the recovery policy and actual final SHA checked. This follow-up does not authorize merging to noor/main, migrating a shared database, deployment or submission.

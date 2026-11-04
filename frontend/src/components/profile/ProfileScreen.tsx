@@ -41,6 +41,8 @@ import { profileService, type ProfileService } from "@/lib/profile/service";
 import { ProfileSections, SECTIONS } from "./ProfileSections";
 import { ProfileIdentity } from "./ProfileIdentity";
 import { ProfileVisualSummary } from "./ProfileVisualSummary";
+import type { AgeConditions } from "@/lib/profile/age-conditions";
+import { ProfileEvidenceWorkspace } from "./ProfileEvidenceWorkspace";
 
 const ICONS = [GraduationCap, Compass, BookOpen, Clock3];
 
@@ -49,11 +51,15 @@ export function ProfileScreen({
   service = profileService,
   returnToPlans = false,
   contextEvent,
+  ageRequirements,
+  evidenceEnabled = false,
 }: {
   eventId?: string;
   service?: ProfileService;
   returnToPlans?: boolean;
   contextEvent?: { id: string; title: string };
+  ageRequirements?: AgeConditions | undefined;
+  evidenceEnabled?: boolean;
 }) {
   const navigate = useNavigate();
   const event = contextEvent;
@@ -316,6 +322,19 @@ export function ProfileScreen({
           </div>
         </header>
 
+        {evidenceEnabled && (
+          <ProfileEvidenceWorkspace
+            disabled={loadState !== "ready" || dirty || status === "saving"}
+            onChanged={() => {
+              if (dirtyRef.current)
+                setMessage(
+                  "Your saved sources changed while you were editing. Your form draft is preserved; review the saved profile before submitting it.",
+                );
+              else setLoadAttempt((attempt) => attempt + 1);
+            }}
+          />
+        )}
+
         {loadState === "ready" && (
           <ProfileIdentity
             draft={draft}
@@ -413,6 +432,7 @@ export function ProfileScreen({
                   <div id="profile-editor" className="scroll-mt-24">
                     <fieldset disabled={status === "saving"} className="min-w-0">
                       <ProfileSections
+                        ageRequirements={ageRequirements}
                         active={active}
                         draft={draft}
                         update={update}

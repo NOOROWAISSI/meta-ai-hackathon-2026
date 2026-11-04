@@ -1,0 +1,60 @@
+﻿{
+    "testedAt":  "2026-10-31T17:50:58.121Z",
+    "model":  "muse-spark-1.3",
+    "provider":  "live",
+    "syntheticStudent":  true,
+    "checks":  [
+                   "actual frontend -\u003e ASP.NET -\u003e live Meta English explanation displays original source links",
+                   "live Arabic explanation, cache reuse and no implicit profile/plan mutation",
+                   "Arabic UI displays server-rendered selected text with RTL, mobile layout and no internal IDs",
+                   "profile change invalidates cached old-context explanation with 409; no plan created"
+               ],
+    "english":  {
+                    "overview":  "Review the published opportunity details and original sources.",
+                    "personalRelevance":  "Compare your interests and goals with the opportunity details. This does not establish eligibility.",
+                    "preparationPriorities":  [
+                                                  "Review the published requirements and original sources.",
+                                                  "Identify skills and resources you may need for preparation."
+                                              ],
+                    "questionsToClarify":  [
+                                               "Which details still need confirmation with the organizer?",
+                                               "Which participation conditions remain unconfirmed?",
+                                               "Which submission instructions remain unclear?"
+                                           ],
+                    "sources":  [
+                                    {
+                                        "label":  "Meta \u0026 Cerebral Valley",
+                                        "url":  "https://dev.meta.ai/events/global-hackathon"
+                                    },
+                                    {
+                                        "label":  "Application and acceptance",
+                                        "url":  "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver"
+                                    }
+                                ],
+                    "generatedAt":  "2026-10-31T17:51:05.1649056+00:00"
+                },
+    "arabic":  {
+                   "overview":  "راجع تفاصيل الفرصة المنشورة والمصادر الأصلية.",
+                   "personalRelevance":  "راجع اهتماماتك وأهدافك مع تفاصيل الفرصة. هذا لا يثبت الأهلية.",
+                   "preparationPriorities":  [
+                                                 "راجع المتطلبات المنشورة والمصادر الأصلية."
+                                             ],
+                   "questionsToClarify":  [
+                                              "ما المعلومات التي لا تزال تحتاج إلى تأكيد من المنظم؟"
+                                          ],
+                   "sources":  [
+                                   {
+                                       "label":  "Meta \u0026 Cerebral Valley",
+                                       "url":  "https://dev.meta.ai/events/global-hackathon"
+                                   },
+                                   {
+                                       "label":  "Application and acceptance",
+                                       "url":  "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver"
+                                   }
+                               ],
+                   "generatedAt":  "2026-10-31T17:51:09.2921915+00:00"
+               },
+    "testedCommit":  "89e8c7ecfbde2bef5367565fa6bc0670d1287516",
+    "integrationCommit":  "965f4c08b26575937986284c1c88a18201a99172",
+    "status":  "technical-pass-generic-personalization-finding"
+}

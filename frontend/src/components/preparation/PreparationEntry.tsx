@@ -13,6 +13,7 @@ import {
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useLocale } from "@/components/LocaleProvider";
 import { AccountReportedParticipation } from "@/components/catalog/ReportedParticipation";
+import { PreparationSelectionAction } from "./PreparationSelection";
 import {
   CatalogRequestError,
   realCatalogService,
@@ -143,6 +144,9 @@ export function PreparationEntry({
             aria-hidden
           />
           <p className="prep-eyebrow">{t("Source review needed", "بانتظار مراجعة المصدر")}</p>
+          <div className="mt-4">
+            <PreparationSelectionAction opportunityId={opportunityId} navigateAfterSave={false} />
+          </div>
           <h2 className="mt-3 text-2xl font-bold">
             {t("A clearer starting point for your plan.", "نقطة بداية أوضح لخطتك.")}
           </h2>

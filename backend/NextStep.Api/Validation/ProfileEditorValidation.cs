@@ -12,6 +12,12 @@ public static class ProfileEditorValidation
         Input.Require(editor is not null && Encoding.UTF8.GetByteCount(editor.ToJsonString()) <= 600000, "Profile details are too large.");
         var strings = new HashSet<string> { "displayName", "educationStatus", "fieldOfStudy", "studyLevel", "residence", "goalChoice", "goalDescription", "preferredFormat", "experience", "entrantType", "targetDate", "learningBudget", "currency", "learningLanguage", "constraints", "savedAt" };
         foreach (var (key, value) in editor) {
+            if (key is "reportedAge") {
+                Input.Require(value is null || value is JsonValue age && age.TryGetValue<double>(out var number) && double.IsFinite(number) && number >= 0 && number <= 130 && number == Math.Truncate(number), "Enter a whole age from 0 to 130 or leave unknown.");
+                continue;
+            }
+            if (key == "majorityReached") { Input.Require(value is JsonValue fact && fact.TryGetValue<string>(out var answer) && answer is "unknown" or "yes" or "no"); continue; }
+            if (key == "majorityJurisdiction") { Input.Require(value is JsonValue place && place.TryGetValue<string>(out var country) && country.Length <= 200); continue; }
             if (key is "targetDate" or "savedAt") {
                 Input.Require(value is JsonValue time && time.TryGetValue<string>(out var text) && (text.Length == 0 || (key == "targetDate" ? ContractTime.IsDate(text) : ContractTime.IsInstant(text))), key == "targetDate" ? "Enter a valid calendar date (YYYY-MM-DD)." : "Saved timestamps require an explicit UTC offset.");
                 continue;

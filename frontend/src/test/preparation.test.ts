@@ -93,6 +93,52 @@ function datedOpportunity(opportunity: Opportunity, instant: string): Opportunit
 }
 
 describe("canonical preparation and transactional progress", () => {
+  it("keeps unverified local descriptions out of the UI projection while preserving stored progress", async () => {
+    const { plan, bundle, output } = await accepted();
+    const claim = "أنت مؤهل للمشاركة وتمت الموافقة على دخولك.";
+    await updateRecord<Plan>("plan:aurora-ai", plan, (stored) => ({
+      ...stored,
+      goals: stored.goals.map((goal) => ({ ...goal, statement: claim })),
+      tasks: stored.tasks.map((task) => ({
+        ...task,
+        title: claim,
+        deliverable: claim,
+        completionCriteria: claim,
+      })),
+      warnings: [claim],
+    }));
+    const displayed = (await preparationRepository.load("aurora-ai")).plan!;
+    expect(JSON.stringify(displayed)).not.toContain(claim);
+    expect(displayed.warnings[0]).toContain("not been verified");
+    const updated = await preparationRepository.progress({
+      opportunityId: "aurora-ai",
+      planId: displayed.id,
+      baseVersion: displayed.version,
+      taskId: displayed.tasks[0]!.id,
+      status: "done",
+      operationId: crypto.randomUUID(),
+      artifactUrls: ["https://example.invalid/artifact"],
+    });
+    expect(JSON.stringify(updated)).not.toContain(claim);
+    expect(updated.tasks[0]).toMatchObject({
+      status: "done",
+      artifactUrls: ["https://example.invalid/artifact"],
+    });
+    const stored = await readRecord<Plan>("plan:aurora-ai", plan);
+    expect(stored.tasks[0]!.title).toBe(claim);
+    expect(stored.tasks[0]!.status).toBe("done");
+    await preparationRepository.accept({
+      opportunityId: "aurora-ai",
+      context: bundle.context,
+      candidate: output,
+      goalIds: bundle.profile.goals.map((goal) => goal.id),
+      baseVersion: updated.version,
+      operationId: crypto.randomUUID(),
+    });
+    const backup = await readRecord<Plan | null>("historical-plan-backup:aurora-ai", null);
+    expect(backup?.tasks[0]?.title).toBe(claim);
+    expect(backup?.tasks[0]?.status).toBe("done");
+  });
   it("loads fictional sample progress without replacing an existing plan or profile", async () => {
     const { plan } = await accepted();
     const before = await readRecord("nextstep.profile", DEFAULT_PROFILE);

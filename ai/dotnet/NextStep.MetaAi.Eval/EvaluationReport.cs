@@ -5,7 +5,7 @@ using NextStep.MetaAi;
 namespace NextStep.MetaAi.Evaluation;
 
 internal sealed record EvaluationReport(int SchemaVersion, EvaluationProvenance Provenance,
-    IReadOnlyList<EvaluationResult> Results)
+    IReadOnlyList<EvaluationResult> Results, string Mode = "live")
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { WriteIndented = true };
     internal string ToJson() => JsonSerializer.Serialize(this, Json);
@@ -13,9 +13,10 @@ internal sealed record EvaluationReport(int SchemaVersion, EvaluationProvenance 
     internal string ToMarkdown()
     {
         var b = new StringBuilder();
-        b.AppendLine("# NextStep Meta AI — Live Quality Evaluation");
+        b.AppendLine(Mode == "offline-fixtures" ? "# NextStep Meta AI — Offline Fixture Replay" : "# NextStep Meta AI — Live Quality Evaluation");
         b.AppendLine();
         b.AppendLine("Synthetic scenarios only. Results describe standalone MetaAi client behavior, not end-to-end production behavior.");
+        if (Mode == "offline-fixtures") b.AppendLine("Frozen synthetic provider responses; no provider calls. This replay does not establish live model quality.");
         b.AppendLine("The report excludes credentials and user-specific private data. Model output is retained for manual review.");
         b.AppendLine();
         b.AppendLine("## Provenance");
@@ -57,6 +58,8 @@ internal sealed record EvaluationReport(int SchemaVersion, EvaluationProvenance 
                 b.AppendLine($"- New candidate effort: {effort:F1} h");
             foreach (var t in r.Candidate?.Tasks ?? Array.Empty<CandidateTask>())
                 b.AppendLine($"- Task: {t.Title.Replace("\r", " ").Replace("\n", " ")} | {t.Priority} | {t.EstimatedHours:F1}h | {t.Target.Kind}");
+            foreach (var action in r.Actions ?? Array.Empty<PlanActionSelection>())
+                b.AppendLine($"- Selected action: `{action.Action}` | target `{action.Target.Kind}` | rendering reason `{r.Reason}`");
             if (r.Candidate is { } c)
                 b.AppendLine($"- Explanation: {c.Explanation.Replace("\r", " ").Replace("\n", " ")}");
             foreach (var f in r.Flags)
@@ -77,4 +80,5 @@ internal sealed record EvaluationReport(int SchemaVersion, EvaluationProvenance 
 
 internal sealed record EvaluationResult(string Id, string Focus, string Status, long ElapsedMilliseconds,
     int? TaskCount, PlanCandidateOutput? Candidate, string? Feasibility,
-    double? AvailableHours, double? RemainingEffortHours, string[] Flags, string? ErrorCode);
+    double? AvailableHours, double? RemainingEffortHours, string[] Flags, string? ErrorCode,
+    IReadOnlyList<PlanActionSelection>? Actions = null, string? Reason = null);

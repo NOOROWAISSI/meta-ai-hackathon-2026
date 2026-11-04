@@ -30,6 +30,9 @@ export interface Hackathon {
 }
 
 export interface UserProfile {
+  reportedAge?: number | null;
+  majorityReached?: "unknown" | "yes" | "no";
+  majorityJurisdiction?: string;
   interests: string[];
   skills: string[];
   weeklyHours: number | null;

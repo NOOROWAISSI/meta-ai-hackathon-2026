@@ -631,6 +631,11 @@ export function PreparationFlow({
                   : "before storage migration"}{" "}
                 · Plan version {plan!.version}
               </p>
+              {plan!.warnings.map((warning, index) => (
+                <p key={index} className="prep-warning">
+                  {warning}
+                </p>
+              ))}
               <details className="prep-reasoning">
                 <summary>Time assessment & limitations</summary>
                 <p>
@@ -638,9 +643,6 @@ export function PreparationFlow({
                     ? `Original deadline: ${workspaceDeadline}. Available time assumes even weekly distribution ${stale ? "at the saved assessment" : "from now"}; it is not a guarantee of completion.`
                     : "No reliable submission deadline or time zone is available. This plan provides untimed guidance."}
                 </p>
-                {plan!.warnings.map((warning, index) => (
-                  <p key={index}>{warning}</p>
-                ))}
               </details>
             </div>
           </section>

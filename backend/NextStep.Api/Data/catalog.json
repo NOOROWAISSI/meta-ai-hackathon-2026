@@ -9,9 +9,9 @@
     "rulesUrl": "https://launchpad-hacks.devpost.com/rules",
     "format": "online",
     "theme": "Useful prototypes for real users",
-    "sourceRevision": "source-fixtures-v0.2-2026-10-27",
-    "lastReviewedAt": "2026-10-27T11:20:05Z",
-    "informationFreshness": "needs_verification",
+    "sourceRevision": "source-fixtures-v0.2-reviewed-2026-10-31-E01-7ba264654344",
+    "lastReviewedAt": "2026-10-31T10:43:16.336Z",
+    "informationFreshness": "current",
     "costStatus": "unknown",
     "benefits": [],
     "sourceEvidence": [
@@ -62,6 +62,14 @@
         "passage": "encouraged but optional",
         "status": "reviewed",
         "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "E01-manual-timing-20261031",
+        "sourceUrl": "https://launchpad-hacks.devpost.com/rules",
+        "sourceSection": "Published dates and event information; manual review 31 October 2026",
+        "status": "reviewed",
+        "passage": "Submissions close November 20, 2026 at 5:00 PM Eastern Time.",
+        "checkedAt": "2026-10-31T10:43:16.336Z"
       }
     ],
     "sourceCoverage": {
@@ -232,20 +240,86 @@
     ],
     "timelineEvents": [
       {
-        "id": "E01-submission-close",
+        "id": "E01-build_start",
+        "kind": "build_start",
+        "claims": [
+          {
+            "id": "E01-build_start-reviewed",
+            "publishedText": "Hacking opens 16 October 2026 at midnight Eastern Time; the start offset is not explicit.",
+            "dateTime": null,
+            "timeZone": "Eastern Time (offset not specified)",
+            "evidenceIds": [
+              "E01-manual-timing-20261031"
+            ]
+          }
+        ],
+        "sourceStatus": "reviewed"
+      },
+      {
+        "id": "E01-submission_close",
         "kind": "submission_close",
         "claims": [
           {
-            "id": "E01-close-claim",
-            "publishedText": "Source-summary document reports 2026-11-20T17:00:00-05:00",
+            "id": "E01-submission_close-reviewed",
+            "publishedText": "Published submission deadline: 2026-11-20T17:00:00-05:00 (EST (Devpost deadline header)).",
             "dateTime": "2026-11-20T17:00:00-05:00",
-            "evidenceIds": []
+            "timeZone": "EST (Devpost deadline header)",
+            "evidenceIds": [
+              "E01-manual-timing-20261031"
+            ]
           }
         ],
-        "sourceStatus": "unverified"
+        "sourceStatus": "reviewed"
+      },
+      {
+        "id": "E01-judging_start",
+        "kind": "judging_start",
+        "claims": [
+          {
+            "id": "E01-judging_start-reviewed",
+            "publishedText": "Judging begins 21 November 2026, 09:00 Eastern Time.",
+            "dateTime": null,
+            "timeZone": "Eastern Time (offset not specified)",
+            "evidenceIds": [
+              "E01-manual-timing-20261031"
+            ]
+          }
+        ],
+        "sourceStatus": "reviewed"
+      },
+      {
+        "id": "E01-judging_end",
+        "kind": "judging_end",
+        "claims": [
+          {
+            "id": "E01-judging_end-reviewed",
+            "publishedText": "Judging ends 25 November 2026, 17:00 Eastern Time.",
+            "dateTime": null,
+            "timeZone": "Eastern Time (offset not specified)",
+            "evidenceIds": [
+              "E01-manual-timing-20261031"
+            ]
+          }
+        ],
+        "sourceStatus": "reviewed"
       }
     ],
-    "interestTags": []
+    "interestTags": [
+      {
+        "id": "E01-topic-0",
+        "label": "Prototyping",
+        "evidenceIds": [
+          "E01-manual-timing-20261031"
+        ]
+      },
+      {
+        "id": "E01-topic-1",
+        "label": "Student projects",
+        "evidenceIds": [
+          "E01-manual-timing-20261031"
+        ]
+      }
+    ]
   },
   {
     "id": "E02",
@@ -257,11 +331,13 @@
     "rulesUrl": "https://global-ai-builders-challenge.devpost.com/rules",
     "format": "online",
     "theme": "Student technology projects with AI encouraged",
-    "sourceRevision": "source-fixtures-v0.2-2026-10-27",
-    "lastReviewedAt": "2026-10-27T11:20:05Z",
-    "informationFreshness": "needs_verification",
+    "sourceRevision": "source-fixtures-v0.2-reviewed-2026-10-31-E02-a52835aa9759",
+    "lastReviewedAt": "2026-10-31T10:43:16.336Z",
+    "informationFreshness": "current",
     "costStatus": "free",
-    "benefits": [],
+    "benefits": [
+      "Participation certificates for eligible participants; award certificates for winning teams. Sponsor prizes remain conditional, not guaranteed."
+    ],
     "sourceEvidence": [
       {
         "id": "ev-gai-age",
@@ -302,6 +378,22 @@
         "passage": "the complete team roster, a development disclosure, and an AI disclosure",
         "status": "reviewed",
         "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "E02-manual-timing-20261031",
+        "sourceUrl": "https://global-ai-builders-challenge.devpost.com/rules",
+        "sourceSection": "Published dates and event information; manual review 31 October 2026",
+        "status": "reviewed",
+        "passage": "The time zone is America/Los_Angeles.",
+        "checkedAt": "2026-10-31T10:43:16.336Z"
+      },
+      {
+        "id": "E02-manual-overview-20261031",
+        "sourceUrl": "https://global-ai-builders-challenge.devpost.com/",
+        "sourceSection": "Published results and participant benefits",
+        "status": "reviewed",
+        "passage": "Winners are scheduled to be announced on December 5, 2026",
+        "checkedAt": "2026-10-31T10:43:16.336Z"
       }
     ],
     "sourceCoverage": {
@@ -504,20 +596,70 @@
     ],
     "timelineEvents": [
       {
-        "id": "E02-submission-close",
+        "id": "E02-build_start",
+        "kind": "build_start",
+        "claims": [
+          {
+            "id": "E02-build_start-reviewed",
+            "publishedText": "The event begins 21 November 2026 at midnight PST, America/Los_Angeles.",
+            "dateTime": "2026-11-21T00:00:00-08:00",
+            "timeZone": "PST / America/Los_Angeles",
+            "evidenceIds": [
+              "E02-manual-timing-20261031"
+            ]
+          }
+        ],
+        "sourceStatus": "reviewed"
+      },
+      {
+        "id": "E02-submission_close",
         "kind": "submission_close",
         "claims": [
           {
-            "id": "E02-close-claim",
-            "publishedText": "Source-summary document reports 2026-11-28T15:00:00-08:00",
+            "id": "E02-submission_close-reviewed",
+            "publishedText": "Published submission deadline: 2026-11-28T15:00:00-08:00 (PST / America/Los_Angeles).",
             "dateTime": "2026-11-28T15:00:00-08:00",
-            "evidenceIds": []
+            "timeZone": "PST / America/Los_Angeles",
+            "evidenceIds": [
+              "E02-manual-timing-20261031"
+            ]
           }
         ],
-        "sourceStatus": "unverified"
+        "sourceStatus": "reviewed"
+      },
+      {
+        "id": "E02-results",
+        "kind": "results",
+        "claims": [
+          {
+            "id": "E02-results-reviewed",
+            "publishedText": "Results scheduled for 5 December 2026 at 15:00 PST.",
+            "dateTime": "2026-12-05T15:00:00-08:00",
+            "timeZone": "PST / America/Los_Angeles",
+            "evidenceIds": [
+              "E02-manual-overview-20261031"
+            ]
+          }
+        ],
+        "sourceStatus": "reviewed"
       }
     ],
-    "interestTags": []
+    "interestTags": [
+      {
+        "id": "E02-topic-0",
+        "label": "AI",
+        "evidenceIds": [
+          "E02-manual-timing-20261031"
+        ]
+      },
+      {
+        "id": "E02-topic-1",
+        "label": "Programming",
+        "evidenceIds": [
+          "E02-manual-timing-20261031"
+        ]
+      }
+    ]
   },
   {
     "id": "E03",
@@ -529,11 +671,13 @@
     "rulesUrl": "https://ai-agents-founders-hetic-26.devpost.com/rules",
     "format": "online",
     "theme": "Agents and workflows for founder tasks",
-    "sourceRevision": "source-fixtures-v0.2-2026-10-27",
-    "lastReviewedAt": "2026-10-27T11:20:05Z",
-    "informationFreshness": "needs_verification",
+    "sourceRevision": "source-fixtures-v0.2-reviewed-2026-10-31-E03-3362d4679efc",
+    "lastReviewedAt": "2026-10-31T10:43:16.336Z",
+    "informationFreshness": "current",
     "costStatus": "unknown",
-    "benefits": [],
+    "benefits": [
+      "Published team prize categories: grand prize EUR600, runner-up EUR250, critical-thinking award EUR150, subject to eligibility and award conditions."
+    ],
     "sourceEvidence": [
       {
         "id": "ev-hetic-enrollment",
@@ -606,6 +750,14 @@
         "passage": "Responsible AI",
         "status": "reviewed",
         "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "E03-manual-timing-20261031",
+        "sourceUrl": "https://ai-agents-founders-hetic-26.devpost.com/rules",
+        "sourceSection": "Published dates and event information; manual review 31 October 2026",
+        "status": "reviewed",
+        "passage": "Submission period",
+        "checkedAt": "2026-10-31T10:43:16.336Z"
       }
     ],
     "sourceCoverage": {
@@ -837,17 +989,25 @@
     ],
     "timelineEvents": [
       {
-        "id": "E03-submission-close",
-        "kind": "submission_close",
+        "id": "E03-build-start-conflict",
+        "kind": "build_start",
         "claims": [
           {
-            "id": "E03-close-claim",
-            "publishedText": "Source-summary document reports 2026-12-18T17:00:00+01:00",
-            "dateTime": "2026-12-18T17:00:00+01:00",
+            "id": "E03-open-rules",
+            "publishedText": "Rules: 16 November 2026, 09:00 Europe/Paris",
+            "dateTime": "2026-11-16T09:00:00+01:00",
+            "timeZone": "Europe/Paris",
+            "evidenceIds": []
+          },
+          {
+            "id": "E03-open-schedule",
+            "publishedText": "Schedule: 4 November 2026, 06:00 CET",
+            "dateTime": "2026-11-04T06:00:00+01:00",
+            "timeZone": "Europe/Paris",
             "evidenceIds": []
           }
         ],
-        "sourceStatus": "unverified"
+        "sourceStatus": "conflicting"
       },
       {
         "id": "E03-submission-open",
@@ -869,9 +1029,88 @@
           }
         ],
         "sourceStatus": "conflicting"
+      },
+      {
+        "id": "E03-submission_close",
+        "kind": "submission_close",
+        "claims": [
+          {
+            "id": "E03-submission_close-reviewed",
+            "publishedText": "Published submission deadline: 2026-12-18T17:00:00+01:00 (CET / Europe/Paris).",
+            "dateTime": "2026-12-18T17:00:00+01:00",
+            "timeZone": "CET / Europe/Paris",
+            "evidenceIds": [
+              "E03-manual-timing-20261031"
+            ]
+          }
+        ],
+        "sourceStatus": "reviewed"
+      },
+      {
+        "id": "E03-judging_start",
+        "kind": "judging_start",
+        "claims": [
+          {
+            "id": "E03-judging_start-reviewed",
+            "publishedText": "Judging starts 19 December 2026; time not published.",
+            "dateTime": null,
+            "timeZone": "CET / Europe/Paris",
+            "evidenceIds": [
+              "E03-manual-timing-20261031"
+            ]
+          }
+        ],
+        "sourceStatus": "reviewed"
+      },
+      {
+        "id": "E03-judging_end",
+        "kind": "judging_end",
+        "claims": [
+          {
+            "id": "E03-judging_end-reviewed",
+            "publishedText": "Judging ends 8 January 2027; time not published.",
+            "dateTime": null,
+            "timeZone": "CET / Europe/Paris",
+            "evidenceIds": [
+              "E03-manual-timing-20261031"
+            ]
+          }
+        ],
+        "sourceStatus": "reviewed"
+      },
+      {
+        "id": "E03-results",
+        "kind": "results",
+        "claims": [
+          {
+            "id": "E03-results-reviewed",
+            "publishedText": "Winners expected during the week of 11 January 2027; exact day and time not specified.",
+            "dateTime": null,
+            "timeZone": "CET / Europe/Paris",
+            "evidenceIds": [
+              "E03-manual-timing-20261031"
+            ]
+          }
+        ],
+        "sourceStatus": "reviewed"
       }
     ],
-    "interestTags": []
+    "interestTags": [
+      {
+        "id": "E03-topic-0",
+        "label": "AI",
+        "evidenceIds": [
+          "E03-manual-timing-20261031"
+        ]
+      },
+      {
+        "id": "E03-topic-1",
+        "label": "Agents",
+        "evidenceIds": [
+          "E03-manual-timing-20261031"
+        ]
+      }
+    ]
   },
   {
     "id": "E04",
@@ -883,11 +1122,14 @@
     "rulesUrl": "https://paypalaihackathon.devpost.com/rules",
     "format": "online",
     "theme": "Meaningful PayPal sandbox and AI integration",
-    "sourceRevision": "source-fixtures-v0.2-2026-10-27",
-    "lastReviewedAt": "2026-10-27T11:20:05Z",
-    "informationFreshness": "needs_verification",
+    "sourceRevision": "source-fixtures-v0.2-reviewed-2026-10-31-E04-c621dca20b40",
+    "lastReviewedAt": "2026-10-31T10:43:16.336Z",
+    "informationFreshness": "current",
     "costStatus": "free",
-    "benefits": [],
+    "benefits": [
+      "Cash awards subject to the official prize and eligibility terms. Published total amounts differ across page sections; no single total is asserted.",
+      "Published workshop recordings are linked on the event overview."
+    ],
     "sourceEvidence": [
       {
         "id": "ev-pp-repo",
@@ -936,6 +1178,14 @@
         "passage": "less than three (3) minutes",
         "status": "reviewed",
         "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "E04-manual-timing-20261031",
+        "sourceUrl": "https://paypalaihackathon.devpost.com/rules",
+        "sourceSection": "Published dates and event information; manual review 31 October 2026",
+        "status": "reviewed",
+        "passage": "Dates and Timing",
+        "checkedAt": "2026-10-31T10:43:16.336Z"
       }
     ],
     "sourceCoverage": {
@@ -1099,20 +1349,102 @@
     ],
     "timelineEvents": [
       {
-        "id": "E04-submission-close",
+        "id": "E04-build_start",
+        "kind": "build_start",
+        "claims": [
+          {
+            "id": "E04-build_start-reviewed",
+            "publishedText": "Submission period begins 1 October 2026 at 09:15 Pacific Time; the start offset is not explicit.",
+            "dateTime": null,
+            "timeZone": "Pacific Time (offset not specified)",
+            "evidenceIds": [
+              "E04-manual-timing-20261031"
+            ]
+          }
+        ],
+        "sourceStatus": "reviewed"
+      },
+      {
+        "id": "E04-submission_close",
         "kind": "submission_close",
         "claims": [
           {
-            "id": "E04-close-claim",
-            "publishedText": "Source-summary document reports 2026-11-12T12:00:00-08:00",
+            "id": "E04-submission_close-reviewed",
+            "publishedText": "Published submission deadline: 2026-11-12T12:00:00-08:00 (PST (published deadline header)).",
             "dateTime": "2026-11-12T12:00:00-08:00",
-            "evidenceIds": []
+            "timeZone": "PST (published deadline header)",
+            "evidenceIds": [
+              "E04-manual-timing-20261031"
+            ]
           }
         ],
-        "sourceStatus": "unverified"
+        "sourceStatus": "reviewed"
+      },
+      {
+        "id": "E04-judging_start",
+        "kind": "judging_start",
+        "claims": [
+          {
+            "id": "E04-judging_start-reviewed",
+            "publishedText": "Judging begins 1 December 2026 at 14:00 Pacific Time; numeric offset not supplied.",
+            "dateTime": null,
+            "timeZone": "Pacific Time (offset not specified)",
+            "evidenceIds": [
+              "E04-manual-timing-20261031"
+            ]
+          }
+        ],
+        "sourceStatus": "reviewed"
+      },
+      {
+        "id": "E04-judging_end",
+        "kind": "judging_end",
+        "claims": [
+          {
+            "id": "E04-judging_end-reviewed",
+            "publishedText": "Judging ends 15 December 2026 at 08:00 Pacific Time; numeric offset not supplied.",
+            "dateTime": null,
+            "timeZone": "Pacific Time (offset not specified)",
+            "evidenceIds": [
+              "E04-manual-timing-20261031"
+            ]
+          }
+        ],
+        "sourceStatus": "reviewed"
+      },
+      {
+        "id": "E04-results",
+        "kind": "results",
+        "claims": [
+          {
+            "id": "E04-results-reviewed",
+            "publishedText": "Results expected around 21 December 2026 at 14:00 Pacific Time; approximate publication.",
+            "dateTime": null,
+            "timeZone": "Pacific Time (offset not specified)",
+            "evidenceIds": [
+              "E04-manual-timing-20261031"
+            ]
+          }
+        ],
+        "sourceStatus": "reviewed"
       }
     ],
-    "interestTags": []
+    "interestTags": [
+      {
+        "id": "E04-topic-0",
+        "label": "AI",
+        "evidenceIds": [
+          "E04-manual-timing-20261031"
+        ]
+      },
+      {
+        "id": "E04-topic-1",
+        "label": "Payments",
+        "evidenceIds": [
+          "E04-manual-timing-20261031"
+        ]
+      }
+    ]
   },
   {
     "id": "E05",
@@ -1124,11 +1456,15 @@
     "rulesUrl": "https://cosmohacks.devpost.com/rules",
     "format": "online",
     "theme": "Student and community-life projects",
-    "sourceRevision": "source-fixtures-v0.2-2026-10-27",
-    "lastReviewedAt": "2026-10-27T11:20:05Z",
-    "informationFreshness": "needs_verification",
-    "costStatus": "unknown",
-    "benefits": [],
+    "sourceRevision": "source-fixtures-v0.2-reviewed-2026-10-31-E05-8f8f5f5d04c0",
+    "lastReviewedAt": "2026-10-31T10:43:16.336Z",
+    "informationFreshness": "current",
+    "costStatus": "free",
+    "benefits": [
+      "Published workshops and mentor support, subject to availability.",
+      "Certificates are published for participants, judges and mentors after the event.",
+      "Cash prizes and sponsor offers are published; individual access and benefits remain subject to their conditions."
+    ],
     "sourceEvidence": [
       {
         "id": "ev-cosmo-age",
@@ -1177,6 +1513,14 @@
         "passage": "explain how AI was used",
         "status": "reviewed",
         "checkedAt": "2026-10-27T11:20:05Z"
+      },
+      {
+        "id": "E05-manual-timing-20261031",
+        "sourceUrl": "https://cosmohacks.devpost.com/",
+        "sourceSection": "Published dates and event information; manual review 31 October 2026",
+        "status": "reviewed",
+        "passage": "All times are CST (UTC−6).",
+        "checkedAt": "2026-10-31T10:43:16.336Z"
       }
     ],
     "sourceCoverage": {
@@ -1340,20 +1684,118 @@
     ],
     "timelineEvents": [
       {
-        "id": "E05-submission-close",
+        "id": "E05-build_start",
+        "kind": "build_start",
+        "claims": [
+          {
+            "id": "E05-build_start-reviewed",
+            "publishedText": "Building starts 19 December 2026 at 10:00 CST (UTC-06:00).",
+            "dateTime": "2026-12-19T10:00:00-06:00",
+            "timeZone": "CST / UTC-06:00",
+            "evidenceIds": [
+              "E05-manual-timing-20261031"
+            ]
+          }
+        ],
+        "sourceStatus": "reviewed"
+      },
+      {
+        "id": "E05-submission_close",
         "kind": "submission_close",
         "claims": [
           {
-            "id": "E05-close-claim",
-            "publishedText": "Source-summary document reports 2027-01-18T16:00:00-06:00",
+            "id": "E05-submission_close-reviewed",
+            "publishedText": "Published submission deadline: 2027-01-18T16:00:00-06:00 (CST / UTC-06:00).",
             "dateTime": "2027-01-18T16:00:00-06:00",
-            "evidenceIds": []
+            "timeZone": "CST / UTC-06:00",
+            "evidenceIds": [
+              "E05-manual-timing-20261031"
+            ]
           }
         ],
-        "sourceStatus": "unverified"
+        "sourceStatus": "reviewed"
+      },
+      {
+        "id": "E05-registration_close",
+        "kind": "registration_close",
+        "claims": [
+          {
+            "id": "E05-registration_close-reviewed",
+            "publishedText": "Registration closes with project submission: 18 January 2027 at 16:00 CST.",
+            "dateTime": "2027-01-18T16:00:00-06:00",
+            "timeZone": "CST / UTC-06:00",
+            "evidenceIds": [
+              "E05-manual-timing-20261031"
+            ]
+          }
+        ],
+        "sourceStatus": "reviewed"
+      },
+      {
+        "id": "E05-judging_start",
+        "kind": "judging_start",
+        "claims": [
+          {
+            "id": "E05-judging_start-reviewed",
+            "publishedText": "Remote judging follows submissions, 18–22 January 2027; start time not specified.",
+            "dateTime": null,
+            "timeZone": "CST / UTC-06:00",
+            "evidenceIds": [
+              "E05-manual-timing-20261031"
+            ]
+          }
+        ],
+        "sourceStatus": "reviewed"
+      },
+      {
+        "id": "E05-judging_end",
+        "kind": "judging_end",
+        "claims": [
+          {
+            "id": "E05-judging_end-reviewed",
+            "publishedText": "Remote judging ends 22 January 2027; time not specified.",
+            "dateTime": null,
+            "timeZone": "CST / UTC-06:00",
+            "evidenceIds": [
+              "E05-manual-timing-20261031"
+            ]
+          }
+        ],
+        "sourceStatus": "reviewed"
+      },
+      {
+        "id": "E05-results",
+        "kind": "results",
+        "claims": [
+          {
+            "id": "E05-results-reviewed",
+            "publishedText": "Closing ceremony and results: 23 January 2027 at 10:00 CST / 16:00 UTC.",
+            "dateTime": "2027-01-23T10:00:00-06:00",
+            "timeZone": "CST / UTC-06:00",
+            "evidenceIds": [
+              "E05-manual-timing-20261031"
+            ]
+          }
+        ],
+        "sourceStatus": "reviewed"
       }
     ],
-    "interestTags": []
+    "interestTags": [
+      {
+        "id": "E05-topic-0",
+        "label": "Student projects",
+        "evidenceIds": [
+          "E05-manual-timing-20261031"
+        ]
+      },
+      {
+        "id": "E05-topic-1",
+        "label": "Community",
+        "evidenceIds": [
+          "E05-manual-timing-20261031"
+        ]
+      }
+    ]
   },
   {
     "id": "meta-global-ai-2026",

@@ -7,7 +7,11 @@ export const GOALS = {
   explore: "Explore opportunities in my interests.",
 } as const;
 
-export interface ProfileDraft extends Omit<UserProfile, "weeklyHours" | "teamSize" | "maxBudget"> {
+export interface ProfileDraft extends Omit<
+  UserProfile,
+  "weeklyHours" | "teamSize" | "maxBudget" | "reportedAge"
+> {
+  ageInput: string;
   hoursInput: string;
   teamSizeInput: string;
   budgetInput: string;
@@ -15,9 +19,10 @@ export interface ProfileDraft extends Omit<UserProfile, "weeklyHours" | "teamSiz
 export type ProfileErrors = Record<string, string>;
 
 export function toDraft(profile: UserProfile): ProfileDraft {
-  const { weeklyHours, teamSize, maxBudget, ...rest } = profile;
+  const { weeklyHours, teamSize, maxBudget, reportedAge, ...rest } = profile;
   return {
     ...structuredClone(rest),
+    ageInput: reportedAge?.toString() ?? "",
     hoursInput: weeklyHours?.toString() ?? "",
     teamSizeInput: teamSize?.toString() ?? "",
     budgetInput: maxBudget?.toString() ?? "",
@@ -26,6 +31,13 @@ export function toDraft(profile: UserProfile): ProfileDraft {
 
 export function validateDraft(draft: ProfileDraft): ProfileErrors {
   const errors: ProfileErrors = {};
+  if (
+    draft.ageInput?.trim() &&
+    (!Number.isInteger(Number(draft.ageInput)) ||
+      Number(draft.ageInput) < 0 ||
+      Number(draft.ageInput) > 130)
+  )
+    errors["ageInput"] = "Enter a whole age from 0 to 130, or leave not provided.";
   if (
     draft.avatarDataUrl &&
     (!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/.test(draft.avatarDataUrl) ||
@@ -73,7 +85,7 @@ export function validateDraft(draft: ProfileDraft): ProfileErrors {
 }
 
 export function confirmedProfile(draft: ProfileDraft): UserProfile {
-  const { hoursInput, teamSizeInput, budgetInput, ...rest } = structuredClone(draft);
+  const { hoursInput, teamSizeInput, budgetInput, ageInput, ...rest } = structuredClone(draft);
   const goals =
     draft.goalChoice && draft.goalChoice !== "unknown"
       ? [
@@ -87,6 +99,7 @@ export function confirmedProfile(draft: ProfileDraft): UserProfile {
         : draft.goals;
   return {
     ...rest,
+    reportedAge: ageInput?.trim() ? Number(ageInput) : null,
     weeklyHours: hoursInput.trim() === "" ? null : Number(hoursInput),
     teamSize:
       draft.entrantType === "solo"

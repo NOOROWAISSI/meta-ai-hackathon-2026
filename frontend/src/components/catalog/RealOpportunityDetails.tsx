@@ -18,11 +18,14 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { realCatalogService } from "@/lib/catalog/service";
 import { PreferenceActions } from "@/components/account/AccountOpportunities";
 import { SourceFreshness } from "./SourceFreshness";
+import { MetaSnapshot } from "./MetaSnapshot";
+import { EvidenceOpportunityInsight } from "./EvidenceOpportunityInsight";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useVisitState } from "@/components/VisitMemory";
 import { AccountFitConstellation } from "./AccountFitConstellation";
 import { AccountPreparation } from "@/components/account/AccountPlans";
 import { PreparationEntry } from "@/components/preparation/PreparationEntry";
+import { PreparationSelectionAction } from "@/components/preparation/PreparationSelection";
 import { ReportedParticipation } from "./ReportedParticipation";
 import { PublishedEventOverview } from "./PublishedEventOverview";
 import { accountApi, AccountApiError } from "@/lib/account/api";
@@ -69,7 +72,10 @@ export function RealOpportunityDetails({
   const publishedSubmission = planningRecord.data?.timelineEvents.find(
     (milestone) => milestone.kind === "submission_close" && milestone.claims.length,
   );
-  const context = item && savedProfile ? briefingContext(item, savedProfile, language) : null;
+  const context =
+    item && savedProfile
+      ? briefingContext(item, savedProfile, language, planningRecord.data?.sourceRevision ?? null)
+      : null;
   const contextKey = context ? JSON.stringify(context) : null;
   const analysis = useQuery({
     queryKey: ["real-opportunity-briefing", auth?.user?.id, contextKey],
@@ -78,7 +84,11 @@ export function RealOpportunityDetails({
         await analysisService.explain({ context: context!, listing: item! }, signal),
         context!,
       ),
-    enabled: analysisService.available && !!context && requestedContext === contextKey,
+    enabled:
+      analysisService !== metaBriefingService &&
+      analysisService.available &&
+      !!context &&
+      requestedContext === contextKey,
     retry: false,
     staleTime: Infinity,
   });
@@ -165,11 +175,7 @@ export function RealOpportunityDetails({
             </div>
             <div className="mt-5 flex flex-wrap gap-3">
               <PreferenceActions item={item} />
-              {item.kind === "hackathon" && (
-                <Link to="/plans" search={{ event: item.id }} className="detail-primary">
-                  {t("Prepare for this opportunity", "حضّر لهذه الفرصة")}
-                </Link>
-              )}
+              {item.kind === "hackathon" && <PreparationSelectionAction opportunityId={item.id} />}
               <Link to="/profile" search={{ event: item.id }} className="detail-secondary">
                 {t("Edit my profile", "تعديل ملفي")}
               </Link>
@@ -473,94 +479,82 @@ export function RealOpportunityDetails({
               kind={item.kind}
               {...(savedProfile ? { profile: savedProfile } : {})}
             />
-            <section
-              className="border-y border-primary/15 py-6"
-              aria-labelledby="meta-briefing-title"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 id="meta-briefing-title" className="flex items-center gap-2 text-lg font-bold">
-                  <Sparkles className="size-5 text-primary" aria-hidden />
-                  {t("Meta personal explanation", "تفسير Meta الشخصي")}
-                </h2>
-                <span className="text-xs text-muted-foreground">
-                  {analysisService.available
-                    ? t("AI explanation · check against sources", "تفسير AI · راجعه مع المصادر")
-                    : t("Awaiting backend integration", "بانتظار ربط خدمة التحليل")}
-                </span>
-              </div>
-              {!analysisService.available ? (
-                <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
-                  {t(
-                    "The live explanation is not connected yet. It will explain the opportunity, relate it to your confirmed interests and experience, and separate preparation suggestions from unknown conditions. The facts above remain available without AI.",
-                    "التفسير الحي لسه مش موصول. رح يلخّص الفرصة، يربطها باهتماماتك وخبرتك المؤكدة، ويفصل نصائح التحضير عن الشروط المجهولة. المعلومات فوق متاحة بدون AI.",
-                  )}
-                </p>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    className="detail-secondary mt-4"
-                    disabled={!context || analysis.isFetching}
-                    onClick={() => {
-                      setRequestedContext(contextKey);
-                      if (requestedContext === contextKey) void analysis.refetch();
-                    }}
+            {analysisService === metaBriefingService ? (
+              <EvidenceOpportunityInsight
+                key={auth?.user?.id ?? "guest"}
+                opportunityId={opportunityId}
+              />
+            ) : (
+              <section
+                className="border-y border-primary/15 py-6"
+                aria-labelledby="meta-briefing-title"
+                dir={language === "ar" ? "rtl" : "ltr"}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h2
+                    id="meta-briefing-title"
+                    className="flex items-center gap-2 text-lg font-bold"
                   >
-                    {analysis.isFetching && (
-                      <LoaderCircle className="size-4 animate-spin" aria-hidden />
+                    <Sparkles className="size-5 text-primary" aria-hidden />
+                    {t("Meta snapshot", "ملخّص Meta")}
+                  </h2>
+                  <span className="text-xs text-muted-foreground">
+                    {analysisService.available
+                      ? t("AI explanation · check against sources", "تفسير AI · راجعه مع المصادر")
+                      : t("Awaiting backend integration", "بانتظار ربط خدمة التحليل")}
+                  </span>
+                </div>
+                {!analysisService.available ? (
+                  <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
+                    {t(
+                      "Personal snapshots are not connected yet. Public event details remain available above.",
+                      "الملخّص الشخصي لسه مش موصول. تفاصيل الفرصة العامة متاحة فوق.",
                     )}
-                    {analysis.isFetching
-                      ? t("Preparing explanation…", "جارٍ تجهيز التفسير…")
-                      : t("Explain this opportunity for me", "اشرحلي الفرصة بالنسبة إلي")}
-                  </button>
-                  {analysis.isError && (
-                    <p role="alert" className="prep-error mt-4">
-                      {t(
-                        "The explanation failed. Your profile and original opportunity details are unchanged. Retry when ready.",
-                        "تعذّر التفسير. ملفك والتفاصيل الأصلية ما تغيّروا؛ جرّب مجددًا.",
+                  </p>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="detail-secondary mt-4"
+                      disabled={!context || analysis.isFetching}
+                      onClick={() => {
+                        setRequestedContext(contextKey);
+                        if (requestedContext === contextKey) void analysis.refetch();
+                      }}
+                    >
+                      {analysis.isFetching && (
+                        <LoaderCircle className="size-4 animate-spin" aria-hidden />
                       )}
-                    </p>
-                  )}
-                  {requestedContext && requestedContext !== contextKey && (
-                    <p role="status" className="mt-3 text-sm text-muted-foreground">
-                      {t(
-                        "The context changed. Request a new explanation.",
-                        "المعلومات تغيّرت؛ اطلب تفسيرًا محدّثًا.",
-                      )}
-                    </p>
-                  )}
-                  {analysis.data && (
-                    <div className="mt-5 grid gap-6 md:grid-cols-2">
-                      <div>
-                        <h3 className="font-semibold">
-                          {t("What it is and why it relates to you", "شو هي وشو علاقتها فيك")}
-                        </h3>
-                        <p className="mt-2 text-sm leading-7">{analysis.data.overview}</p>
-                        <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                          {analysis.data.personalRelevance}
-                        </p>
-                      </div>
-                      <div>
-                        <h3 className="font-semibold">{t("What to prepare", "شو تحضّر")}</h3>
-                        <ul className="mt-2 list-disc space-y-2 ps-5 text-sm leading-7">
-                          {analysis.data.preparationPriorities.map((text, index) => (
-                            <li key={index}>{text}</li>
-                          ))}
-                        </ul>
-                        <h3 className="mt-4 font-semibold">
-                          {t("Still unknown", "شو لسه مش واضح")}
-                        </h3>
-                        <ul className="mt-2 list-disc space-y-2 ps-5 text-sm leading-7 text-muted-foreground">
-                          {analysis.data.questionsToClarify.map((text, index) => (
-                            <li key={index}>{text}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-            </section>
+                      {analysis.isFetching
+                        ? t("Preparing explanation…", "جارٍ تجهيز التفسير…")
+                        : t("Compare my starting point", "قارن نقطة بدايتي")}
+                    </button>
+                    {analysis.isError && (
+                      <p role="alert" className="prep-error mt-4">
+                        {analysis.error.message}{" "}
+                        {t(
+                          "The explanation failed. Your profile and original opportunity details are unchanged. Retry when ready.",
+                          "تعذّر التفسير. ملفك والتفاصيل الأصلية ما تغيّروا؛ جرّب مجددًا.",
+                        )}
+                      </p>
+                    )}
+                    {requestedContext && requestedContext !== contextKey && (
+                      <p role="status" className="mt-3 text-sm text-muted-foreground">
+                        {t(
+                          "Your profile changed. Compare again to use the confirmed starting point.",
+                          "البروفايل تغيّر؛ حدّث المقارنة عشان تستخدم نقطة البداية المؤكدة.",
+                        )}
+                      </p>
+                    )}
+                    <MetaSnapshot
+                      briefing={analysis.data}
+
+                      loading={analysis.isFetching}
+                    />
+                  </>
+                )}
+              </section>
+            )}
           </TabsContent>
           <TabsContent value="preparation" className="space-y-6">
             <PreparationEntry

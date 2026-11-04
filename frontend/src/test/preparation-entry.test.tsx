@@ -15,6 +15,7 @@ vi.mock("@/components/auth/AuthProvider", () => ({
 }));
 vi.mock("@/components/LocaleProvider", () => ({ useLocale: () => ({ t: (en: string) => en }) }));
 vi.mock("@tanstack/react-router", () => ({
+  useNavigate: () => vi.fn(),
   Link: ({
     to,
     search,

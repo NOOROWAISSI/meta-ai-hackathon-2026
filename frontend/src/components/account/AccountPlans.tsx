@@ -16,8 +16,10 @@ import {
   accountApi,
   apiJson,
   accountDataChanged,
+  AccountApiError,
   type SubmissionCoverageView,
 } from "@/lib/account/api";
+import { DisclosurePanel } from "./DisclosurePanel";
 import type {
   Opportunity,
   Plan,
@@ -41,6 +43,8 @@ import { ReportedParticipation } from "@/components/catalog/ReportedParticipatio
 import { useLocale } from "@/components/LocaleProvider";
 import { PlanProgress } from "@/components/preparation/PlanProgress";
 import { DraftFeasibility } from "@/components/preparation/DraftFeasibility";
+import { SelectedPreparations } from "@/components/preparation/PreparationSelection";
+import { usePreparationSelections } from "@/lib/account/preparation-selections";
 
 interface Candidate {
   candidateId: string;
@@ -72,6 +76,7 @@ export function AccountPlans({ eventId }: { eventId?: string }) {
 function AccountPlanIndex() {
   const auth = useAuth();
   const { t } = useLocale();
+  const selections = usePreparationSelections();
   const profile = useQuery({
     queryKey: ["account", auth?.user?.id, "profile"],
     queryFn: accountApi.profile,
@@ -100,9 +105,12 @@ function AccountPlanIndex() {
             <ListChecks className="size-4" aria-hidden />
             My Plans
           </p>
-          <h1>Your next steps, saved.</h1>
+          <h1>{t("Your next steps, saved.", "خطواتك الجاية، محفوظة.")}</h1>
           <p className="prep-organizer">
-            Confirmed plans and self-reported progress from your account.
+            {t(
+              "Selected opportunities, confirmed plans and your reported progress.",
+              "فرص اخترتها، وخطط مقبولة، وتقدّمك المحفوظ.",
+            )}
           </p>
         </div>
         <div className="text-end">
@@ -110,6 +118,9 @@ function AccountPlanIndex() {
           <p className="text-xs text-muted-foreground">{t("Confirmed plans", "خطط مؤكّدة")}</p>
         </div>
       </header>
+      <SelectedPreparations
+        acceptedOpportunityIds={plans.data?.map((p) => p.context.opportunityId) ?? []}
+      />
       {plans.isPending ? (
         <p role="status" className="prep-loading">
           Loading confirmed plans…
@@ -126,16 +137,30 @@ function AccountPlanIndex() {
           </button>
         </div>
       ) : !plans.data.length ? (
-        <div className="prep-empty">
-          <ListChecks className="size-10 text-primary" aria-hidden />
-          <h2>No preparation plans yet.</h2>
-          <p>
-            Choose a reviewed hackathon and generate a draft. Nothing is added until you accept it.
+        selections.isPending ? (
+          <p role="status" className="text-sm text-muted-foreground">
+            {t("Loading your preparation choices…", "جار تحميل اختيارات التحضير…")}
           </p>
-          <Link to="/" search={{}} className="detail-primary">
-            Explore opportunities
-          </Link>
-        </div>
+        ) : selections.data?.length ? (
+          <p className="text-sm text-muted-foreground">
+            {t(
+              "No accepted plan yet. Continue a selected opportunity above to review its preparation options.",
+              "لسه ما في خطة مقبولة. تابع إحدى الفرص اللي فوق لمراجعة خيارات التحضير.",
+            )}
+          </p>
+        ) : (
+          <div className="prep-empty">
+            <ListChecks className="size-10 text-primary" aria-hidden />
+            <h2>No preparation plans yet.</h2>
+            <p>
+              Choose a reviewed hackathon and generate a draft. Nothing is added until you accept
+              it.
+            </p>
+            <Link to="/" search={{}} className="detail-primary">
+              Explore opportunities
+            </Link>
+          </div>
+        )
       ) : (
         <div className="grid gap-5 md:grid-cols-2">
           {plans.data.map((plan) => {
@@ -225,7 +250,17 @@ export function AccountPreparation({
 }) {
   const Heading = embedded ? "h2" : "h1";
   const auth = useAuth();
+  const { t } = useLocale();
   const query = useQueryClient();
+  const disclosure = useQuery({
+    queryKey: ["account", auth?.user?.id, "disclosure"],
+    queryFn: () => accountApi.disclosure(),
+    enabled: !!auth?.user,
+    retry: false,
+  });
+  const [disclosureNeeded, setDisclosureNeeded] = useState(false);
+  const [acknowledging, setAcknowledging] = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
   const key = ["account", auth?.user?.id, "preparation", opportunityId];
   const data = useQuery({
     queryKey: key,
@@ -360,13 +395,66 @@ export function AccountPreparation({
         );
       setCandidate({ ...draft, context, baseVersion: version, operationId: crypto.randomUUID() });
     } catch (failure) {
-      if (live.current)
+      if (!live.current) return;
+      // The server enforces the data-sharing disclosure before any provider
+      // call. Show the disclosure itself, not the raw error.
+      if (failure instanceof AccountApiError && failure.code === "disclosure_required")
+        setDisclosureNeeded(true);
+      else
         setError(
           failure instanceof Error ? failure.message : "Generation failed. No plan was accepted.",
         );
     } finally {
       lock.current = false;
       if (live.current) setBusy(false);
+    }
+  }
+  async function acknowledgeAndGenerate() {
+    setAcknowledging(true);
+    try {
+      await accountApi.acknowledgeDisclosure();
+      if (!live.current) return;
+      setDisclosureNeeded(false);
+      void query.invalidateQueries({ queryKey: ["account", auth?.user?.id, "disclosure"] });
+      void generate();
+    } catch {
+      if (live.current)
+        setError(
+          t(
+            "Your acknowledgment could not be saved. Nothing was sent.",
+            "تعذّر حفظ إقرارك. لم يُرسل أي شيء.",
+          ),
+        );
+    } finally {
+      if (live.current) setAcknowledging(false);
+    }
+  }
+  function declineDisclosure() {
+    setDisclosureNeeded(false);
+    setNotice(
+      t("No draft was generated and nothing was sent.", "لم تُنشأ أي مسودة ولم يُرسل أي شيء."),
+    );
+  }
+  async function withdrawDisclosure() {
+    if (withdrawing) return;
+    setError("");
+    setWithdrawing(true);
+    try {
+      const status = await accountApi.withdrawDisclosure();
+      if (!live.current) return;
+      query.setQueryData(["account", auth?.user?.id, "disclosure"], status);
+      void query.invalidateQueries({ queryKey: ["account", auth?.user?.id, "disclosure"] });
+      setNotice(
+        t(
+          "Your acknowledgment was withdrawn. Generation will ask again before sending anything.",
+          "تم سحب إقرارك. سيطلب الإنشاء الإقرار من جديد قبل إرسال أي شيء.",
+        ),
+      );
+    } catch {
+      if (!live.current) return;
+      setError(t("Your acknowledgment could not be withdrawn.", "تعذّر سحب إقرارك."));
+    } finally {
+      if (live.current) setWithdrawing(false);
     }
   }
   async function accept() {
@@ -506,6 +594,26 @@ export function AccountPreparation({
           </Link>
         </p>
       )}
+      {disclosure.data && !disclosure.data.required && (
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border px-4 py-3 text-sm text-muted-foreground">
+          <span>
+            {t(
+              "Data sharing with Meta AI: acknowledged.",
+              "مشاركة البيانات مع Meta AI: تم الإقرار.",
+            )}
+          </span>
+          <button
+            type="button"
+            className="min-h-11 text-primary underline"
+            disabled={withdrawing}
+            onClick={() => void withdrawDisclosure()}
+          >
+            {withdrawing
+              ? t("Withdrawing…", "جارٍ سحب الإقرار…")
+              : t("Withdraw acknowledgment", "سحب الإقرار")}
+          </button>
+        </div>
+      )}
       {plan && !newDraft && !candidate ? (
         <>
           <section className="glass rounded-3xl p-6">
@@ -515,13 +623,13 @@ export function AccountPreparation({
               total={tasks.length}
               remainingHours={plan.budget.remainingEffortHours}
             />
+            <ul className="mt-5 list-disc space-y-2 ps-5 text-sm text-muted-foreground">
+              {plan.warnings.map((warning, index) => (
+                <li key={index}>{warning}</li>
+              ))}
+            </ul>
             <details className="mt-5 text-sm">
               <summary className="cursor-pointer">Plan context and limitations</summary>
-              <ul className="mt-3 list-disc space-y-2 ps-5 text-muted-foreground">
-                {plan.warnings.map((warning, index) => (
-                  <li key={index}>{warning}</li>
-                ))}
-              </ul>
               <p className="mt-3">
                 Plan version {plan.version}. Budget evaluated{" "}
                 {new Date(plan.budget.evaluatedAt).toLocaleString()}.
@@ -711,6 +819,13 @@ export function AccountPreparation({
               The confirmed submission window has closed. A prospective plan cannot promise this
               deadline.
             </p>
+          )}
+          {disclosureNeeded && (
+            <DisclosurePanel
+              busy={acknowledging}
+              onAcknowledge={() => void acknowledgeAndGenerate()}
+              onDecline={declineDisclosure}
+            />
           )}
           <button
             type="button"

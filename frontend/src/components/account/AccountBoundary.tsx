@@ -22,7 +22,9 @@ export function AccountCacheBridge() {
   useEffect(() => {
     query.removeQueries({
       predicate: (item) =>
-        (item.queryKey[0] === "account" || item.queryKey[0] === "account-profile-facts") &&
+        (item.queryKey[0] === "account" ||
+          item.queryKey[0] === "account-profile-facts" ||
+          item.queryKey[0] === "real-opportunity-briefing") &&
         item.queryKey[1] !== auth?.user?.id,
     });
   }, [auth?.user?.id, query]);
