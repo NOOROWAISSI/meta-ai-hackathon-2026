@@ -24,12 +24,12 @@ In another terminal:
     npm ci
     npm run dev -- --host 127.0.0.1 --port 8082 --strictPort
 
-## Review status
+## Release status
 
-This branch is the final release candidate for the hackathon submission. It composes, in order: P1 structured plan safety (PR #31), the corrected P2 privacy work (PR #32, including PR #33), the profile-evidence and submission-document work (PRs #29 and #30), the combined candidate (PR #34), and the independent-review corrections (PR #35). See docs/RELEASE-CANDIDATE.md for the composition, the verification record and the remaining gates. The MIT license at the repository root was agreed by both contributors. One live generation canary passed on an earlier commit of this line; the final candidate's live behavior is not separately certified, and no deployment is claimed. No browser demo profile or plan is silently imported on sign-in.
+This release composes P1 structured plan safety (PR #31), the corrected P2 privacy work (PR #32, including PR #33), the profile-evidence and submission-document work (PRs #29 and #30), the combined candidate (PR #34), the independent-review corrections (PR #35), and the final recording fixes. See [the final integration record](docs/FINAL-RELEASE-20261104.md) for validation and [the original candidate record](docs/RELEASE-CANDIDATE.md) for the composition. The MIT license at the repository root was agreed by both contributors. One live generation canary passed on an earlier commit of this line; the final release's live behavior is not separately certified, and no deployment is claimed. No browser demo profile or plan is silently imported on sign-in.
 
 For the demo, use [the walkthrough](docs/DEMO-RUNBOOK.md) and [release gates](docs/DEMO-RELEASE-GATES.json). Run `powershell -NoProfile -ExecutionPolicy Bypass -File backend/Check-Demo.ps1 -Mode Local` to check public UI/API availability. Submission mode intentionally refuses to report readiness while the final integration, authenticated submission requirements and live E2E remain unverified. Provider configuration alone is not a successful model call.
 
 The frontend lockfile matches the corrected P1 lockfile without changing package.json. For the IDE workspace where package.json/src live at the root, run the frontend commands there instead of changing to frontend.
 
-Optional demo student accounts: [DEMO-STUDENTS.md](backend/DEMO-STUDENTS.md). Scope decisions: [PRODUCT-SCOPE-UPDATE.md](PRODUCT-SCOPE-UPDATE.md). Secrets belong in private backend configuration, never Git or frontend code. No direct merge to main is part of this publication.
+Optional demo student accounts: [DEMO-STUDENTS.md](backend/DEMO-STUDENTS.md). Scope decisions: [PRODUCT-SCOPE-UPDATE.md](PRODUCT-SCOPE-UPDATE.md). Secrets belong in private backend configuration, never Git or frontend code. The final release is integrated through pull requests; published history is not rewritten.
