@@ -45,12 +45,18 @@ The exact application changes above passed:
 - Shared AI safety: 316 offline checks; no live provider requests.
 - Stored-state compatibility: 4 checks.
 - Deep schema verification: 17 column/foreign-key/object checks.
+- Browser/API/MySQL journey: 31 assertions, including explicit disclosure,
+  candidate acceptance, reload, Done progress, retained work, malformed
+  output rejection, version conflicts, cross-account isolation and the
+  extraction opt-in boundary. The provider transport was synthetic; the
+  production Meta client, decoder and application persistence were used.
 - Changed-file ESLint, TypeScript, canonical fixture validation and the
   frontend production build.
 
 The existing reviewed dependency installation was reused with the matching
-lockfile; this is not a claim of another clean dependency install. Browser
-regression results are recorded in the publishing PR after completion.
+lockfile; this is not a claim of another clean dependency install. The
+first backend attempt preceded schema initialization on the fresh test
+database; after applying migrations, all 151 checks passed.
 
 ## Live-provider and recording boundary
 
