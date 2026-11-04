@@ -1,51 +1,52 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { SetStateAction } from "react";
+import { readRecord, subscribeStore, updateRecord } from "../storage/database";
 
-/** Confirm local persistence before updating the displayed state. */
+/** Compatibility hook for the existing screen view models; IndexedDB is authoritative. */
 export function useLocalState<T>(key: string, initial: T) {
   const [value, setValue] = useState<T>(initial);
   const [hydrated, setHydrated] = useState(false);
-  const current = useRef(value);
-
+  const [error, setError] = useState("");
+  const initialRef = useRef(initial);
   useEffect(() => {
-    const sync = () => {
-      try {
-        const raw = localStorage.getItem(key);
-        if (raw) {
-          const stored = JSON.parse(raw) as T;
-          current.current = stored;
-          setValue(stored);
-        }
-      } catch {
-        // Browsing still works when browser storage is unavailable.
-      }
-    };
+    let alive = true;
+    const sync = () =>
+      void readRecord<T>(key, initialRef.current)
+        .then((stored) => {
+          if (alive) {
+            setValue(stored);
+            setError("");
+            setHydrated(true);
+          }
+        })
+        .catch((failure: unknown) => {
+          if (alive) {
+            setError(failure instanceof Error ? failure.message : "Storage unavailable");
+            setHydrated(true);
+          }
+        });
     sync();
-    setHydrated(true);
-    window.addEventListener("storage", sync);
-    window.addEventListener("nextstep:storage", sync);
+    const unsubscribe = subscribeStore(sync);
     return () => {
-      window.removeEventListener("storage", sync);
-      window.removeEventListener("nextstep:storage", sync);
+      alive = false;
+      unsubscribe();
     };
   }, [key]);
-
   const persist = useCallback(
-    (update: SetStateAction<T>): boolean => {
-      const next =
-        typeof update === "function" ? (update as (previous: T) => T)(current.current) : update;
+    async (update: SetStateAction<T>): Promise<boolean> => {
       try {
-        localStorage.setItem(key, JSON.stringify(next));
-        current.current = next;
+        const next = await updateRecord<T>(key, initialRef.current, (current) =>
+          typeof update === "function" ? (update as (previous: T) => T)(current) : update,
+        );
         setValue(next);
-        window.dispatchEvent(new Event("nextstep:storage"));
+        setError("");
         return true;
-      } catch {
+      } catch (failure) {
+        setError(failure instanceof Error ? failure.message : "Storage unavailable");
         return false;
       }
     },
     [key],
   );
-
-  return [value, persist, hydrated] as const;
+  return [value, persist, hydrated, error] as const;
 }

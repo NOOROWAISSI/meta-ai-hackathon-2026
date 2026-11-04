@@ -3,20 +3,9 @@
  * Replace with validated backend DTOs when integration is agreed.
  */
 import type { UserProfile } from "../discover/types";
-import {
-  analysisContext,
-  evaluateRequirement,
-  hasHardBlocker,
-  reliableTargetDeadline,
-} from "./logic";
+import { analysisContext, evaluateRequirement } from "./logic";
 import { buildEventDetails } from "./records";
-import type {
-  AnalysisSnapshot,
-  DetailsState,
-  EventDetails,
-  OpportunityAnswer,
-  PreparationPlan,
-} from "./types";
+import type { AnalysisSnapshot, DetailsState, EventDetails, OpportunityAnswer } from "./types";
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export async function fetchEventDetails(
@@ -114,76 +103,5 @@ export async function askOpportunity(
     answer: `${answer} These are unverified fictional fixture details; confirm current rules with the organizer.`,
     sourceLabel: "Selected event's demo summary and team record",
     sourceUrl: details.event.sourceUrl,
-  };
-}
-export async function createPreparationCandidate(
-  details: EventDetails,
-  profile: UserProfile,
-  weeklyHours: number,
-  freeOnly: boolean,
-  budget: number | null,
-  currency = "USD",
-): Promise<PreparationPlan> {
-  await wait(500);
-  if (
-    !Number.isFinite(weeklyHours) ||
-    weeklyHours <= 0 ||
-    weeklyHours > 168 ||
-    (budget !== null && (!Number.isFinite(budget) || budget < 0 || budget > 1_000_000)) ||
-    (currency !== "" && !/^[A-Z]{3}$/.test(currency)) ||
-    (!freeOnly && budget !== null && !currency)
-  )
-    throw new Error(
-      "Enter positive weekly hours up to 168, and a valid learning budget or leave the maximum unknown.",
-    );
-  if (
-    hasHardBlocker(
-      details.requirements.map((requirement) => evaluateRequirement(requirement, profile)),
-    )
-  )
-    throw new Error(
-      "A checked mandatory participation condition is not met. A preparation plan cannot bypass it.",
-    );
-  return {
-    eventId: details.event.id,
-    title: details.event.title,
-    context: analysisContext(details, profile),
-    createdAt: new Date().toISOString(),
-    weeklyHours,
-    freeOnly,
-    budget: freeOnly ? 0 : budget,
-    ...(currency ? { currency } : {}),
-    deadline: reliableTargetDeadline(details),
-    tasks: [
-      {
-        id: "verify",
-        title: "Resolve the open event questions",
-        deliverable:
-          "A dated note containing verified rules and deadlines, or the questions still awaiting an organizer response.",
-        completionCriteria:
-          "Each open question is answered with a source or explicitly remains unknown.",
-        hours: 1,
-        status: "not_started",
-      },
-      {
-        id: "outline",
-        title: "Outline a project direction",
-        deliverable:
-          details.deliverable ??
-          "A draft project outline after confirming the expected deliverable.",
-        completionCriteria: "Describe the intended user, core idea, and one practical limitation.",
-        hours: 2,
-        status: "not_started",
-      },
-      {
-        id: "practice",
-        title: "Rehearse a small prototype walkthrough",
-        deliverable: "A short walkthrough draft using your chosen tools.",
-        completionCriteria:
-          "Demonstrate the main flow and identify what is still unfinished. This does not establish submission compliance.",
-        hours: 2,
-        status: "not_started",
-      },
-    ],
   };
 }

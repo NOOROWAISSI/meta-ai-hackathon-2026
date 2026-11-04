@@ -1,0 +1,264 @@
+{
+  "opportunity": {
+    "id": "demo-hackathon",
+    "title": "Example Tech Hackathon (Synthetic)",
+    "organizer": "Demo Organizer",
+    "listingHost": "Synthetic listing platform",
+    "canonicalEventUrl": "https://example.org/event",
+    "officialUrl": "https://example.org/event",
+    "rulesUrl": "https://example.org/event/rules",
+    "format": "online",
+    "theme": "Build a useful prototype",
+    "sourceRevision": "synthetic-1",
+    "lastReviewedAt": null,
+    "informationFreshness": "needs_verification",
+    "costStatus": "unknown",
+    "benefits": [],
+    "sourceEvidence": [
+      {
+        "id": "ev-student-synthetic",
+        "sourceUrl": "https://example.org/event/rules",
+        "sourceSection": "Synthetic enrollment example",
+        "passage": "SYNTHETIC PLACEHOLDER - not organizer wording",
+        "checkedAt": null,
+        "status": "unverified"
+      },
+      {
+        "id": "ev-region-synthetic",
+        "sourceUrl": "https://example.org/event/rules",
+        "sourceSection": "Synthetic geographic example",
+        "passage": "SYNTHETIC PLACEHOLDER - not organizer wording",
+        "checkedAt": null,
+        "status": "unverified"
+      },
+      {
+        "id": "ev-video-synthetic",
+        "sourceUrl": "https://example.org/event/rules",
+        "sourceSection": "Synthetic video example",
+        "passage": "SYNTHETIC PLACEHOLDER - not organizer wording",
+        "checkedAt": null,
+        "status": "unverified"
+      }
+    ],
+    "sourceCoverage": {
+      "participation": {
+        "state": "incomplete",
+        "reviewedRequirementIds": [],
+        "missingChecks": ["Synthetic fixture: organizer coverage is not reviewed"],
+        "reviewedAt": null
+      },
+      "submission": {
+        "state": "incomplete",
+        "reviewedRequirementIds": [],
+        "missingChecks": ["Synthetic fixture: organizer coverage is not reviewed"],
+        "reviewedAt": null
+      },
+      "prize": {
+        "state": "incomplete",
+        "reviewedRequirementIds": [],
+        "missingChecks": ["Synthetic fixture: organizer coverage is not reviewed"],
+        "reviewedAt": null
+      }
+    },
+    "requirements": [
+      {
+        "id": "req-student",
+        "statement": "Synthetic enrollment condition",
+        "subject": "individual",
+        "applicability": { "key": "all" },
+        "claims": [
+          { "value": "Synthetic enrollment condition", "evidenceIds": ["ev-student-synthetic"] }
+        ],
+        "sourceEvidenceIds": ["ev-student-synthetic"],
+        "sourceStatus": "unverified",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true,
+        "evaluation": { "key": "enrollment", "allowed": ["higher_education"] }
+      },
+      {
+        "id": "req-region",
+        "statement": "Synthetic geographic condition needs verification",
+        "subject": "individual",
+        "applicability": { "key": "all" },
+        "claims": [
+          {
+            "value": "Synthetic geographic condition needs verification",
+            "evidenceIds": ["ev-region-synthetic"]
+          }
+        ],
+        "sourceEvidenceIds": ["ev-region-synthetic"],
+        "sourceStatus": "unverified",
+        "kind": "hard_eligibility",
+        "lane": "participation",
+        "isMandatory": true,
+        "evaluation": { "key": "unresolved", "reason": "No reviewed geographic policy" }
+      },
+      {
+        "id": "req-video",
+        "statement": "Synthetic submission video condition",
+        "subject": "project",
+        "applicability": { "key": "all" },
+        "claims": [
+          { "value": "Synthetic submission video condition", "evidenceIds": ["ev-video-synthetic"] }
+        ],
+        "sourceEvidenceIds": ["ev-video-synthetic"],
+        "sourceStatus": "unverified",
+        "kind": "submission_mandatory",
+        "lane": "submission",
+        "isMandatory": true,
+        "evaluation": {
+          "key": "submission_criterion",
+          "criterion": "presence",
+          "parameters": { "artifact": "demo_video" }
+        }
+      }
+    ],
+    "timelineEvents": [],
+    "interestTags": []
+  },
+  "profile": {
+    "id": "profile-demo",
+    "version": 1,
+    "reportedAge": { "state": "unknown" },
+    "majority": { "reached": { "state": "unknown" } },
+    "enrollment": {
+      "state": "known",
+      "value": "higher_education",
+      "reportedAt": "2026-10-27T11:06:03Z"
+    },
+    "residence": { "country": { "state": "unknown" }, "region": { "state": "unknown" } },
+    "entrantType": { "state": "unknown" },
+    "team": {
+      "size": { "state": "unknown" },
+      "division": { "state": "unknown" },
+      "sameDivision": { "state": "unknown" },
+      "allMembersMeetRule": {}
+    },
+    "availableHoursPerWeek": { "state": "known", "value": 5, "reportedAt": "2026-10-27T11:06:03Z" },
+    "background": "",
+    "projectExperience": [],
+    "skills": [],
+    "interests": ["AI"],
+    "goals": [{ "id": "goal-demo", "statement": "Prepare a prototype walkthrough" }],
+    "preferredFormats": ["online"],
+    "constraints": [],
+    "acceptedInterpretations": [],
+    "clarificationAnswers": [],
+    "preferredLanguage": "en"
+  },
+  "submission": {
+    "opportunityId": "demo-hackathon",
+    "version": 1,
+    "items": [
+      {
+        "requirementId": "req-video",
+        "state": "unknown",
+        "criterionResults": { "presence": "unknown" },
+        "evidenceLevel": "self_report"
+      }
+    ]
+  },
+  "recommendations": [
+    {
+      "opportunityId": "demo-hackathon",
+      "profileVersion": 1,
+      "sourceRevision": "synthetic-1",
+      "rankingVersion": "rules-1-proposed",
+      "mode": "generic",
+      "matchedFactors": [],
+      "reason": "Generic suggestion: synthetic event metadata is unverified.",
+      "relevanceBand": "low"
+    }
+  ],
+  "analysis": {
+    "context": {
+      "opportunityId": "demo-hackathon",
+      "profileId": "profile-demo",
+      "profileVersion": 1,
+      "sourceRevision": "synthetic-1",
+      "submissionVersion": 1
+    },
+    "participationSummary": "needs_verification",
+    "submissionSummary": "needs_verification",
+    "phases": [
+      {
+        "phase": "submission",
+        "status": "unknown",
+        "timelineEventIds": [],
+        "explanation": "No reviewed deadline is available."
+      }
+    ],
+    "matches": [
+      {
+        "requirementId": "req-student",
+        "status": "unknown",
+        "explanation": "Synthetic unreviewed source; no confirmed rule assessment.",
+        "sourceEvidenceIds": ["ev-student-synthetic"],
+        "evidenceLevel": "none",
+        "reasonCode": "insufficient_source"
+      },
+      {
+        "requirementId": "req-region",
+        "status": "unknown",
+        "explanation": "Synthetic unreviewed source; no confirmed rule assessment.",
+        "sourceEvidenceIds": ["ev-region-synthetic"],
+        "evidenceLevel": "none",
+        "reasonCode": "insufficient_source"
+      },
+      {
+        "requirementId": "req-video",
+        "status": "unknown",
+        "explanation": "Synthetic unreviewed source; no confirmed rule assessment.",
+        "sourceEvidenceIds": ["ev-video-synthetic"],
+        "evidenceLevel": "none",
+        "reasonCode": "insufficient_source"
+      }
+    ],
+    "warnings": [
+      { "code": "incomplete_coverage", "message": "Synthetic source coverage is incomplete." }
+    ]
+  },
+  "resources": [],
+  "plan": {
+    "id": "plan-demo",
+    "version": 1,
+    "context": {
+      "opportunityId": "demo-hackathon",
+      "profileId": "profile-demo",
+      "profileVersion": 1,
+      "sourceRevision": "synthetic-1",
+      "submissionVersion": 1
+    },
+    "goals": [{ "id": "goal-demo", "statement": "Prepare a prototype walkthrough" }],
+    "tasks": [
+      {
+        "id": "task-demo",
+        "title": "Prepare a prototype walkthrough",
+        "target": { "kind": "goal", "goalId": "goal-demo" },
+        "priority": "should",
+        "deliverable": "Two-minute walkthrough draft",
+        "completionCriteria": "The student can demonstrate the main prototype flow and explain its limitations.",
+        "estimatedHours": 2,
+        "remainingEstimatedHours": 2,
+        "status": "not_started",
+        "resourceIds": [],
+        "artifactUrls": []
+      }
+    ],
+    "taskOrder": ["task-demo"],
+    "budget": {
+      "evaluatedAt": "2026-10-27T11:06:03Z",
+      "hoursPerWeek": 5,
+      "deadlineInstant": null,
+      "availableHours": null,
+      "remainingEffortHours": 2,
+      "assumption": "untimed"
+    },
+    "feasibility": "untimed",
+    "warnings": [
+      "Untimed goal advice only; deadline and organizer rules are unverified. One useful task is shown instead of padding to three."
+    ]
+  },
+  "progress": { "planId": "plan-demo", "confirmedPlanVersion": 1, "saveState": "confirmed" }
+}

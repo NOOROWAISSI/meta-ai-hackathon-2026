@@ -18,3 +18,15 @@ Object.defineProperty(window, "matchMedia", {
     dispatchEvent: () => {},
   }),
 });
+import "fake-indexeddb/auto";
+import { IDBFactory } from "fake-indexeddb";
+import { beforeEach, afterEach } from "vitest";
+import { closeStore } from "@/lib/storage/database";
+beforeEach(async () => {
+  await closeStore();
+  globalThis.indexedDB = new IDBFactory();
+  localStorage.clear();
+});
+afterEach(async () => {
+  await closeStore();
+});

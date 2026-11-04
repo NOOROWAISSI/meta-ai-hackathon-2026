@@ -124,6 +124,51 @@ The application must decide which accepted tasks survive regeneration, including
 
 **Mandatory final submission handling remains an application responsibility.** v2 can accept a structurally valid candidate that omits an outstanding required action or stops at a ready-to-submit file. Applicability/mandatory flags do not establish which actions remain outstanding, and task `done` is not organizer receipt evidence. Reconcile outstanding actions against current submission evidence and retained work, and surface uncovered actions or use a server-owned final-action checklist/task. The pure helper in #12 and its application integration in #14 address representation and explicit omissions under review; no v3 mandatory-submission regex guard is present. Generated criteria and prose are draft instructions, not proof of submission, eligibility or factual correctness.
 
+## Reviewed outstanding submission coverage
+
+`NextStep.MetaAi.Application.SubmissionCoverage.Reconcile` is a pure, deterministic, provider-free helper. It is not called by the provider client or `GenerationPolicy`, does not reject generation for omissions, and leaves `PlanCandidateOutput`, prompts, retries and existing APIs unchanged. No dependency, configuration or DI registration is needed.
+
+Pass three separate server-owned projections from one coherent snapshot:
+
+1. `reviewedOutstandingMandatoryRequirements`: only reviewed, applicable (`Applies == true`), mandatory `submission` requirements that the application has determined are still outstanding from authoritative evidence. `ReviewedRequirement` itself has no outstanding/review-evidence field; its name and flags do not establish that evidence. Do not pass all requirements from generation context without this application-owned selection.
+2. `validatedCandidateTasks`: tasks that have already passed candidate validation for that snapshot. The helper is not a substitute for `GenerationPolicy.ValidateCandidate` and does not revalidate prose, effort, resources or priority.
+3. `explicitlyRetainedTasks`: only accepted-plan task records the application has decided will survive acceptance. This is a separate list of `ExistingPlanTask`, **not all `context.ExistingTasks`**. Unstarted tasks may be discarded. Preserve task identity/status; do not infer retention from status or alter status to obtain coverage.
+
+The optional fourth argument is `SubmissionSourceCoverage.Unknown` (default), `Incomplete` or `Complete`. This is the application's assessment of the submission requirement sources, passed through unchanged. Never derive it from the number of tasks, an empty reviewed set or an empty omission list. Unknown/incomplete source coverage stays unknown/incomplete even when every supplied requirement ID has a task. The helper cannot discover missing organizer requirements or verify the caller's completeness assertion.
+
+Example inside application orchestration, after generating a validated candidate and deciding retention:
+
+```csharp
+// These inputs come from authoritative application evidence/acceptance policy.
+// reviewedOutstandingMandatoryRequirements: IReadOnlyList<ReviewedRequirement>
+// tasksToRetainOnAcceptance: IReadOnlyList<ExistingPlanTask>
+var coverage = SubmissionCoverage.Reconcile(
+    reviewedOutstandingMandatoryRequirements,
+    candidate.Tasks,
+    tasksToRetainOnAcceptance,
+    SubmissionSourceCoverage.Unknown);
+// Surface coverage.UnrepresentedRequirementIds for application handling.
+// Recompute at acceptance after rechecking versions, evidence and retention.
+```
+
+`SubmissionCoverageReport` returns:
+
+| Field | Meaning |
+|---|---|
+| `ReviewedOutstandingMandatoryRequirementIds` | The supplied reviewed outstanding mandatory submission set |
+| `CandidateRequirementIds` | IDs in that set directly targeted by candidate tasks |
+| `RetainedRequirementIds` | IDs in that set directly targeted by explicitly retained tasks |
+| `UnrepresentedRequirementIds` | Reviewed outstanding IDs represented by neither task collection |
+| `SourceCoverage` | The caller-supplied source assessment, unchanged |
+
+All ID lists are independent read-only snapshots, deduplicated and sorted using ordinal comparison. Matching is exact and case-sensitive, with no trimming, title/prose matching, keyword heuristics or model calls. Only unambiguous `kind: requirement` targets with `requirementId` count; goal targets never count, even if a goal ID has the same text. Targets outside the supplied outstanding set are excluded. An ID represented in both task collections appears in both lists and is removed from omissions once. Duplicate targets do not multiply coverage. Malformed projection/target inputs produce `invalid_input`; missing actions are ordinary report data, never `invalid_model_output`.
+
+There is no six-requirement cap or report truncation. Generation still returns at most six tasks. Eight outstanding requirements with six different candidate targets can leave two explicitly reported omissions; retained tasks may represent either of those IDs. Noor's application decides how to surface omissions or add server-owned checklist/actions without changing the model's wire contract or silently dropping required work to fit a task limit or budget.
+
+**Representation is not fulfillment.** A task targeting a requirement can still contain only preparation work. A retained task with status `done` represents its target but does not remove the requirement from the reviewed outstanding list or establish organizer receipt, eligibility, verification or compliance. Even with `SourceCoverage.Complete` and no unrepresented IDs, this report establishes only task representation of the supplied set. It exposes no checklist-complete or submission-success verdict. The application continues to own outstanding/completed evidence, eligibility and source review, candidate acceptance, persistence and frontend presentation. Keep budget `no_remaining_gap` separate from these submission facts.
+
+Before integration, agree with Noor on the authoritative evidence-to-outstanding projection and stable ID lifecycle; source-completeness assessment; actual retention decision; omission handling/presentation; and whether/how to expose this internal report through HTTP. No HTTP response fields or persisted schema are added here. Recheck relevant source/submission/base-plan versions and recompute coverage at acceptance; this standalone helper cannot make that transaction atomic.
+
 ## Generation, explicit acceptance and version checks
 
 1. Authorize access and capture one coherent opportunity/source, profile, submission, base-plan and resource-review snapshot. Compare browser expected versions with authoritative versions before generation. The client itself only compares `SourceRevision` with `ExpectedSourceRevision`.

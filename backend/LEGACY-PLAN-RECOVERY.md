@@ -1,0 +1,9 @@
+# Historical plan recovery
+
+Normal plan responses and account export show the safe display projection. They do not return unverified historical task descriptions or warnings.
+
+For an authorized, account-specific recovery request, a storage operator must verify the requester and opportunity, take a protected backup, and use restricted read-only database access. The account's `user_state.payload` keeps the original text under `plans[opportunityId]` until that plan is replaced. On the first replacement of a plan containing unverified descriptions, the server saves the previous record under `historicalPlans[opportunityId]` in the same account state. The archive preserves the state at replacement, including progress and artifact links.
+
+Treat the recovered text as unverified. Share it only through an authorized private channel after review; do not paste it into public logs or present it as approved guidance. Do not overwrite the current plan, progress, or submission evidence to recover it. There is no user-facing raw-recovery endpoint, automated review workflow, or archive history beyond the first saved historical plan per opportunity. Account deletion also deletes its archive. Storage limits can prevent a replacement if archiving would exceed the existing account-state limit.
+
+The separate browser-only demo stores plans in IndexedDB, with no server-issued provenance. Its display therefore hides all stored plan descriptions. Before replacement it keeps the first prior record at `historical-plan-backup:<opportunityId>`; migrated localStorage records may also have a `legacy-backup:` entry. The explicit local storage export includes these raw records for recovery and should be handled as private, unverified data. This local backup is subject to browser storage and quota limits and is not a server backup.

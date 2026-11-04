@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using System.Text.Json;
 using Microsoft.Extensions.Options;
 using NextStep.MetaAi;
 using NextStep.MetaAi.Application;
@@ -8,24 +9,30 @@ using NextStep.MetaAi.Evaluation;
 // Explicit opt-in for paid external requests. All contexts below are synthetic.
 var executedAtUtc = DateTimeOffset.UtcNow;
 var scenarios = CreateScenarios(executedAtUtc);
-var live = args.Contains("--live", StringComparer.Ordinal);
-var help = args.Contains("--help", StringComparer.Ordinal);
-var invalid = args.Where(a => a is not ("--help" or "--live" or "--list")).ToArray();
-if (help || invalid.Length != 0)
+EvaluationOptions selection;
+try { selection = EvaluationOptions.Parse(args, scenarios.Select(s => s.Id)); }
+catch (ArgumentException error)
 {
-    Console.WriteLine("Usage: dotnet run --project ai/dotnet/NextStep.MetaAi.Eval -- [--list | --live]");
-    Console.WriteLine("Without --live, no network calls are made. --live makes 6 real Meta API calls.");
-    return invalid.Length == 0 ? 0 : 2;
+    Console.Error.WriteLine(error.Message);
+    return 2;
 }
-if (!live || args.Contains("--list", StringComparer.Ordinal))
+if (selection.Help)
 {
-    Console.WriteLine("NextStep Meta quality evaluation — dry run (NO provider calls)");
-    foreach (var s in scenarios)
-        Console.WriteLine($"  {s.Id}: {s.Focus}");
-    Console.WriteLine("Run with --live and MODEL_API_KEY set to perform six calls.");
+    Console.WriteLine("Usage: dotnet run --project ai/dotnet/NextStep.MetaAi.Eval -- [--list | --live | --offline-fixtures] [--scenario ID ...]");
+    Console.WriteLine("Repeat --scenario ID to select several; omitted selection means all six.");
+    Console.WriteLine("Without --live, no network calls are made. --list always suppresses live calls.");
     return 0;
 }
-var key = Environment.GetEnvironmentVariable("MODEL_API_KEY");
+scenarios = scenarios.Where(s => selection.ScenarioIds.Contains(s.Id)).ToArray();
+if ((!selection.Live && !selection.OfflineFixtures) || selection.List)
+{
+    Console.WriteLine("NextStep Meta quality evaluation - dry run (NO provider calls)");
+    foreach (var s in scenarios)
+        Console.WriteLine($"  {s.Id}: {s.Focus}");
+    Console.WriteLine($"Run with --live and MODEL_API_KEY set for {scenarios.Count} logical call(s), plus configured retries.");
+    return 0;
+}
+var key = selection.OfflineFixtures ? "synthetic-offline-only" : Environment.GetEnvironmentVariable("MODEL_API_KEY");
 if (string.IsNullOrWhiteSpace(key))
 {
     Console.Error.WriteLine("MODEL_API_KEY is missing. Nothing was sent.");
@@ -35,27 +42,30 @@ if (string.IsNullOrWhiteSpace(key))
 var settings = new MetaAiOptions { ApiKey = key };
 var provenance = EvaluationProvenance.Capture(executedAtUtc, settings,
     EvaluationProvenance.ReadEmbeddedSources(), EvaluationProvenance.FindRepositoryRoot());
-using var http = new HttpClient();
+using var fixtureHandler = selection.OfflineFixtures ? new OfflineFixtureHandler() : null;
+using var http = fixtureHandler is null ? new HttpClient() : new HttpClient(fixtureHandler);
 var client = new MetaModelClient(http, Options.Create(settings));
 var results = new List<EvaluationResult>();
 foreach (var scenario in scenarios)
 {
-    Console.Write($"{scenario.Id}: calling Muse Spark 1.3 ... ");
+    if (fixtureHandler is not null) fixtureHandler.ScenarioId = scenario.Id;
+    Console.Write(selection.OfflineFixtures ? $"{scenario.Id}: replaying offline fixture ... " : $"{scenario.Id}: calling Muse Spark 1.3 ... ");
     var sw = Stopwatch.StartNew();
     try
     {
         // The client validates the structured provider response before it returns.
         var candidate = await client.GenerateCandidateAsync(scenario.Context);
+        var renderingProof = PlanActionRenderer.ProofFor(candidate, scenario.Context) ?? throw new InvalidOperationException("Missing renderer provenance.");
         var budget = PreparationBudget.Evaluate(
             scenario.Context.AvailableHoursPerWeek,
             scenario.Context.ReviewedSubmissionDeadline,
             DateTimeOffset.UtcNow,
             candidate,
             Array.Empty<RetainedWork>()); // Only a diagnostic: existing tasks do not expose remaining hours here.
-        var flags = QualityFlags(scenario, candidate, budget);
+        var flags = EvaluationQuality.Flags(scenario.Id, scenario.Context, candidate, budget);
         results.Add(new EvaluationResult(scenario.Id, scenario.Focus, "ok", sw.ElapsedMilliseconds,
             candidate.Tasks.Count, candidate, budget.Feasibility,
-            budget.AvailableHours, budget.RemainingEffortHours, flags, null));
+            budget.AvailableHours, budget.RemainingEffortHours, flags, null, renderingProof.Selections, renderingProof.Reason));
         Console.WriteLine($"ok ({candidate.Tasks.Count} tasks; {sw.ElapsedMilliseconds} ms; {flags.Length} review flags)");
     }
     catch (MetaAiException error)
@@ -77,7 +87,7 @@ foreach (var scenario in scenarios)
 var reportDir = Path.Combine(Path.GetTempPath(), "nextstep-meta-eval-" +
     executedAtUtc.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture) + "-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(reportDir);
-var report = new EvaluationReport(2, provenance, results);
+var report = new EvaluationReport(2, provenance, results, selection.OfflineFixtures ? "offline-fixtures" : "live");
 var jsonPath = Path.Combine(reportDir, "results.json");
 await using (var output = new FileStream(jsonPath, FileMode.CreateNew))
 await using (var writer = new StreamWriter(output))
@@ -94,44 +104,17 @@ Console.WriteLine(jsonPath);
 Console.WriteLine("Complete the manual rubric in REVIEW.md before claiming quality is acceptable.");
 return results.All(r => r.Status == "ok") ? 0 : 1;
 
-static string[] QualityFlags(EvaluationScenario s, PlanCandidateOutput c, BudgetAssessment b)
-{
-    var flags = new List<string>();
-    if (c.Tasks.Count == 0)
-        flags.Add("Zero tasks: manually check whether the explanation justifies no remaining preparation work.");
-    if (s.Id == "mandatory-missing" && !c.Tasks.Any(t =>
-            t.Target.Kind == "requirement" && t.Target.RequirementId == "req-demo-video" && t.Priority == "must"))
-        flags.Add("Missing mandatory submission work: verify why the explicit missing required video was not scheduled as must.");
-    if (s.Id == "experienced" && c.Tasks.Any(t =>
-            t.Title.Contains("learn basic", StringComparison.OrdinalIgnoreCase) ||
-            t.Title.Contains("intro to", StringComparison.OrdinalIgnoreCase)))
-        flags.Add("Possibly generic beginner work despite accepted experience; inspect relevance.");
-    if (s.Id == "existing-progress" && c.Tasks.Any(t =>
-            t.Title.Contains("create initial wireframes", StringComparison.OrdinalIgnoreCase) ||
-            t.Title.Contains("set up react repository", StringComparison.OrdinalIgnoreCase)))
-        flags.Add("Possible semantic duplication of retained work; inspect manually.");
-    if (b.Feasibility == "infeasible")
-        flags.Add("Estimated workload exceeds reported capacity; assess transparency. Do NOT silently shrink real effort.");
-    if (s.Id == "unknown-facts")
-        flags.Add("Manually verify no definite dates, deadlines, eligibility verdicts or experience claims were invented.");
-    if (s.Id == "approved-resources")
-    {
-        if (c.Tasks.Any(t => t.ResourceIds.Contains("reviewed-resource-002", StringComparer.Ordinal)))
-            flags.Add("IRRELEVANT RESOURCE: model selected the reviewed interview guide for a visualization task.");
-        flags.Add("Resource IDs are allowlisted and described, but semantic fit still needs manual review.");
-    }
-    return flags.ToArray();
-}
-
 static IReadOnlyList<EvaluationScenario> CreateScenarios(DateTimeOffset now)
 {
-    static PlanningProfile Profile(string[] experience, string[] skills, string[] constraints) => new(experience, skills, constraints);
-    static PlanGenerationContext Context(string id, string theme, PlanGoal goal, PlanningProfile profile,
+    static PlanningProfile Profile(string[] experience, string[] skills, string[] constraints) => new(experience.Select(e => new ExperienceEntry(ExperienceKinds.Experience, e)).ToArray(), skills, constraints);
+    PlanGenerationContext Context(string id, string theme, PlanGoal goal, PlanningProfile profile,
         double? hours, DateTimeOffset? deadline, IReadOnlyList<ReviewedRequirement>? requirements = null,
         IReadOnlyList<string>? resources = null, IReadOnlyList<ExistingPlanTask>? existing = null) =>
-        new(id, theme, EvaluationProvenance.ScenarioSetVersion, EvaluationProvenance.ScenarioSetVersion, new[] { goal },
+        new PlanGenerationContext(id, theme, EvaluationProvenance.ScenarioSetVersion, EvaluationProvenance.ScenarioSetVersion, new[] { goal },
             requirements ?? Array.Empty<ReviewedRequirement>(), resources ?? Array.Empty<string>(),
-            hours, deadline, false, existing ?? Array.Empty<ExistingPlanTask>(), profile);
+            hours, deadline, false, existing ?? Array.Empty<ExistingPlanTask>(), profile) {
+                AvailableCapacityHours = hours is { } weekly && deadline is { } end ? Math.Max(0, (end - now).TotalDays / 7 * weekly) : null
+            };
 
     var beginner = Context("eval-beginner", "Student prototype hackathon: simple task management web application",
         new("g-beginner", "Build and demonstrate a simple task tracker with a clear user journey"),
@@ -154,7 +137,7 @@ static IReadOnlyList<EvaluationScenario> CreateScenarios(DateTimeOffset now)
         Profile(new[] { "Built one prototype" }, new[] { "React" },
             new[] { "The required demo video has not been created" }),
         6, now.AddDays(21),
-        new[] { new ReviewedRequirement("req-demo-video", "Mandatory submission: record and submit a demonstration video of the working prototype; this item is currently missing.", "submission", true, true) });
+        new[] { new ReviewedRequirement("req-demo-video", "Mandatory submission: record and submit a demonstration video of the working prototype; this item is currently missing.", "submission", true, true, new("video", ["record", "deliver"], EvaluationProvenance.ScenarioSetVersion, ["synthetic-reviewed-video-evidence"])) });
     var progress = Context("eval-progress", "Hackathon web application preparation with existing accepted work",
         new("g-progress", "Complete a prototype and a clear presentation"),
         Profile(new[] { "Completed initial design" }, new[] { "React", "CSS" },
@@ -185,3 +168,17 @@ static IReadOnlyList<EvaluationScenario> CreateScenarios(DateTimeOffset now)
 }
 
 sealed record EvaluationScenario(string Id, string Focus, PlanGenerationContext Context);
+
+sealed class OfflineFixtureHandler : HttpMessageHandler
+{
+    private readonly JsonDocument fixtures = JsonDocument.Parse(typeof(OfflineFixtureHandler).Assembly.GetManifestResourceStream("evaluation-source/NextStep.MetaAi.Eval/Fixtures/structured-scenarios.json")!);
+    internal string ScenarioId { get; set; } = "";
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        var content = fixtures.RootElement.GetProperty(ScenarioId).GetRawText();
+        var response = JsonSerializer.Serialize(new { choices = new[] { new { finish_reason = "stop", message = new { role = "assistant", content } } } });
+        return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = new StringContent(response, System.Text.Encoding.UTF8, "application/json") });
+    }
+    protected override void Dispose(bool disposing) { if (disposing) fixtures.Dispose(); base.Dispose(disposing); }
+}
