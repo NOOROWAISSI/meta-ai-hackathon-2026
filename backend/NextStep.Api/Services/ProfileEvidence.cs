@@ -174,7 +174,7 @@ public sealed class ProfileEvidenceService(EvidenceRepository repository, IEvide
         Current(s, e, request.ProfileVersion, request.SourcesVersion);
         var draft = e.Draft;
         Input.Require(draft is not null && draft.Id == request.DraftId && draft.ProfileVersion == s.Profile.Version && draft.SourcesVersion == e.Version, "This extraction is outdated. Analyze current sources again.");
-        Input.Require(request.Facts is { Length: > 0 and <= 24 } && request.Facts.Select(f => f.Index).Distinct().Count() == request.Facts.Length, "Choose the facts you want to confirm.");
+        Input.Require(request.Facts is { Length: > 0 and <= 100 } && request.Facts.Select(f => f.Index).Distinct().Count() == request.Facts.Length, "Choose between 1 and 100 facts to confirm.");
         var profile = s.Profile;
         foreach (var accepted in request.Facts) {
             Input.Require(accepted.Index >= 0 && accepted.Index < draft!.Output.Facts.Length && accepted.Value is { Length: > 0 and <= 1500 } && accepted.Contribution is { Length: <= 1500 }, "A confirmed fact is invalid.");
@@ -187,8 +187,8 @@ public sealed class ProfileEvidenceService(EvidenceRepository repository, IEvide
                     ? profile with { Skills = [..profile.Skills, new(id, accepted.Value, "reported_has")] }
                     : profile with { Skills = profile.Skills.Select(skill => skill.Id == existing.Id ? skill with { Label = accepted.Value, State = "reported_has" } : skill).ToArray() };
             } else if (proposed.Kind == "project") {
-                Input.Require(!string.IsNullOrWhiteSpace(accepted.Contribution), "Describe your personal contribution before adopting a project.");
-                profile = profile with { ProjectExperience = [..profile.ProjectExperience, new(id, accepted.Value + "\nPersonal contribution: " + accepted.Contribution)] };
+                var contribution = string.IsNullOrWhiteSpace(accepted.Contribution) ? "Not provided; personal contribution is unknown." : accepted.Contribution;
+                profile = profile with { ProjectExperience = [..profile.ProjectExperience, new(id, accepted.Value + "\nPersonal contribution: " + contribution)] };
                 var projects = s.ProfileEditor["projects"] as JsonArray ?? new JsonArray();
                 if (projects.Parent is null) s.ProfileEditor["projects"] = projects;
                 projects.Add(new JsonObject { ["id"] = id, ["title"] = accepted.Value.Split('\n')[0][..Math.Min(100, accepted.Value.Split('\n')[0].Length)], ["description"] = accepted.Value, ["contribution"] = accepted.Contribution, ["technologies"] = new JsonArray(), ["url"] = "" });

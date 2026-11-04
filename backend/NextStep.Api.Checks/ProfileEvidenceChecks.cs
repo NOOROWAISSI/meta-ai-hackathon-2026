@@ -200,10 +200,34 @@ public static class ProfileEvidenceChecks {
             var changed = await client.PostAsJsonAsync("/api/profile/evidence/accept", request with { Facts = [new(0, "Invented skill", "")] }, Wire.Json); Check(changed.StatusCode == HttpStatusCode.Conflict);
             var reloaded = (await client.GetFromJsonAsync<EvidenceView>("/api/profile/evidence", Wire.Json))!; Check(reloaded.Workspace.Confirmed.Count == 2 && reloaded.Workspace.Draft is null);
         }));
-        test("project adoption without contribution rolls back all selected facts", () => Run(async (host, client, view) => {
+        test("selected projects can be confirmed without inventing a missing contribution", () => Run(async (host, client, view) => {
             view = await Analyze(client, await Add(client, view));
             var result = await client.PostAsJsonAsync("/api/profile/evidence/accept", new EvidenceAcceptance(view.Workspace.Draft!.Id, view.ProfileVersion, view.Workspace.Version, [new(0, "React", ""), new(1, "Student project", "")]), Wire.Json);
-            Check(!result.IsSuccessStatusCode && (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!.Skills.Length == 0);
+            result.EnsureSuccessStatusCode();
+            var saved = (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!;
+            var evidence = (await client.GetFromJsonAsync<EvidenceView>("/api/profile/evidence", Wire.Json))!;
+            Check(saved.Skills.Length == 1 && saved.ProjectExperience.Single().Description.Contains("personal contribution is unknown"));
+            Check(evidence.Workspace.Confirmed.Count == 2 && evidence.Workspace.Confirmed.Single(f => f.Kind == "project").Contribution == "");
+            var editor = (await client.GetFromJsonAsync<ProfileEditorView>("/api/profile/editor", Wire.Json))!;
+            Check(editor.Editor["projects"]![0]!["contribution"]!.GetValue<string>() == "");
+        }));
+        test("one hundred selected facts persist atomically and replay without duplicates", () => Run(async (host, client, view) => {
+            var profile = (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!;
+            var owner = profile.Id["profile-".Length..];
+            var facts = Enumerable.Range(0, 100).Select(i => new ProposedFact(i < 50 ? "skill" : i < 70 ? "project" : "goal", "Synthetic batch fact " + i, "source_statement", "Synthetic stored draft", [])).ToArray();
+            var draftId = Guid.NewGuid().ToString("N");
+            await host.Services.GetRequiredService<EvidenceRepository>().Transaction(owner, (state, evidence) => {
+                evidence.Draft = new(draftId, state.Profile.Version, evidence.Version, new(facts, []));
+                return true;
+            }, CancellationToken.None);
+            var request = new EvidenceAcceptance(draftId, view.ProfileVersion, view.Workspace.Version, facts.Select((fact, index) => new FactAcceptance(index, fact.Value, "")).ToArray());
+            (await client.PostAsJsonAsync("/api/profile/evidence/accept", request, Wire.Json)).EnsureSuccessStatusCode();
+            (await client.PostAsJsonAsync("/api/profile/evidence/accept", request, Wire.Json)).EnsureSuccessStatusCode();
+            var reloaded = (await client.GetFromJsonAsync<EvidenceView>("/api/profile/evidence", Wire.Json))!;
+            var saved = (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!;
+            Check(reloaded.Workspace.Confirmed.Count == 100 && reloaded.Workspace.Draft is null);
+            Check(saved.Skills.Length == 50 && saved.ProjectExperience.Length == 20 && saved.Goals.Length == 30);
+            Check(saved.ProjectExperience.All(p => p.Description.Contains("personal contribution is unknown")));
         }));
         test("explicit skill adoption updates an older reported-lacks fact rather than silently ignoring it", () => Run(async (host, client, view) => {
             var original = (await client.GetFromJsonAsync<StudentProfile>("/api/profile", Wire.Json))!;

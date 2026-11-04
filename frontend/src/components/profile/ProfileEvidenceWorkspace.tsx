@@ -18,6 +18,7 @@ import {
   type ProposedFact,
 } from "@/lib/profile/evidence";
 import { ExtractionOptInPanel } from "./ExtractionOptInPanel";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 type Edit = { selected: boolean; value: string; contribution: string };
 export function ProfileEvidenceWorkspace({
@@ -28,6 +29,8 @@ export function ProfileEvidenceWorkspace({
   onChanged: () => void;
 }) {
   const { t, language } = useLocale();
+  const auth = useAuth();
+  const githubDraftKey = auth?.user ? `nextstep:github-source-draft:v1:${auth.user.id}` : null;
   const [view, setView] = useState<EvidenceView>();
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
@@ -37,6 +40,52 @@ export function ProfileEvidenceWorkspace({
   const [url, setUrl] = useState("");
   const [username, setUsername] = useState("");
   const [repoUrl, setRepoUrl] = useState("");
+  useEffect(() => {
+    if (!githubDraftKey) {
+      setUsername("");
+      setRepoUrl("");
+      return;
+    }
+    try {
+      const stored = localStorage.getItem(githubDraftKey);
+      if (stored) {
+        const value = JSON.parse(stored);
+        setUsername(typeof value.username === "string" ? value.username : "");
+        setRepoUrl(typeof value.repoUrl === "string" ? value.repoUrl : "");
+        return;
+      }
+    } catch {
+      /* A blocked browser store must not prevent source import. */
+    }
+    const imported = view?.workspace.sources.find(
+      (source) => source.kind === "github" && source.url,
+    );
+    if (imported?.url) {
+      try {
+        const url = new URL(imported.url);
+        if (url.hostname === "github.com") {
+          setUsername(url.pathname.split("/").filter(Boolean)[0] ?? "");
+          setRepoUrl(imported.url);
+        }
+      } catch {
+        /* Keep invalid historical links out of the input. */
+      }
+    }
+  }, [githubDraftKey, view?.workspace.sources]);
+  function rememberGitHub(nextUsername: string, nextRepoUrl: string) {
+    setUsername(nextUsername);
+    setRepoUrl(nextRepoUrl);
+    if (githubDraftKey) {
+      try {
+        localStorage.setItem(
+          githubDraftKey,
+          JSON.stringify({ username: nextUsername, repoUrl: nextRepoUrl }),
+        );
+      } catch {
+        /* Keep editable inputs usable when browser storage is unavailable. */
+      }
+    }
+  }
   const [repos, setRepos] = useState<{ name: string; url: string; description: string }[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [consent, setConsent] = useState(false);
@@ -94,7 +143,19 @@ export function ProfileEvidenceWorkspace({
       const result = await operation();
       setView(result);
       if (changesProfile) onChanged();
-      setNotice(t("Confirmed saved.", "تم الحفظ."));
+      setNotice(
+        label === "accept"
+          ? t("Confirmed saved.", "تم اعتماد المعلومات وحفظها بملفك.")
+          : label === "analysis"
+            ? t(
+                "Analysis draft saved. Review and select facts below, then confirm them to update your profile.",
+                "تم حفظ اقتراحات التحليل. راجع المعلومات تحت واختار الصحيح منها، ثم اعتمده لتحديث ملفك.",
+              )
+            : t(
+                "Source changes saved. Profile facts have not been confirmed by this action.",
+                "تم حفظ تعديل المصادر. هذه العملية لا تعتمد معلومات جديدة بملفك.",
+              ),
+      );
       retryOperation.current = null;
     } catch (e) {
       setError(
@@ -108,12 +169,9 @@ export function ProfileEvidenceWorkspace({
     }
   }
   const locked = disabled || !!busy || !view;
-  const selectedSources = (view?.workspace.sources ?? []).filter((s) =>
-    selected.includes(s.id),
-  );
+  const selectedSources = (view?.workspace.sources ?? []).filter((s) => selected.includes(s.id));
   const allOptedIn =
-    selectedSources.length > 0 &&
-    selectedSources.every((s) => optIns[s.id]?.optedIn);
+    selectedSources.length > 0 && selectedSources.every((s) => optIns[s.id]?.optedIn);
   useEffect(() => {
     const missing = selected.filter((id) => !(id in optIns));
     if (!missing.length) return;
@@ -298,7 +356,7 @@ export function ProfileEvidenceWorkspace({
               <input
                 id="github-account"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => rememberGitHub(e.target.value, repoUrl)}
                 placeholder="GitHub username"
                 className="min-w-0 flex-1 rounded-xl border border-border bg-background p-3"
               />
@@ -327,7 +385,7 @@ export function ProfileEvidenceWorkspace({
                   <button
                     type="button"
                     key={repo.url}
-                    onClick={() => setRepoUrl(repo.url)}
+                    onClick={() => rememberGitHub(username, repo.url)}
                     aria-pressed={repoUrl === repo.url}
                     className={`block w-full rounded-xl border p-3 text-start text-sm ${repoUrl === repo.url ? "border-primary bg-primary/15" : "border-border"}`}
                   >
@@ -346,7 +404,7 @@ export function ProfileEvidenceWorkspace({
               id="github-repository"
               type="url"
               value={repoUrl}
-              onChange={(e) => setRepoUrl(e.target.value)}
+              onChange={(e) => rememberGitHub(username, e.target.value)}
               placeholder="https://github.com/owner/repository"
               className="w-full rounded-xl border border-border bg-background p-3"
             />
@@ -479,7 +537,9 @@ export function ProfileEvidenceWorkspace({
             <button
               type="button"
               className="detail-primary mt-4"
-              disabled={locked || !consent || !selected.length || selected.length > 3 || !allOptedIn}
+              disabled={
+                locked || !consent || !selected.length || selected.length > 3 || !allOptedIn
+              }
               onClick={() =>
                 void run(
                   "analysis",
@@ -557,8 +617,8 @@ export function ProfileEvidenceWorkspace({
                       htmlFor={`evidence-contribution-${index}`}
                     >
                       {t(
-                        "What did you personally contribute? Required to adopt this project.",
-                        "شو كانت مساهمتك الشخصية؟ مطلوبة لاعتماد المشروع.",
+                        "What did you personally contribute? Optional; leave blank if not provided.",
+                        "شو كانت مساهمتك الشخصية؟ اختياري؛ اتركه فارغًا إذا مش مذكورة.",
                       )}
                     </label>
                     <textarea
@@ -605,21 +665,66 @@ export function ProfileEvidenceWorkspace({
                 </ul>
               </aside>
             )}
+            <p
+              id="fact-confirmation-help"
+              className="my-3 text-sm text-muted-foreground"
+              role="status"
+            >
+              {stale
+                ? t(
+                    "This draft is outdated. Analyze current sources before confirming.",
+                    "المسودة قديمة؛ حلل المصادر الحالية قبل الاعتماد.",
+                  )
+                : !edits.some((e) => e.selected)
+                  ? t(
+                      "Select the checkbox beside each fact you want to add. Nothing is selected yet.",
+                      "حدد مربع الاختيار بجانب كل معلومة بدك تضيفها. لسه ما اخترت معلومات.",
+                    )
+                  : t(
+                      `${edits.filter((e) => e.selected).length} selected facts will be saved. Missing project contributions remain unknown.`,
+                      `سيتم حفظ ${edits.filter((e) => e.selected).length} معلومات مختارة. مساهمات المشاريع غير المذكورة بتظل غير معروفة.`,
+                    )}
+            </p>
             <button
               type="button"
               className="detail-primary"
-              disabled={
-                locked ||
-                stale ||
-                !edits.some((e) => e.selected) ||
-                edits.some(
-                  (e, i) =>
-                    e.selected &&
-                    (!e.value.trim() ||
-                      (draft.output.facts[i]?.kind === "project" && !e.contribution.trim())),
-                )
-              }
-              onClick={() =>
+              aria-describedby="fact-confirmation-help"
+              disabled={!!busy}
+              onClick={() => {
+                if (!view || !edits.some((e) => e.selected)) {
+                  setError(
+                    t(
+                      "Select at least one fact to confirm.",
+                      "اختار معلومة واحدة على الأقل لاعتمادها.",
+                    ),
+                  );
+                  return;
+                }
+                if (disabled || stale) {
+                  setError(
+                    disabled
+                      ? t(
+                          "Save or cancel the profile form changes first. Your selected facts are preserved.",
+                          "احفظ أو ألغِ تعديلات نموذج البروفايل أولًا. المعلومات اللي اخترتها محفوظة.",
+                        )
+                      : t(
+                          "The profile or sources changed. Refresh saved sources before confirming. Your selection has not been submitted.",
+                          "الملف أو المصادر تغيّرت. حدّث المصادر المحفوظة قبل الاعتماد. لم يتم إرسال اختياراتك.",
+                        ),
+                  );
+                  return;
+                }
+                const invalid = edits.findIndex((e) => e.selected && !e.value.trim());
+                if (invalid >= 0) {
+                  setError(
+                    t(
+                      "Your selection is kept. Enter the selected fact's text before confirming.",
+                      "اختياراتك محفوظة. اكتب نص المعلومة المختارة قبل اعتمادها.",
+                    ),
+                  );
+                  document.getElementById(`evidence-fact-${invalid}`)?.focus();
+                  return;
+                }
                 void run("accept", () =>
                   evidenceService.mutate("/accept", {
                     draftId: draft.id,
@@ -630,8 +735,8 @@ export function ProfileEvidenceWorkspace({
                         : [],
                     ),
                   }),
-                )
-              }
+                );
+              }}
             >
               <ShieldCheck className="size-4" />
               {t("Confirm selected facts in my profile", "اعتمد المعلومات المختارة بملفي")}

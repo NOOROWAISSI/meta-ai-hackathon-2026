@@ -126,6 +126,29 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
+it("remembers GitHub source inputs across remount without fetching or importing automatically", async () => {
+  localStorage.removeItem("nextstep:github-source-draft:v1:student-a");
+  const first = render(<ProfileEvidenceWorkspace disabled={false} onChanged={() => {}} />);
+  await screen.findByText("Private sources · review before analysis");
+  fireEvent.change(screen.getByPlaceholderText("GitHub username"), {
+    target: { value: "synthetic-student" },
+  });
+  fireEvent.change(screen.getByPlaceholderText("https://github.com/owner/repository"), {
+    target: { value: "https://github.com/synthetic-student/project" },
+  });
+  first.unmount();
+  render(<ProfileEvidenceWorkspace disabled={false} onChanged={() => {}} />);
+  await waitFor(() =>
+    expect(screen.getByPlaceholderText("GitHub username")).toHaveValue("synthetic-student"),
+  );
+  expect(screen.getByPlaceholderText("https://github.com/owner/repository")).toHaveValue(
+    "https://github.com/synthetic-student/project",
+  );
+  expect(service.repositories).not.toHaveBeenCalled();
+  expect(service.mutate).not.toHaveBeenCalled();
+  localStorage.removeItem("nextstep:github-source-draft:v1:student-a");
+});
+
 it.each(["en", "ar"])(
   "discloses embedded links and personal information before comparison in %s",
   async (language) => {
@@ -330,6 +353,12 @@ it("does not analyze imported sources before selection and explicit consent", as
   service.mutate.mockResolvedValue(structuredClone(drafted));
   fireEvent.click(analyze);
   await screen.findByText("Your review comes first");
+  expect(
+    screen.getByText(
+      "Analysis draft saved. Review and select facts below, then confirm them to update your profile.",
+    ),
+  ).toBeInTheDocument();
+  expect(screen.queryByText("Confirmed saved.")).not.toBeInTheDocument();
   expect(service.mutate).toHaveBeenCalledWith("/analyze", {
     profileVersion: 2,
     sourcesVersion: 1,
@@ -339,18 +368,25 @@ it("does not analyze imported sources before selection and explicit consent", as
   });
   expect(
     screen.getByRole("button", { name: "Confirm selected facts in my profile" }),
-  ).toBeDisabled();
+  ).toBeEnabled();
+  fireEvent.click(screen.getByRole("button", { name: "Confirm selected facts in my profile" }));
+  expect(screen.getByText("Select at least one fact to confirm.")).toBeInTheDocument();
 });
 
-it("requires personal contribution and explicit fact selection before project adoption", async () => {
+it("accepts selected projects with an optional personal contribution", async () => {
   service.read.mockResolvedValue(structuredClone(drafted));
   const changed = vi.fn();
   render(<ProfileEvidenceWorkspace disabled={false} onChanged={changed} />);
   const confirm = await screen.findByRole("button", {
     name: "Confirm selected facts in my profile",
   });
+  expect(
+    screen.getByText(
+      "Select the checkbox beside each fact you want to add. Nothing is selected yet.",
+    ),
+  ).toBeInTheDocument();
   fireEvent.click(screen.getByRole("checkbox", { name: /project · Source statement/ }));
-  expect(confirm).toBeDisabled();
+  await waitFor(() => expect(confirm).toBeEnabled());
   fireEvent.change(screen.getByLabelText(/What did you personally contribute/), {
     target: { value: "I implemented form validation and the calendar interface." },
   });
@@ -394,13 +430,49 @@ it("failed adoption preserves selected edited facts and never displays false suc
   expect(service.mutate.mock.calls[1]).toEqual(service.mutate.mock.calls[0]);
 });
 
+it("three and four selected facts keep confirmation enabled without adopting automatically", async () => {
+  const multiple = structuredClone(drafted);
+  multiple.workspace.draft!.output.facts = ["React", "SQL", "Git", "TypeScript"].map((value) => ({
+    ...structuredClone(drafted.workspace.draft!.output.facts[0]!),
+    kind: "skill",
+    value,
+  }));
+  service.read.mockResolvedValue(multiple);
+  render(<ProfileEvidenceWorkspace disabled={false} onChanged={() => {}} />);
+  const confirm = await screen.findByRole("button", {
+    name: "Confirm selected facts in my profile",
+  });
+  const facts = await screen.findAllByRole("checkbox", { name: /skill · Source statement/ });
+  for (const fact of facts) {
+    fireEvent.click(fact);
+    await waitFor(() => expect(confirm).toBeEnabled());
+  }
+  expect(facts).toHaveLength(4);
+  expect(service.mutate).not.toHaveBeenCalled();
+  service.mutate.mockResolvedValue({ ...initial, profileVersion: 3 });
+  fireEvent.click(confirm);
+  await waitFor(() =>
+    expect(service.mutate).toHaveBeenCalledWith(
+      "/accept",
+      expect.objectContaining({
+        facts: ["React", "SQL", "Git", "TypeScript"].map((value, index) => ({
+          index,
+          value,
+          contribution: "",
+        })),
+      }),
+    ),
+  );
+});
+
 it("outdated extraction cannot be adopted", async () => {
   service.read.mockResolvedValue({ ...drafted, profileVersion: 3 });
   render(<ProfileEvidenceWorkspace disabled={false} onChanged={() => {}} />);
   await screen.findByText("This draft is outdated. Refresh and analyze again.");
   expect(
     screen.getByRole("button", { name: "Confirm selected facts in my profile" }),
-  ).toBeDisabled();
+  ).toBeEnabled();
+  expect(service.mutate).not.toHaveBeenCalled();
 });
 
 it("source uploads reject oversized files before contacting the backend", async () => {
