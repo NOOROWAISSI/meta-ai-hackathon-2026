@@ -31,7 +31,7 @@ builder.Services.AddHttpClient<IPersonalBriefingModel, MetaPersonalBriefingModel
 builder.Services.AddSingleton<PersonalBriefingService>();
 builder.Services.AddSingleton<EvidenceRepository>();
 builder.Services.AddTransient<ProfileEvidenceService>();
-builder.Services.AddHttpClient<IEvidenceIntelligence, MetaEvidenceIntelligence>(client => client.Timeout = TimeSpan.FromSeconds(95)).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
+builder.Services.AddHttpClient<IEvidenceIntelligence, MetaEvidenceIntelligence>(client => client.Timeout = TimeSpan.FromSeconds(190)).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
 builder.Services.AddHttpClient<PublicGitHubSources>(client => client.Timeout = TimeSpan.FromSeconds(20)).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
 builder.Services.AddSingleton<SourceCollector>();
 builder.Services.AddSingleton<DiscoveryFeed>();

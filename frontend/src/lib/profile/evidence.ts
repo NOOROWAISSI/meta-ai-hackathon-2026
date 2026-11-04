@@ -163,7 +163,7 @@ export const evidenceService = {
       base + path,
       method,
       body,
-      AbortSignal.timeout(100000),
+      AbortSignal.timeout(200000),
     );
     accountDataChanged();
     return result;
@@ -203,7 +203,7 @@ export const evidenceService = {
         consent: true,
         language,
       },
-      AbortSignal.timeout(100000),
+      AbortSignal.timeout(200000),
     ),
 };
 
