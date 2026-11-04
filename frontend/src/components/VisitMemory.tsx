@@ -10,6 +10,11 @@ import {
 
 const VisitMemory = createContext<Map<string, unknown> | null>(null);
 
+/** Read existing screen snapshots without issuing a new analysis request. */
+export function useVisitMemory() {
+  return useContext(VisitMemory);
+}
+
 /** Per mounted application, never shared between SSR requests or browser visits. */
 export function VisitMemoryProvider({ children }: { children: ReactNode }) {
   const values = useRef(new Map<string, unknown>());

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 2,
+  "provenance": {
+    "executedAtUtc": "2026-10-31T17:42:26.2035462+00:00",
+    "gitCommitSha": "60639eb351d966ad3bf05e69d72a457ad0f25eb1",
+    "relevantSourceHasUncommittedChanges": false,
+    "sourceMatchesWorkingTree": true,
+    "sourceFingerprint": "sha256:a7a7343b532fa6731d30ee5d650ecc08005cbc4db2a25d5b687077c49a3c3dde",
+    "promptFingerprint": "sha256:91ad08953293a238da6bf439854afedf1d5ccaac4a2337a9fbcf83d63ebb9922",
+    "scenarioVersion": "synthetic-v1",
+    "scenarioFingerprint": "sha256:a44f272bd411d3f43c2f064908bda3970ddae083094a34020851fa7c095ec5f1",
+    "configuration": {
+      "model": "muse-spark-1.3",
+      "attemptTimeoutSeconds": 30,
+      "overallTimeoutSeconds": 60,
+      "maxRetries": 1,
+      "maxRetryDelaySeconds": 5,
+      "maxResponseBytes": 131072
+    }
+  },
+  "results": [
+    {
+      "id": "unknown-facts",
+      "focus": "Unknown availability and unverified deadline",
+      "status": "ok",
+      "elapsedMilliseconds": 12264,
+      "taskCount": 2,
+      "candidate": {
+        "tasks": [
+          {
+            "title": "Compile clarification checklist for unverified participation details",
+            "target": {
+              "kind": "goal",
+              "goalId": "g-unknown"
+            },
+            "priority": "should",
+            "deliverable": "Written checklist of open questions about participation conditions and submission expectations needing organizer confirmation",
+            "completionCriteria": "Checklist captures the reported unknowns and what verified confirmation would resolve each, with no assumptions recorded as facts",
+            "estimatedHours": 1,
+            "resourceIds": []
+          },
+          {
+            "title": "Outline neutral exploration options for preparation",
+            "target": {
+              "kind": "goal",
+              "goalId": "g-unknown"
+            },
+            "priority": "could",
+            "deliverable": "Brief notes mapping possible preparation directions linked to the exploration goal without assuming requirements",
+            "completionCriteria": "Notes list options considered and the further information needed for each, with unverified points marked as such",
+            "estimatedHours": 1.5,
+            "resourceIds": []
+          }
+        ],
+        "explanation": "No reviewed requirements were supplied so no must tasks apply. With participation details unverified, the drafts focus on small goal-directed clarification and neutral option mapping for the exploration goal, without inventing criteria, sources, rules, or a schedule. No reviewed resources were supplied so resourceIds are empty. Estimates describe preparation effort only and do not promise timing."
+      },
+      "feasibility": "untimed",
+      "availableHours": null,
+      "remainingEffortHours": 2.5,
+      "flags": [
+        "Manually verify no definite dates, deadlines, eligibility verdicts or experience claims were invented."
+      ],
+      "errorCode": null
+    }
+  ]
+}

@@ -23,6 +23,8 @@ import type { ProfileService } from "@/lib/profile/service";
 import { Field, SelectField, TagEditor, TextField } from "./ProfileFields";
 import { ExperienceHelper } from "./ExperienceHelper";
 import { BackgroundFields } from "./BackgroundFields";
+import { EventAgeFields } from "./EventAgeFields";
+import type { AgeConditions } from "@/lib/profile/age-conditions";
 import { SectionHeading, ChoiceRail, WeeklyRhythm } from "./ProfileCompositions";
 
 export const SECTIONS = [
@@ -72,6 +74,7 @@ export function ProfileSections({
   service,
   suggestionFailure,
   eventTitle,
+  ageRequirements,
   onPendingChange,
 }: {
   active: number;
@@ -81,6 +84,7 @@ export function ProfileSections({
   service: ProfileService;
   suggestionFailure: boolean;
   eventTitle?: string;
+  ageRequirements?: AgeConditions | undefined;
   onPendingChange: (key: string, value: string, section: number) => void;
 }) {
   const [removed, setRemoved] = useState<ProfileProject | null>(null);
@@ -103,6 +107,12 @@ export function ProfileSections({
           update={update}
           errors={errors}
           {...(eventTitle ? { eventTitle } : {})}
+        />
+        <EventAgeFields
+          conditions={ageRequirements}
+          draft={draft}
+          update={update}
+          errors={errors}
         />
       </section>
 
@@ -226,7 +236,7 @@ export function ProfileSections({
           <TextField
             name="experience"
             label="Experience overview (optional)"
-            hint="Coursework, independent learning, team projects, or anything else you want to describe."
+            hint="Coursework, independent learning, team projects, or anything else you want to describe. This text is shared with Meta AI when you generate a draft, after you acknowledge the disclosure. Avoid names and contact details."
             multiline
             {...field}
           />
@@ -372,24 +382,26 @@ export function ProfileSections({
               <p className="profile-footnote">
                 A link is an artifact, not independent proof of authorship or competence.
               </p>
-              <ExperienceHelper
-                project={project}
-                service={service}
-                fail={suggestionFailure}
-                onAccept={(contribution, skills) => {
-                  const combined = [...draft.skills];
-                  for (const skill of skills) {
-                    if (!combined.some((entry) => entry.toLowerCase() === skill.toLowerCase()))
-                      combined.push(skill);
-                  }
-                  update({
-                    projects: projects.map((entry) =>
-                      entry.id === project.id ? { ...entry, contribution } : entry,
-                    ),
-                    skills: combined,
-                  });
-                }}
-              />
+              {service.suggestionsAvailable !== false && (
+                <ExperienceHelper
+                  project={project}
+                  service={service}
+                  fail={suggestionFailure}
+                  onAccept={(contribution, skills) => {
+                    const combined = [...draft.skills];
+                    for (const skill of skills) {
+                      if (!combined.some((entry) => entry.toLowerCase() === skill.toLowerCase()))
+                        combined.push(skill);
+                    }
+                    update({
+                      projects: projects.map((entry) =>
+                        entry.id === project.id ? { ...entry, contribution } : entry,
+                      ),
+                      skills: combined,
+                    });
+                  }}
+                />
+              )}
               <button
                 type="button"
                 className="flex items-center gap-2 text-xs text-destructive"
@@ -517,7 +529,7 @@ export function ProfileSections({
         <TextField
           name="constraints"
           label="Practical constraints (optional)"
-          hint="For example limited equipment, unreliable connectivity, travel, or accessibility needs."
+          hint="For example limited equipment, unreliable connectivity, travel, or accessibility needs. This text is shared with Meta AI when you generate a draft, after you acknowledge the disclosure. Avoid names and contact details."
           multiline
           {...field}
         />

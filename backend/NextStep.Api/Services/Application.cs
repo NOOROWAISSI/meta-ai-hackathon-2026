@@ -1,0 +1,185 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using NextStep.MetaAi;
+using NextStep.MetaAi.Application;
+
+namespace NextStep.Api;
+
+public sealed class Application(IStateStore store, Catalog catalog, IMetaModelClient model, ResourceCatalog resources, DisclosureStore disclosure)
+{
+    public static SubmissionState Submission(UserState state, Opportunity opportunity) => state.Submissions.GetValueOrDefault(opportunity.Id) ?? Catalog.EmptySubmission(opportunity);
+    public Task<StudentProfile> SaveProfile(string owner, ProfileUpdate update, CancellationToken ct)
+    {
+        Input.Require(update is not null && update.Profile is not null); Input.Profile(update.Profile);
+        return store.Change(owner, state => {
+            if (state.Profile.Id != update.Profile.Id || state.Profile.Version != update.ExpectedVersion || update.Profile.Version != update.ExpectedVersion) throw new ApiFault("version_conflict", "The profile changed. Reload before saving; plans and progress are preserved.");
+            state.Profile = Wire.Copy(update.Profile with { Version = checked(update.ExpectedVersion + 1) });
+            return state.Profile;
+        }, ct);
+    }
+    public Task<SubmissionState> SaveSubmission(string owner, string id, SubmissionUpdate update, CancellationToken ct)
+    {
+        var opportunity = catalog.Get(id); Input.Require(update is not null); Input.Submission(update.Submission, opportunity);
+        return store.Change(owner, state => {
+            if (Submission(state, opportunity).Version != update.ExpectedVersion || update.Submission.Version != update.ExpectedVersion) throw new ApiFault("version_conflict", "Submission facts changed. Reload and review your edits.");
+            var confirmed = update.Submission with { Version = checked(update.ExpectedVersion + 1) };
+            state.Submissions[id] = Wire.Copy(confirmed); return confirmed;
+        }, ct);
+    }
+    // A candidate task repeats retained work only when both sides carry a
+    // trusted action and the action and target match. Rendered titles are
+    // templates with step numbers, not identity. When either side lacks a
+    // trusted action (a legacy retained task, an unrendered candidate), fall
+    // back to the conservative exact-title comparison.
+    private static bool RepeatsRetained(CandidateTask task, PreparationTask old, Dictionary<string, string> trustedActions)
+    {
+        var oldAction = trustedActions.GetValueOrDefault(old.Id);
+        if (task.Action is { } action && oldAction is not null)
+            return string.Equals(action, oldAction, StringComparison.Ordinal) && old.Target == task.Target;
+        return string.Equals(old.Title.Trim(), task.Title.Trim(), StringComparison.OrdinalIgnoreCase);
+    }
+    // Self-report entries keep their provenance: the briefing note is
+    // application-generated, project experience and background are the
+    // student's own words, and accepted interpretations stay marked as
+    // system-proposed readings rather than direct reports.
+    private static ExperienceEntry[] ExperienceEntries(Opportunity opportunity, StudentProfile profile)
+    {
+        var entries = new List<ExperienceEntry>();
+        var note = BriefingStartingPoints.PlanningNote(opportunity, profile);
+        if (!string.IsNullOrWhiteSpace(note)) entries.Add(new(ExperienceKinds.BriefingNote, note));
+        // Combined integration: PR #29's planning clarifications keep their
+        // own provenance kind. They are answers the student confirmed during
+        // evidence review for this opportunity, not free-form self-report.
+        entries.AddRange(ProfileEvidenceService.PlanningClarifications(profile, opportunity.Id)
+            .Select(text => new ExperienceEntry(ExperienceKinds.EvidenceClarification, text)));
+        entries.AddRange(profile.ProjectExperience.Select(e => new ExperienceEntry(ExperienceKinds.Experience, e.Description)));
+        entries.AddRange(profile.AcceptedInterpretations.Select(e => new ExperienceEntry(ExperienceKinds.AcceptedInterpretation, e.Text)));
+        if (!string.IsNullOrWhiteSpace(profile.Background)) entries.Add(new(ExperienceKinds.SelfReport, profile.Background));
+        return entries.Where(e => !string.IsNullOrWhiteSpace(e.Text)).Take(30)
+            .Select(e => e.Text.Length <= 1000 ? e : e with { Text = e.Text[..1000] }).ToArray();
+    }
+    private static void Check(Opportunity o, UserState state, AnalysisRequest request)
+    {
+        Input.Require(request is not null && request.Profile is not null && request.Submission is not null);
+        Input.Profile(request.Profile); Input.Submission(request.Submission, o);
+        if (request.ExpectedSourceRevision != o.SourceRevision || !JsonNode.DeepEquals(JsonSerializer.SerializeToNode(request.Profile, Wire.Json), JsonSerializer.SerializeToNode(state.Profile, Wire.Json)) || !JsonNode.DeepEquals(JsonSerializer.SerializeToNode(request.Submission, Wire.Json), JsonSerializer.SerializeToNode(Submission(state, o), Wire.Json))) throw new ApiFault("version_conflict", "Save and reload current profile/submission facts first. Source or accepted facts changed.");
+        if (request.PreviousPlan is not null && !JsonNode.DeepEquals(JsonSerializer.SerializeToNode(request.PreviousPlan, Wire.Json), JsonSerializer.SerializeToNode(PlanDisplay.Project(state, o.Id, state.Plans.GetValueOrDefault(o.Id)), Wire.Json))) throw new ApiFault("version_conflict", "The accepted plan changed. Reload before generating another draft.");
+    }
+    public Task<AnalysisResult> Analyze(string owner, string id, AnalysisRequest request, CancellationToken ct)
+    {
+        var opportunity = catalog.Get(id);
+        return store.Read(owner, state => { Check(opportunity, state, request); return Matching.Analyze(opportunity, state.Profile, Submission(state, opportunity), DateTimeOffset.UtcNow); }, ct);
+    }
+    public async Task<StoredCandidate> Generate(string owner, string id, AnalysisRequest request, CancellationToken ct)
+    {
+        var opportunity = catalog.Get(id);
+        var snapshot = await store.Read(owner, state => { Check(opportunity, state, request); return Wire.Copy(state); }, ct);
+        var submission = Submission(snapshot, opportunity); var profile = snapshot.Profile;
+        var analysis = Matching.Analyze(opportunity, profile, submission, DateTimeOffset.UtcNow);
+        var previousRaw = snapshot.Plans.GetValueOrDefault(id);
+        var previous = PlanDisplay.Project(snapshot, id, previousRaw);
+        var trustedActions = PlanDisplay.TrustedActions(snapshot, id, previousRaw);
+        var retained = SubmissionReconciliation.Retain(previous);
+        var capacity = PreparationCapacity.Evaluate(opportunity, Input.Fact<double>(profile.AvailableHoursPerWeek), retained, DateTimeOffset.UtcNow).AvailableHours;
+        var rules = opportunity.Requirements.Where(r => r.Lane is "submission" or "preparation" && r.Evaluation["key"]?.GetValue<string>() != "unresolved" && Catalog.Reviewed(opportunity, r) && Matching.Applies(r, profile) == true && analysis.Matches.Single(m => m.RequirementId == r.Id).Status != "supported").Select(r => new ReviewedRequirement(r.Id, r.Statement, r.Lane, true, r.IsMandatory, Catalog.ReviewedDeliverable(opportunity, r))).ToArray();
+        var reviewedResources = resources.For(opportunity).Where(resource => resource.Status == "reviewed").ToArray();
+        var projection = new PlanGenerationContext(id, opportunity.Theme, opportunity.SourceRevision, request.ExpectedSourceRevision, profile.Goals, rules, reviewedResources.Select(resource => resource.Id).ToArray(), Input.Fact<double>(profile.AvailableHoursPerWeek), Catalog.Instant(opportunity, "submission_close"), analysis.ParticipationSummary == "does_not_meet_confirmed_requirement", previous?.Tasks.Select(t => new ExistingPlanTask(t.Id, t.Title, t.Status, t.Target, trustedActions.GetValueOrDefault(t.Id))).ToArray() ?? [], new PlanningProfile(ExperienceEntries(opportunity, profile), profile.Skills.Where(s => s.State == "reported_has").Select(s => s.Label).Take(30).ToArray(), profile.Constraints)) { ReviewedResources = reviewedResources.Select(resource => new ReviewedResourceInfo(resource.Id, resource.Title, resource.RelevanceNote)).ToArray(), RetainedEffortHours = retained.Sum(t => t.RemainingEstimatedHours), AvailableCapacityHours = capacity };
+        GenerationPolicy.ValidateInput(projection);
+        // P2 disclosure gate: after request integrity and input validation, but
+        // before any provider call or candidate write. A missing or outdated
+        // acknowledgment therefore produces no external request and no draft.
+        Disclosure.RequireCurrent(await disclosure.Get(owner, ct));
+        var output = await model.GenerateCandidateAsync(projection, ct);
+        GenerationPolicy.ValidateInput(projection); GenerationPolicy.ValidateCandidate(output, projection);
+        output = PlanActionRenderer.WithCapacityGuidance(output, projection);
+        var renderingProof = PlanActionRenderer.ProofFor(output, projection) ?? throw new ApiFault("invalid_model_output", "The draft did not pass the structured rendering boundary. Generate another draft.");
+        if (output.Tasks.Any(t => retained.Any(old => RepeatsRetained(t, old, trustedActions)))) throw new ApiFault("invalid_model_output", "The draft repeats retained work. Your accepted plan is unchanged.");
+        return await store.Change(owner, state => {
+            Check(opportunity, state, request);
+            if (state.Plans.GetValueOrDefault(id)?.Version != previous?.Version) throw new ApiFault("version_conflict", "Progress changed while generating. Request a fresh draft.");
+            _ = SubmissionReconciliation.Assess(opportunity, state.Profile, Submission(state, opportunity), previous, output.Tasks, SubmissionReconciliation.Retain(previous));
+            var now = DateTimeOffset.UtcNow;
+            foreach (var expired in state.Candidates.Where(p => p.Value.ExpiresAt <= now).Select(p => p.Key).ToArray()) state.Candidates.Remove(expired);
+            if (state.Candidates.Count >= 20) throw new ApiFault("rate_limited", "Too many pending drafts. Discard an older draft first.");
+            var candidate = new StoredCandidate(Guid.NewGuid().ToString("N"), id, analysis.Context, previous?.Version, Wire.Copy(profile.Goals), Wire.Copy(output), now.AddMinutes(30), Wire.Copy(renderingProof));
+            state.Candidates.Add(candidate.Id, candidate); return candidate;
+        }, ct);
+    }
+    public Task<Plan> Accept(string owner, string id, AcceptPlan request, CancellationToken ct)
+    {
+        var opportunity = catalog.Get(id); Input.Require(request is not null && Input.Id(request.CandidateId) && Input.Id(request.OperationId));
+        var fingerprint = MySqlStateStore.Hash("accept:" + id + JsonSerializer.Serialize(request, Wire.Json));
+        return store.Change(owner, state => {
+            if (Replay(state, request.OperationId, fingerprint, id)) return PlanDisplay.Project(state, id, state.Plans[id])!;
+            if (!state.Candidates.TryGetValue(request.CandidateId, out var candidate) || candidate.OpportunityId != id || candidate.ExpiresAt <= DateTimeOffset.UtcNow) throw new ApiFault("not_found", "This draft expired or is unavailable. Generate another draft.");
+            if (!PlanActionRenderer.Matches(candidate.Output, candidate.RenderingProof)) throw new ApiFault("version_conflict", "This draft needs to be regenerated using the current safety checks.");
+            var submission = Submission(state, opportunity); var currentContext = Matching.Context(opportunity, state.Profile, submission); var previous = state.Plans.GetValueOrDefault(id);
+            if (candidate.Context != currentContext || previous?.Version != request.ExpectedPlanVersion || candidate.BaseVersion != request.ExpectedPlanVersion) throw new ApiFault("version_conflict", "Context or plan version changed. Your previous plan is kept.");
+            var analysis = Matching.Analyze(opportunity, state.Profile, submission, DateTimeOffset.UtcNow);
+            if (analysis.ParticipationSummary == "does_not_meet_confirmed_requirement") throw new ApiFault("invalid_input", "Preparation cannot bypass a confirmed participation blocker.");
+            var deadline = Catalog.Instant(opportunity, "submission_close");
+            if (deadline <= DateTimeOffset.UtcNow) throw new ApiFault("invalid_input", "The confirmed submission window has closed.");
+            if (Input.Fact<double>(state.Profile.AvailableHoursPerWeek) == 0 && candidate.Output.Tasks.Count > 0) throw new ApiFault("invalid_input", "Zero reported hours cannot support positive preparation work.");
+            var retained = SubmissionReconciliation.Retain(previous);
+            var coverage = SubmissionReconciliation.Assess(opportunity, state.Profile, submission, previous, candidate.Output.Tasks, retained, candidate.Id);
+            var newTasks = candidate.Output.Tasks.Select(t => new PreparationTask(Guid.NewGuid().ToString("N"), t.Title, t.Target, t.Priority, t.Deliverable, t.CompletionCriteria, t.EstimatedHours, t.EstimatedHours, "not_started", t.ResourceIds.ToArray(), [])).ToArray();
+            var tasks = retained.Concat(newTasks).ToArray();
+            var goals = candidate.Goals.Concat(previous?.Goals ?? []).DistinctBy(g => g.Id).ToArray(); var budget = Budget(opportunity, state.Profile, tasks);
+            var plan = new Plan(previous?.Id ?? Guid.NewGuid().ToString("N"), checked((previous?.Version ?? 0) + 1), currentContext, goals, tasks, tasks.Select(t => t.Id).ToArray(), budget.Budget, budget.Feasibility, new[] { candidate.Output.Explanation, "Progress is self-reported and does not change eligibility or submission facts." }.Concat(deadline is null ? ["Submission timing is unconfirmed; this is untimed guidance."] : Array.Empty<string>()).ToArray());
+            plan = plan with { Warnings = plan.Warnings.Concat(coverage.Report.UnrepresentedRequirementIds.Select(requirementId => "Submission action not represented by plan tasks: " + opportunity.Requirements.Single(rule => rule.Id == requirementId).Statement)).Concat(coverage.Report.SourceCoverage != "complete" ? ["Submission source coverage remains " + coverage.Report.SourceCoverage + "; task coverage does not establish submission completeness."] : Array.Empty<string>()).ToArray() };
+            var previousDisplay = PlanDisplay.Project(state, id, previous);
+            if (previous is not null && previousDisplay!.Warnings.Contains(PlanDisplay.HistoricalNotice) && !state.HistoricalPlans.ContainsKey(id)) state.HistoricalPlans[id] = Wire.Copy(previous);
+            var retainedIds = retained.Select(t => t.Id).ToHashSet(StringComparer.Ordinal);
+            var oldRendering = state.PlanRenderings.GetValueOrDefault(id);
+            var batches = oldRendering is not null && previous is not null && oldRendering.PlanId == previous.Id ? oldRendering.Batches.Where(b => b.TaskIds.Any(retainedIds.Contains)).ToList() : [];
+            batches.Add(new(candidate.Output, candidate.RenderingProof!, newTasks.Select(t => t.Id).ToArray()));
+            state.PlanRenderings[id] = new(plan.Id, batches.ToArray(), deadline is null, coverage.Report.UnrepresentedRequirementIds.Length > 0, coverage.Report.SourceCoverage != "complete");
+            state.Plans[id] = plan; state.Candidates.Remove(candidate.Id); Remember(state, request.OperationId, fingerprint, id); return PlanDisplay.Project(state, id, plan)!;
+        }, ct);
+    }
+    public Task<SubmissionCoverageView> Coverage(string owner, string id, string? candidateId, CancellationToken ct)
+    {
+        var opportunity = catalog.Get(id);
+        return store.Read(owner, state => {
+            var plan = state.Plans.GetValueOrDefault(id); var submission = Submission(state, opportunity);
+            if (candidateId is null) return SubmissionReconciliation.Assess(opportunity, state.Profile, submission, plan, [], plan?.Tasks ?? []);
+            if (!state.Candidates.TryGetValue(candidateId, out var candidate) || candidate.OpportunityId != id || candidate.ExpiresAt <= DateTimeOffset.UtcNow) throw new ApiFault("not_found", "This draft is unavailable for your account.");
+            if (candidate.Context != Matching.Context(opportunity, state.Profile, submission) || candidate.BaseVersion != plan?.Version) throw new ApiFault("version_conflict", "Draft context changed. Reload current evidence and request a new draft.");
+            return SubmissionReconciliation.Assess(opportunity, state.Profile, submission, plan, candidate.Output.Tasks, SubmissionReconciliation.Retain(plan), candidate.Id);
+        }, ct);
+    }
+    public Task<Plan> Progress(string owner, string id, string taskId, TaskUpdate request, CancellationToken ct)
+    {
+        var opportunity = catalog.Get(id); Input.Require(request is not null && Input.Id(request.OperationId) && request.Status is "not_started" or "in_progress" or "done");
+        Input.Require(request.ArtifactUrls is null || request.ArtifactUrls.Length <= 8 && request.ArtifactUrls.All(u => u.Length <= 2000 && Input.Url(u)), "Artifact URLs must be valid HTTP(S) links.");
+        var fingerprint = MySqlStateStore.Hash("progress:" + id + ":" + taskId + JsonSerializer.Serialize(request, Wire.Json));
+        return store.Change(owner, state => {
+            if (Replay(state, request.OperationId, fingerprint, id)) return PlanDisplay.Project(state, id, state.Plans[id])!;
+            var plan = state.Plans.GetValueOrDefault(id) ?? throw new ApiFault("not_found", "No accepted plan exists for this opportunity.");
+            if (plan.Version != request.ExpectedVersion) throw new ApiFault("version_conflict", "Progress changed in another request. Reload before applying your unsaved change.");
+            if (!plan.Tasks.Any(t => t.Id == taskId)) throw new ApiFault("not_found", "This task does not belong to the selected plan.");
+            var tasks = plan.Tasks.Select(t => t.Id != taskId ? t : t with { Status = request.Status, RemainingEstimatedHours = request.Status == "done" ? 0 : t.RemainingEstimatedHours > 0 ? t.RemainingEstimatedHours : t.EstimatedHours, ArtifactUrls = request.ArtifactUrls ?? t.ArtifactUrls }).ToArray();
+            var contextIsCurrent = plan.Context == Matching.Context(opportunity, state.Profile, Submission(state, opportunity));
+            var assessment = PreparationCapacity.Evaluate(opportunity, plan.Budget.HoursPerWeek, tasks, DateTimeOffset.UtcNow, contextIsCurrent);
+            var updated = plan with { Version = checked(plan.Version + 1), Tasks = tasks, Budget = ToBudget(assessment), Feasibility = assessment.Feasibility };
+            state.Plans[id] = updated; Remember(state, request.OperationId, fingerprint, id); return PlanDisplay.Project(state, id, updated)!;
+        }, ct);
+    }
+    private static (PlanBudget Budget, string Feasibility) Budget(Opportunity o, StudentProfile p, PreparationTask[] tasks)
+    {
+        var budget = PreparationCapacity.Evaluate(o, Input.Fact<double>(p.AvailableHoursPerWeek), tasks, DateTimeOffset.UtcNow);
+        return (ToBudget(budget), budget.Feasibility);
+    }
+    private static PlanBudget ToBudget(BudgetAssessment b) => new(b.EvaluatedAt.ToString("O"), b.HoursPerWeek, b.DeadlineInstant?.ToString("O"), b.AvailableHours, b.RemainingEffortHours, b.Assumption);
+    private static bool Replay(UserState state, string operation, string fingerprint, string opportunity)
+    {
+        if (!state.Receipts.TryGetValue(operation, out var receipt)) return false;
+        if (receipt.Fingerprint != fingerprint || receipt.OpportunityId != opportunity) throw new ApiFault("version_conflict", "The operation ID was already used for a different change.");
+        return true;
+    }
+    private static void Remember(UserState state, string operation, string fingerprint, string opportunity)
+    {
+        state.Receipts[operation] = new(fingerprint, opportunity);
+        while (state.Receipts.Count > 100) state.Receipts.Remove(state.Receipts.Keys.First());
+    }
+}

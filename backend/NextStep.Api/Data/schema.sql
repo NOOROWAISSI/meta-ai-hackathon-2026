@@ -1,0 +1,149 @@
+CREATE TABLE IF NOT EXISTS schema_migrations (
+  version INT NOT NULL PRIMARY KEY,
+  applied_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS anonymous_sessions (
+  owner_id CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+  token_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL UNIQUE,
+  expires_at DATETIME(6) NOT NULL,
+  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS user_state (
+  owner_id CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+  schema_version INT NOT NULL,
+  revision BIGINT NOT NULL DEFAULT 1,
+  payload JSON NOT NULL,
+  updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_user_state_session FOREIGN KEY (owner_id) REFERENCES anonymous_sessions(owner_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+INSERT IGNORE INTO schema_migrations(version) VALUES (1);
+CREATE TABLE IF NOT EXISTS accounts (
+  id CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+  owner_id CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL UNIQUE,
+  email VARCHAR(254) NOT NULL,
+  normalized_email VARCHAR(254) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL UNIQUE,
+  password_hash VARCHAR(512) NULL,
+  google_subject VARCHAR(255) CHARACTER SET ascii COLLATE ascii_bin NULL UNIQUE,
+  display_name VARCHAR(100) NOT NULL,
+  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_account_owner FOREIGN KEY(owner_id) REFERENCES anonymous_sessions(owner_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS account_sessions (
+  token_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+  owner_id CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  expires_at DATETIME(6) NOT NULL,
+  CONSTRAINT fk_account_session FOREIGN KEY(owner_id) REFERENCES anonymous_sessions(owner_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+INSERT IGNORE INTO schema_migrations(version) VALUES (2);
+CREATE TABLE IF NOT EXISTS source_runs (
+  source_id VARCHAR(100) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+  checked_at DATETIME(6) NOT NULL,
+  result VARCHAR(50) NOT NULL,
+  candidate_count INT NOT NULL,
+  content_hash CHAR(64) NULL
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS intake_candidates (
+  id CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+  source_id VARCHAR(100) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  url VARCHAR(2000) NOT NULL,
+  title_hint VARCHAR(300) NOT NULL,
+  state VARCHAR(30) NOT NULL DEFAULT 'pending_review',
+  first_seen_at DATETIME(6) NOT NULL,
+  last_seen_at DATETIME(6) NOT NULL
+) ENGINE=InnoDB;
+INSERT IGNORE INTO schema_migrations(version) VALUES (3);
+CREATE TABLE IF NOT EXISTS password_recovery (
+  email_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+  account_id CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  request_id CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL UNIQUE,
+  code_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  attempts INT NOT NULL DEFAULT 0,
+  requested_at DATETIME(6) NOT NULL,
+  expires_at DATETIME(6) NOT NULL,
+  delivered BOOLEAN NOT NULL DEFAULT 0,
+  grant_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  grant_expires_at DATETIME(6) NULL,
+  INDEX ix_recovery_expiry(expires_at),
+  CONSTRAINT fk_recovery_account FOREIGN KEY(account_id) REFERENCES accounts(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+INSERT IGNORE INTO schema_migrations(version) VALUES (4);
+CREATE TABLE IF NOT EXISTS source_pages (
+  url_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+  source_id VARCHAR(100) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  url VARCHAR(2000) NOT NULL,
+  attempted_at DATETIME(6) NOT NULL,
+  checked_at DATETIME(6) NULL,
+  result VARCHAR(50) NOT NULL,
+  content_hash CHAR(64) NULL
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS discovered_listings (
+  id VARCHAR(100) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+  url_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL UNIQUE,
+  source_id VARCHAR(100) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  page_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  payload JSON NOT NULL,
+  first_seen_at DATETIME(6) NOT NULL,
+  checked_at DATETIME(6) NOT NULL,
+  INDEX ix_discovered_source(source_id)
+) ENGINE=InnoDB;
+INSERT IGNORE INTO schema_migrations(version) VALUES (5);
+-- Version 6: profile_evidence (PR #29). In the combined schema, version 6
+-- has exactly this one meaning; disclosure_acks lives at version 9 below.
+CREATE TABLE IF NOT EXISTS profile_evidence (
+  owner_id CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+  payload JSON NOT NULL,
+  CONSTRAINT fk_profile_evidence_session FOREIGN KEY(owner_id) REFERENCES anonymous_sessions(owner_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+INSERT IGNORE INTO schema_migrations(version) VALUES (6);
+-- Version 7: announcement_extractions (PR #30).
+CREATE TABLE IF NOT EXISTS announcement_extractions (
+  cache_key CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+  page_url VARCHAR(2000) NOT NULL,
+  outcome VARCHAR(40) NOT NULL,
+  payload JSON NULL,
+  created_at DATETIME(6) NOT NULL
+) ENGINE=InnoDB;
+INSERT IGNORE INTO schema_migrations(version) VALUES (7);
+-- Version 8: campus tables (PR #30).
+CREATE TABLE IF NOT EXISTS campus_follows (
+  owner_id CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  university_id VARCHAR(100) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  followed_at DATETIME(6) NOT NULL,
+  seen_at DATETIME(6) NOT NULL,
+  PRIMARY KEY(owner_id,university_id),
+  CONSTRAINT fk_campus_follow_session FOREIGN KEY(owner_id) REFERENCES anonymous_sessions(owner_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS campus_activities (
+  id VARCHAR(100) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+  source_id VARCHAR(100) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  payload JSON NOT NULL,
+  first_seen_at DATETIME(6) NOT NULL,
+  checked_at DATETIME(6) NOT NULL,
+  INDEX ix_campus_activity_source(source_id)
+) ENGINE=InnoDB;
+INSERT IGNORE INTO schema_migrations(version) VALUES (8);
+-- Version 9: disclosure_acks (P2). The standalone P2 branch recorded this
+-- table at version 6; the combined schema reserves 9 so version 6 keeps its
+-- single PR #29 meaning. The table definition is identical, and CREATE TABLE
+-- IF NOT EXISTS makes databases already carrying the P2 table converge
+-- without touching their rows or their existing version 6 record.
+CREATE TABLE IF NOT EXISTS disclosure_acks (
+  owner_id CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+  version INT NOT NULL,
+  acknowledged_at VARCHAR(40) NOT NULL,
+  CONSTRAINT fk_disclosure_owner FOREIGN KEY (owner_id) REFERENCES anonymous_sessions(owner_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+INSERT IGNORE INTO schema_migrations(version) VALUES (9);
+-- Version 10: evidence_import_optins (combined integration). One row per
+-- owner and imported source document; a row means the student opted in to
+-- external extraction for that document only.
+CREATE TABLE IF NOT EXISTS evidence_import_optins (
+  owner_id CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  source_id VARCHAR(100) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  version INT NOT NULL,
+  opted_in_at VARCHAR(40) NOT NULL,
+  source_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  PRIMARY KEY(owner_id, source_id),
+  CONSTRAINT fk_evidence_optin_session FOREIGN KEY (owner_id) REFERENCES anonymous_sessions(owner_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+INSERT IGNORE INTO schema_migrations(version) VALUES (10);

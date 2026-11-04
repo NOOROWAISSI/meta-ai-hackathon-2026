@@ -1,41 +1,35 @@
-# Meta Hackathon 2026
+# Meta Hackathon 2026 / NextStep
 
-A hackathon discovery and preparation platform for Palestinian university students.
+A student opportunity discovery and preparation application. The expanded scope starts with Palestine and global online opportunities.
 
-## Project Overview
+## Team ownership
 
-This platform helps students discover relevant hackathons,
-understand participation requirements, generate personalized
-preparation plans, and track their progress.
+- Noor Owaissi: frontend, application backend and MySQL.
+- Rofi Ibnu: Meta integration, prompts, eligibility/evaluation coordination and AI quality.
+- Integration contracts and deployment are coordinated together.
 
-## Team
+## Projects
 
-- Noor Owaissi — Frontend, Backend & Database
-- Rofi Ibnu — Product, Meta AI Integration, Eligibility & Evaluation
+- [frontend](frontend/README.md): React, TypeScript and Tailwind discovery, saved opportunities, profile and preparation workflows; account state and source-backed catalog reads use the API.
+- [backend](backend/README.md): ASP.NET Core controllers/services/repositories, accounts, recovery, transactional MySQL state and preparation orchestration.
+- [ai/dotnet](ai/dotnet/README-INTEGRATION.md): Rofi's original preparation client, dependency PR #10.
+- [integration handoff](backend/HANDOFF-ROFI.md): current contracts, review requests and unverified live paths.
 
-## Tech Stack
+    powershell -NoProfile -ExecutionPolicy Bypass -File backend/Setup-Database.ps1
+    powershell -NoProfile -ExecutionPolicy Bypass -File backend/Start-Api.ps1
 
-- Frontend: React + TypeScript
-- Backend: ASP.NET Core Web API 
-- Database: MySQL 
-- AI: Meta Models
+In another terminal:
 
-## Documentation
+    cd frontend
+    npm ci
+    npm run dev -- --host 127.0.0.1 --port 8082 --strictPort
 
-Product specifications are maintained in our shared Google Drive.
+## Release status
 
-## Project Status
+This release composes P1 structured plan safety (PR #31), the corrected P2 privacy work (PR #32, including PR #33), the profile-evidence and submission-document work (PRs #29 and #30), the combined candidate (PR #34), the independent-review corrections (PR #35), and the final recording fixes. See [the final integration record](docs/FINAL-RELEASE-20261104.md) for validation and [the original candidate record](docs/RELEASE-CANDIDATE.md) for the composition. The MIT license at the repository root was agreed by both contributors. One live generation canary passed on an earlier commit of this line; the final release's live behavior is not separately certified, and no deployment is claimed. No browser demo profile or plan is silently imported on sign-in.
 
-MVP Development — Draft v0.2
+For the demo, use [the walkthrough](docs/DEMO-RUNBOOK.md) and [release gates](docs/DEMO-RELEASE-GATES.json). Run `powershell -NoProfile -ExecutionPolicy Bypass -File backend/Check-Demo.ps1 -Mode Local` to check public UI/API availability. Submission mode intentionally refuses to report readiness while the final integration, authenticated submission requirements and live E2E remain unverified. Provider configuration alone is not a successful model call.
 
-## Frontend
+The frontend lockfile matches the corrected P1 lockfile without changing package.json. For the IDE workspace where package.json/src live at the root, run the frontend commands there instead of changing to frontend.
 
-The React + TypeScript interface lives in [frontend/](./frontend/README.md).
-
-```sh
-cd frontend
-npm ci --legacy-peer-deps
-npm run dev
-```
-
-The current frontend uses fictional demo records and local browser storage. Backend, database, and live Meta AI integration are not connected yet.
+Optional demo student accounts: [DEMO-STUDENTS.md](backend/DEMO-STUDENTS.md). Scope decisions: [PRODUCT-SCOPE-UPDATE.md](PRODUCT-SCOPE-UPDATE.md). Secrets belong in private backend configuration, never Git or frontend code. The final release is integrated through pull requests; published history is not rewritten.

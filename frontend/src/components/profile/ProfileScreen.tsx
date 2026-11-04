@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { DEFAULT_PROFILE, DEMO_HACKATHONS } from "@/lib/discover/demo-data";
+import { EMPTY_PROFILE as DEFAULT_PROFILE } from "@/lib/profile/defaults";
 import type { UserProfile } from "@/lib/discover/types";
 import type { AnalysisSnapshot } from "@/lib/details/types";
 import {
@@ -41,18 +41,28 @@ import { profileService, type ProfileService } from "@/lib/profile/service";
 import { ProfileSections, SECTIONS } from "./ProfileSections";
 import { ProfileIdentity } from "./ProfileIdentity";
 import { ProfileVisualSummary } from "./ProfileVisualSummary";
+import type { AgeConditions } from "@/lib/profile/age-conditions";
+import { ProfileEvidenceWorkspace } from "./ProfileEvidenceWorkspace";
 
 const ICONS = [GraduationCap, Compass, BookOpen, Clock3];
 
 export function ProfileScreen({
   eventId,
   service = profileService,
+  returnToPlans = false,
+  contextEvent,
+  ageRequirements,
+  evidenceEnabled = false,
 }: {
   eventId?: string;
   service?: ProfileService;
+  returnToPlans?: boolean;
+  contextEvent?: { id: string; title: string };
+  ageRequirements?: AgeConditions | undefined;
+  evidenceEnabled?: boolean;
 }) {
   const navigate = useNavigate();
-  const event = DEMO_HACKATHONS.find((entry) => entry.id === eventId);
+  const event = contextEvent;
   const [saved, setSaved] = useState<UserProfile>(DEFAULT_PROFILE);
   const [draft, setDraft] = useState<ProfileDraft>(() => toDraft(DEFAULT_PROFILE));
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
@@ -178,7 +188,9 @@ export function ProfileScreen({
       dirtyRef.current = false;
       setStatus("saved");
       setMessage(
-        "Changes saved in this browser. Your existing plans and completed tasks are unchanged.",
+        service.kind === "server"
+          ? "Changes confirmed in your account. Existing plans and completed tasks are preserved."
+          : "Changes saved in this browser. Your existing plans and completed tasks are unchanged.",
       );
     } catch (error) {
       setStatus("failed");
@@ -192,13 +204,19 @@ export function ProfileScreen({
     }
   };
   const returnToContext = (updateAnalysis = false) =>
-    void navigate({
-      to: "/",
-      search: event
-        ? { event: event.id, ...(updateAnalysis ? { analysis: "update" as const } : {}) }
-        : {},
-      resetScroll: false,
-    });
+    returnToPlans && !updateAnalysis
+      ? void navigate({
+          to: "/plans",
+          search: event ? { event: event.id } : {},
+          resetScroll: false,
+        })
+      : void navigate({
+          to: "/",
+          search: event
+            ? { opportunity: event.id, ...(updateAnalysis ? { analysis: "update" as const } : {}) }
+            : {},
+          resetScroll: false,
+        });
   const saveButton = (mobile = false) => (
     <button
       form="student-profile"
@@ -304,6 +322,19 @@ export function ProfileScreen({
           </div>
         </header>
 
+        {evidenceEnabled && (
+          <ProfileEvidenceWorkspace
+            disabled={loadState !== "ready" || dirty || status === "saving"}
+            onChanged={() => {
+              if (dirtyRef.current)
+                setMessage(
+                  "Your saved sources changed while you were editing. Your form draft is preserved; review the saved profile before submitting it.",
+                );
+              else setLoadAttempt((attempt) => attempt + 1);
+            }}
+          />
+        )}
+
         {loadState === "ready" && (
           <ProfileIdentity
             draft={draft}
@@ -339,7 +370,7 @@ export function ProfileScreen({
         )}
         {loadState === "ready" && (
           <>
-            {import.meta.env.DEV && (
+            {import.meta.env.DEV && service.kind !== "server" && (
               <details className="mb-5 text-xs text-muted-foreground">
                 <summary className="w-fit cursor-pointer">Profile demo controls</summary>
                 <div className="mt-3 flex flex-wrap gap-4 border-l-2 border-primary/20 pl-3">
@@ -401,6 +432,7 @@ export function ProfileScreen({
                   <div id="profile-editor" className="scroll-mt-24">
                     <fieldset disabled={status === "saving"} className="min-w-0">
                       <ProfileSections
+                        ageRequirements={ageRequirements}
                         active={active}
                         draft={draft}
                         update={update}
@@ -492,7 +524,9 @@ export function ProfileScreen({
                 )}
                 {status === "saving" && (
                   <p role="status" className="mt-3 text-sm text-muted-foreground">
-                    Confirming your changes in browser storage…
+                    {service.kind === "server"
+                      ? "Confirming changes in your account…"
+                      : "Confirming your changes in browser storage…"}
                   </p>
                 )}
               </div>
@@ -520,8 +554,8 @@ export function ProfileScreen({
                   <div className="mt-6 border-t border-primary/15 pt-5">
                     <p className="text-xs font-semibold">For {event.title}</p>
                     <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                      Organizer conditions are unverified in this demo. Complete eligibility cannot
-                      be established.
+                      Participation conditions are checked separately against the organizer's
+                      sources.
                     </p>
                     {(!draft.entrantType || draft.entrantType === "unknown") && (
                       <p className="mt-2 text-xs text-muted-foreground">

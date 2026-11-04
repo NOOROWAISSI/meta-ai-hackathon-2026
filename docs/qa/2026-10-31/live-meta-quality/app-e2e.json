@@ -1,0 +1,168 @@
+﻿{
+    "testedAt":  "2026-10-31T17:34:16.848Z",
+    "model":  "muse-spark-1.3",
+    "provider":  "live",
+    "syntheticStudent":  true,
+    "checks":  [
+                   "actual frontend -\u003e ASP.NET -\u003e live Meta English explanation displays original source links",
+                   "live Arabic explanation, cache reuse and no implicit profile/plan mutation",
+                   "actual frontend -\u003e live Meta candidate -\u003e explicit acceptance -\u003e MySQL confirmed plan",
+                   "live-generated plan start/Done, failed-save preservation/retry, reload persistence, version conflict and separate submission evidence",
+                   "mobile workspace and return to selected event"
+               ],
+    "english":  {
+                    "overview":  "The Meta Global AI Developer Hackathon 2026, organized by Meta \u0026 Cerebral Valley, is described as a ten-day online build event with separate indie-developer/student and startup tracks. The theme is building a practical AI project for a real-world problem or a technical frontier using Meta tools, alongside live workshops and Discord office hours. Applications and project submission are described as separate. Applications are reported as closed. Kickoff is published as 26 October 2026 with time not specified. Project submission is published for 4 November 2026 at 21:00 ET. Judging is published as 4 November to 8 November 2026 with times not specified, with finals and winners published as 9 November 2026 with time not specified. The exact application cutoff remains unknown due to conflicting publications of 25 October at 23:59 ET and 25 October at 23:59 EST. Advertised benefits include a cash prize pool requiring winner verification, Meta API credits for selected participants for a ten-day window subject to credit terms, and live workshops and Discord office hours. Entry acceptance does not establish eligibility, submission compliance or prize entitlement.",
+                    "personalRelevance":  "The reported interests in AI and Web development relate to an event theme centered on a practical AI project. The reported background of having built a small web interface and the reported goal of preparing a small AI study-helper prototype and an honest walkthrough of its limitations relate to a real-world problem project format and to published judging dimensions concerning who benefits and why the project matters and a working demonstration with explanation. The reported JavaScript self-report relates to web interface work for such a prototype. No prior AI model integration is reported, which relates to the published dimension concerning explanation of creative use of Meta AI tools as an area without reported prior experience.",
+                    "preparationPriorities":  [
+                                                  "Understanding of the single event track condition for a study-helper prototype",
+                                                  "Understanding of original-work and ownership and applicable open-source licensing expectations",
+                                                  "Understanding of official portal submission expectations where fields and formats remain unconfirmed",
+                                                  "Understanding of how to explain who benefits and why the project matters",
+                                                  "Understanding of how to explain use of Meta AI tools",
+                                                  "Understanding of sound engineering expectations for a small prototype",
+                                                  "Understanding of working demonstration expectations including honest explanation of limitations",
+                                                  "Understanding of official rules and waiver acknowledgement and residence, sanctions and affiliation exclusion areas"
+                                              ],
+                    "questionsToClarify":  [
+                                               "What is the exact application cutoff given the conflicting ET and EST publications and the reported closed state?",
+                                               "Is any further application possible given that applications are reported as closed and applications and submission are separate?",
+                                               "What is the organizer acceptance status of the application, which is not independently verified?",
+                                               "Which track would a study-helper prototype enter, and what team conditions apply to that track?",
+                                               "How do the published residence, sanctions and affiliation exclusions apply, including team-member conditions?",
+                                               "What constitutes acknowledgement of the official rules and waiver?",
+                                               "What are the required portal fields, artifact formats and final deliverable specifications, and is a demo video mandatory or preferred?",
+                                               "What are the winner verification, award allocation and payout conditions and the credit terms?"
+                                           ],
+                    "sources":  [
+                                    {
+                                        "label":  "Meta \u0026 Cerebral Valley",
+                                        "url":  "https://dev.meta.ai/events/global-hackathon"
+                                    },
+                                    {
+                                        "label":  "Application and acceptance",
+                                        "url":  "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver"
+                                    }
+                                ],
+                    "generatedAt":  "2026-10-31T17:35:54.9348173+00:00"
+                },
+    "arabic":  {
+                   "overview":  "فرصة هاكاثون Meta Global AI Developer Hackathon 2026 بتنظيم Meta و Cerebral Valley، وهي فعالية بناء عبر الإنترنت لمدة عشرة أيام بمسارين منفصلين للمطورين المستقلين والطلاب ومسار للشركات الناشئة. الفكرة المعلنة هي بناء مشروع عملي في الذكاء الاصطناعي لمشكلة واقعية أو حد تقني باستخدام أدوات Meta للذكاء الاصطناعي، مع ورش عمل مباشرة وساعات مكتبية عبر Discord. التقديم وتسليم المشروع منفصلان، وحالة التسجيل معلنة بأنها مغلقة. المواعيد المنشورة تشمل فتح التقديم في 13 أكتوبر 2026، والانطلاق في 26 أكتوبر 2026 دون وقت محدد، وتسليم المشروع في 4 نوفمبر 2026، وبدء التحكيم في 4 نوفمبر وانتهائه في 8 نوفمبر، والنهائيات وإعلان الفائزين في 9 نوفمبر دون أوقات محددة. موعد إغلاق التقديم متعارض بين ما تنشره الصفحة الرئيسية وما تنشره القواعد الرسمية حول المنطقة الزمنية، لذلك يبقى غير مؤكد. من المزايا المعلنة مجموعة جوائز نقدية تتطلب التحقق من الفائزين، ورصيد معلن لواجهة Meta البرمجية لفترة عشرة أيام يخضع لشروط الائتمان، إضافة إلى الورش والدعم. تغطية المصدر غير مكتملة وحالة المصدر تحتاج إلى تحقق، وقبول الدخول لا يثبت الأهلية أو الامتثال للتسليم أو استحقاق الجائزة.",
+                   "personalRelevance":  "ترتبط الاهتمامات المعلنة وهي الذكاء الاصطناعي وتطوير الويب، والهدف المعلن وهو إعداد نموذج أولي صغير لمساعد دراسي بالذكاء الاصطناعي مع عرض صادق لحدوده، بموضوع الفعالية حول بناء مشروع عملي في الذكاء الاصطناعي ومعايير التحكيم حول الأثر والاستخدام الإبداعي لأدوات Meta وجودة الهندسة والعرض التوضيحي. التقارير الذاتية المؤكدة تشمل مهارة JavaScript وبناء واجهة ويب صغيرة، مع عدم الإبلاغ عن أي تكامل سابق لنماذج الذكاء الاصطناعي. الوقت المتاح المبلغ عنه ذاتيا هو خمس ساعات أسبوعيا، دون افتراض أن الجدول قابل للتحقيق. هذا الارتباط هو صلة بالاهتمام فقط وليس إثباتا للأهلية أو الجاهزية.",
+                   "preparationPriorities":  [
+                                                 "وضوح المستفيدين وأهمية المشكلة التي يعالجها النموذج المقترح لمساعد الدراسة",
+                                                 "فهم الاستخدام الإبداعي المعلن لأدوات Meta وكيفية شرحه ضمن المشروع",
+                                                 "سلامة التصميم الهندسي وحدود النموذج وكيفية عرضها بأمانة",
+                                                 "طبيعة العرض التوضيحي العامل وشرح محتوى العرض المرئي دون افتراض مواصفات إلزامية",
+                                                 "أصالة العمل وشروط الملكية والتراخيص مفتوحة المصدر عند الاقتضاء",
+                                                 "اختيار مسار واحد فقط للمشروع وعدم الخلط بين شروط المسارات",
+                                                 "متطلبات التقديم عبر البوابة الرسمية وحقولها وصيغ التسليم التي لم يتم تأكيدها بعد",
+                                                 "متابعة الورش المباشرة وساعات الدعم المعلنة كمصدر للمعلومات دون افتراض محتواها"
+                                             ],
+                   "questionsToClarify":  [
+                                              "ما حالة القبول الفعلية للتقديم بعد إعلان أن التقديم مغلق، وكيف يتم التحقق منها لدى المنظمين؟",
+                                              "ما الموعد النهائي الدقيق لإغلاق التقديم في ظل التعارض المعلن بين المنطقتين الزمنيتين؟",
+                                              "ما المسار المطلوب للمشاركة وشروطه الخاصة وحجم الفريق المسموح فيه؟",
+                                              "ما تفسير سياسة الإقامة والعقوبات والانتماء وشروط أعضاء الفريق؟",
+                                              "ما المقصود بالإقرار المطلوب للقواعد الرسمية والتنازل وهل هو منفصل عن القبول؟",
+                                              "ما الحقول المطلوبة في بوابة التسليم وصيغ الملفات ومواصفات التسليم النهائي؟",
+                                              "هل العرض المرئي تفضيل للتحكيم أم متطلب إلزامي وما مواصفاته إن وجدت؟",
+                                              "ما شروط التحقق من الفائزين وتوزيع الجوائز وشروط استخدام الرصيد المعلن؟"
+                                          ],
+                   "sources":  [
+                                   {
+                                       "label":  "Meta \u0026 Cerebral Valley",
+                                       "url":  "https://dev.meta.ai/events/global-hackathon"
+                                   },
+                                   {
+                                       "label":  "Application and acceptance",
+                                       "url":  "https://cerebralvalley.ai/e/meta-ai-developer-hackathon/waiver"
+                                   }
+                               ],
+                   "generatedAt":  "2026-10-31T17:36:11.1607419+00:00"
+               },
+    "candidate":  {
+                      "tasks":  [
+                                    {
+                                        "title":  "Build single-flow AI study-helper prototype",
+                                        "target":  {
+                                                       "kind":  "goal",
+                                                       "goalId":  "live-goal"
+                                                   },
+                                        "priority":  "should",
+                                        "deliverable":  "Working prototype covering one study-helper flow with AI response handling",
+                                        "completionCriteria":  "One flow runs end-to-end with question input, AI-generated help, and displayed answer; code is original or third-party use is logged for license check; observed failures noted for walkthrough",
+                                        "estimatedHours":  12,
+                                        "resourceIds":  [
+                                                            "resource-microsoft-ai-concepts",
+                                                            "resource-google-ml-crash-course"
+                                                        ]
+                                    },
+                                    {
+                                        "title":  "Prepare honest limitations walkthrough",
+                                        "target":  {
+                                                       "kind":  "goal",
+                                                       "goalId":  "live-goal"
+                                                   },
+                                        "priority":  "should",
+                                        "deliverable":  "Walkthrough notes describing what the prototype does and its limitations",
+                                        "completionCriteria":  "Walkthrough covers single-flow demo, observed limits, and what was not verified; preparation progress recorded separately from any submission receipt",
+                                        "estimatedHours":  3,
+                                        "resourceIds":  [
+
+                                                        ]
+                                    },
+                                    {
+                                        "title":  "Verify portal instructions and submit project",
+                                        "target":  {
+                                                       "kind":  "requirement",
+                                                       "requirementId":  "meta-global-ai-2026-s-portal"
+                                                   },
+                                        "priority":  "must",
+                                        "deliverable":  "Submission package plus portal confirmation record",
+                                        "completionCriteria":  "Organizer-confirmed portal instructions verified first; project submitted only through that confirmed channel; receipt or confirmation saved and recorded separately from preparation progress",
+                                        "estimatedHours":  2,
+                                        "resourceIds":  [
+
+                                                        ]
+                                    },
+                                    {
+                                        "title":  "Check originality and license compliance",
+                                        "target":  {
+                                                       "kind":  "requirement",
+                                                       "requirementId":  "meta-global-ai-2026-s-rights"
+                                                   },
+                                        "priority":  "must",
+                                        "deliverable":  "Originality and license checklist for code, text, and media",
+                                        "completionCriteria":  "All code, text, and media marked as original or with ownership and applicable open-source license conditions noted; unlicensed use removed or credited per conditions",
+                                        "estimatedHours":  2,
+                                        "resourceIds":  [
+
+                                                        ]
+                                    },
+                                    {
+                                        "title":  "Choose and record single track",
+                                        "target":  {
+                                                       "kind":  "requirement",
+                                                       "requirementId":  "meta-global-ai-2026-s-track"
+                                                   },
+                                        "priority":  "must",
+                                        "deliverable":  "Recorded single-track selection for submission",
+                                        "completionCriteria":  "One track selected and recorded; submission uses that single track only at entry",
+                                        "estimatedHours":  1,
+                                        "resourceIds":  [
+
+                                                        ]
+                                    }
+                                ],
+                      "explanation":  "Scoped to reported JavaScript and small web interface experience with no reported AI model integration; estimate includes time to learn integration for one flow. Minimum demo scope is one question-in and help-out flow plus a limitations walkthrough. Dependency-ordered critical path is single-track choice, prototype single flow, originality and license check, limitations walkthrough, then verification of organizer-confirmed portal instructions with submit and receipt check. Optional work to defer is extra helper features, additional subjects, styling polish, and extra optional learning beyond the attached concepts. Timeframe is not confirmed in supplied data so feasibility is unknown and no schedule is promised; next decision is to confirm the single flow and single track to keep, then re-estimate retained work against availability."
+                  },
+    "accepted":  {
+                     "taskCount":  5,
+                     "feasibility":  "untimed",
+                     "totalEstimatedHours":  20
+                 },
+    "status":  "technical-pass-with-documented-quality-limitations",
+    "testedCommit":  "8ebef71222091e8a9db08986ccfb99ab767e3699",
+    "semanticReview":  "Reviewed against supplied canonical Meta record and synthetic profile. Grounded EN/AR output and conditional submission steps observed; summaries are verbose. No production certification or universal eligibility verdict.",
+    "harnessNotes":  "Arabic briefing was requested through browser fetch to the authenticated backend, not by toggling the complete Arabic UI. Navigation burst hit unchanged production rate limits; successful final return was retried after waiting. Initial synthetic fixture validation was corrected before any provider call. Low-level upstream request counts and billing telemetry were not captured."
+}

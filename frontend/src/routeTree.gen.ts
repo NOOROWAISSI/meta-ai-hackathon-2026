@@ -10,6 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as OpportunitiesRouteImport } from './routes/opportunities'
 import { Route as PlansRouteImport } from './routes/plans'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as SavedRouteImport } from './routes/saved'
@@ -17,6 +20,21 @@ import { Route as SavedRouteImport } from './routes/saved'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OpportunitiesRoute = OpportunitiesRouteImport.update({
+  id: '/opportunities',
+  path: '/opportunities',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlansRoute = PlansRouteImport.update({
@@ -37,12 +55,18 @@ const SavedRoute = SavedRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/opportunities': typeof OpportunitiesRoute
   '/plans': typeof PlansRoute
   '/profile': typeof ProfileRoute
   '/saved': typeof SavedRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/opportunities': typeof OpportunitiesRoute
   '/plans': typeof PlansRoute
   '/profile': typeof ProfileRoute
   '/saved': typeof SavedRoute
@@ -50,20 +74,48 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/opportunities': typeof OpportunitiesRoute
   '/plans': typeof PlansRoute
   '/profile': typeof ProfileRoute
   '/saved': typeof SavedRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/plans' | '/profile' | '/saved'
+  fullPaths:
+    | '/'
+    | '/forgot-password'
+    | '/login'
+    | '/opportunities'
+    | '/plans'
+    | '/profile'
+    | '/saved'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/plans' | '/profile' | '/saved'
-  id: '__root__' | '/' | '/plans' | '/profile' | '/saved'
+  to:
+    | '/'
+    | '/forgot-password'
+    | '/login'
+    | '/opportunities'
+    | '/plans'
+    | '/profile'
+    | '/saved'
+  id:
+    | '__root__'
+    | '/'
+    | '/forgot-password'
+    | '/login'
+    | '/opportunities'
+    | '/plans'
+    | '/profile'
+    | '/saved'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
+  LoginRoute: typeof LoginRoute
+  OpportunitiesRoute: typeof OpportunitiesRoute
   PlansRoute: typeof PlansRoute
   ProfileRoute: typeof ProfileRoute
   SavedRoute: typeof SavedRoute
@@ -76,6 +128,27 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/opportunities': {
+      id: '/opportunities'
+      path: '/opportunities'
+      fullPath: '/opportunities'
+      preLoaderRoute: typeof OpportunitiesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/plans': {
@@ -104,6 +177,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
+  LoginRoute: LoginRoute,
+  OpportunitiesRoute: OpportunitiesRoute,
   PlansRoute: PlansRoute,
   ProfileRoute: ProfileRoute,
   SavedRoute: SavedRoute,

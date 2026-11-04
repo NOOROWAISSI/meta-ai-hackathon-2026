@@ -1,0 +1,38 @@
+[
+  {
+    "opportunityId": "E01",
+    "listingId": "harvard-cs50-web",
+    "relevanceNote": "Optional preparation for a web prototype and its demonstration. This course is not an organizer requirement.",
+    "reviewedAt": "2026-10-31T10:43:16.336Z"
+  },
+  {
+    "opportunityId": "E01",
+    "listingId": "harvard-cs50x",
+    "relevanceNote": "Optional programming foundations for a student prototype; choose only the relevant modules.",
+    "reviewedAt": "2026-10-31T10:43:16.336Z"
+  },
+  {
+    "opportunityId": "E03",
+    "listingId": "microsoft-ai-concepts",
+    "relevanceNote": "Optional background on generative AI and agents. The event’s separate free-runtime policy still requires a check.",
+    "reviewedAt": "2026-10-31T10:43:16.336Z"
+  },
+  {
+    "opportunityId": "E03",
+    "listingId": "harvard-cs50-python",
+    "relevanceNote": "Optional Python programming practice for a code-based agent; no-code entrants do not need Python.",
+    "reviewedAt": "2026-10-31T10:43:16.336Z"
+  },
+  {
+    "opportunityId": "E05",
+    "listingId": "harvard-cs50x",
+    "relevanceNote": "Optional programming foundations for a student/community project.",
+    "reviewedAt": "2026-10-31T10:43:16.336Z"
+  },
+  {
+    "opportunityId": "E05",
+    "listingId": "harvard-cs50-python",
+    "relevanceNote": "Optional Python practice if selected for the project; not a participation prerequisite.",
+    "reviewedAt": "2026-10-31T10:43:16.336Z"
+  }
+]

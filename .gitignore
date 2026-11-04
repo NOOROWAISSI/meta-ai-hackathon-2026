@@ -1,0 +1,9 @@
+**/node_modules/
+**/bin/
+**/obj/
+**/.output/
+**/.secrets/
+**/.env
+**/.env.*
+!**/.env.example
+*.log

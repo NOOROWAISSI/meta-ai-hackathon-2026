@@ -9,7 +9,20 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useRef, type CSSProperties, type ReactNode } from "react";
-import type { Hackathon } from "@/lib/discover/types";
+import type { LucideIcon } from "lucide-react";
+
+interface CollectionItem {
+  id: string;
+  title: string;
+  topics: string[];
+}
+export interface OpportunityCollection {
+  id: string;
+  title: string;
+  description: string;
+  topics: readonly string[];
+  icon: LucideIcon;
+}
 
 const GROUPS = [
   {
@@ -42,27 +55,33 @@ const GROUPS = [
   },
 ] as const;
 
-function groupId(event: Hackathon) {
+function defaultGroupId(event: CollectionItem) {
   return (
     GROUPS.find((group) => group.topics.some((topic) => event.topics.includes(topic)))?.id ?? "more"
   );
 }
 
-export function OpportunityGroups({
+export function OpportunityGroups<T extends CollectionItem>({
   items,
   renderCard,
+  collections = GROUPS,
+  classify = defaultGroupId,
+  memoryKey = "discover.collection",
 }: {
-  items: Hackathon[];
-  renderCard: (event: Hackathon) => ReactNode;
+  items: T[];
+  renderCard: (event: T) => ReactNode;
+  collections?: readonly OpportunityCollection[];
+  classify?: (event: T) => string;
+  memoryKey?: string;
 }) {
-  const [selected, setSelected] = useVisitState<string | null>("discover.collection", null);
+  const [selected, setSelected] = useVisitState<string | null>(memoryKey, null);
   const panel = useRef<HTMLElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const results = useRef<HTMLDivElement>(null);
-  const group = GROUPS.find((entry) => entry.id === selected);
-  const shown = selected === "all" ? items : items.filter((event) => groupId(event) === selected);
-  const groups = GROUPS.filter(
-    (entry) => entry.id !== "more" || items.some((event) => groupId(event) === "more"),
+  const group = collections.find((entry) => entry.id === selected);
+  const shown = selected === "all" ? items : items.filter((event) => classify(event) === selected);
+  const groups = collections.filter(
+    (entry) => entry.id !== "more" || items.some((event) => classify(event) === "more"),
   );
 
   const select = (id: string | null) => {
@@ -116,7 +135,7 @@ export function OpportunityGroups({
 
       <div className="collection-grid">
         {groups.map(({ id, title, description, topics, icon: Icon }, index) => {
-          const events = items.filter((event) => groupId(event) === id);
+          const events = items.filter((event) => classify(event) === id);
           return (
             <button
               key={id}
@@ -127,6 +146,7 @@ export function OpportunityGroups({
               disabled={!events.length}
               onClick={() => select(selected === id ? null : id)}
               aria-expanded={selected === id}
+              aria-pressed={selected === id}
               aria-controls="collection-results"
               className="collection-stack group text-left"
               aria-label={`Open ${title}: ${events.length} ${events.length === 1 ? "opportunity" : "opportunities"}`}
@@ -141,7 +161,7 @@ export function OpportunityGroups({
               </span>
               <span className="collection-front glass-strong">
                 <span
-                  className={`collection-cover event-cover event-cover-${["one", "two", "three", "four"][index]}`}
+                  className={`collection-cover event-cover event-cover-${["one", "two", "three", "four"][index % 4]}`}
                 >
                   <span className="collection-icon relative z-10 grid size-12 place-items-center rounded-2xl border border-white/35 bg-white/15 text-white backdrop-blur">
                     <Icon className="size-6" aria-hidden />
